@@ -115,18 +115,22 @@ Moves `docs/architecture/` to `docs/spec/` and updates CLAUDE.md references.
 
 ### Worktree Configuration
 
-Edit `worktree/config.json`:
+Your worktree settings are stored at `~/.claude/worktree-manager.config.json`.
+
+Run `/cs:wt:setup` to configure, or see `~/.claude/plugins/skills/worktree-manager/SKILL.md` for first-time setup instructions.
 
 ```json
 {
-  "terminal": "iterm2",
-  "shell": "bash",
+  "terminal": "iterm2-tab",
+  "shell": "zsh",
   "claudeCommand": "cc",
   "portPool": { "start": 8100, "end": 8199 },
   "portsPerWorktree": 2,
   "worktreeBase": "~/Projects/worktrees"
 }
 ```
+
+Config lookup: user config → `~/.claude/plugins/skills/worktree-manager/config.template.json` → defaults
 
 ## Project Structure
 

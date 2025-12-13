@@ -17,6 +17,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!plugins/cs/skills/worktree-manager/scripts/lib/
 lib64/
 parts/
 sdist/

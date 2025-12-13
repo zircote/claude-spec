@@ -56,23 +56,17 @@ if [ -z "$WORKTREE_PATH" ]; then
     exit 1
 fi
 
-# Find script directory and config
+# Find script directory and load config
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CONFIG_FILE="$SCRIPT_DIR/../config.json"
+source "$SCRIPT_DIR/lib/config.sh"
 
-# Load config (with defaults)
-if [ -f "$CONFIG_FILE" ] && command -v jq &> /dev/null; then
-    TERMINAL=$(jq -r '.terminal // "ghostty"' "$CONFIG_FILE")
-    SHELL_CMD=$(jq -r '.shell // "bash"' "$CONFIG_FILE")
-    CLAUDE_CMD=$(jq -r '.claudeCommand // "claude --dangerously-skip-permissions"' "$CONFIG_FILE")
-else
-    TERMINAL="ghostty"
-    SHELL_CMD="bash"
-    CLAUDE_CMD="claude --dangerously-skip-permissions"
-fi
+# Load config values (user config -> template -> defaults)
+TERMINAL=$(get_config "terminal" "ghostty")
+SHELL_CMD=$(get_config "shell" "bash")
+CLAUDE_CMD=$(get_config "claudeCommand" "claude --dangerously-skip-permissions")
 
 # Note: CLAUDE_CMD defaults to "claude --dangerously-skip-permissions" for autonomous operation
-# Users can customize in config.json (e.g., use an alias like "cc")
+# Users can customize in ~/.claude/worktree-manager.config.json (e.g., use an alias like "cc")
 
 # Expand ~ in path
 WORKTREE_PATH="${WORKTREE_PATH/#\~/$HOME}"
