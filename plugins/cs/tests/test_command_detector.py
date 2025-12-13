@@ -266,7 +266,10 @@ class TestRunPreSteps:
         def mock_get_steps(cmd, step_type):
             return [{"name": "nonexistent-step"}]
 
-        monkeypatch.setattr("command_detector.get_enabled_steps", mock_get_steps)
+        # Use raising=False in case the original import failed
+        monkeypatch.setattr(
+            "command_detector.get_enabled_steps", mock_get_steps, raising=False
+        )
 
         run_pre_steps(str(tmp_path), "cs:p")
 
