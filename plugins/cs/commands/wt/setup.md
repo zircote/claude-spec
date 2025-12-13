@@ -139,28 +139,28 @@ Use the `AskUserQuestion` tool with these 4 questions in a single call:
 
 ### Step 5: Write Config File
 
-After mapping answers, write the configuration:
+After mapping answers, write the configuration using jq for proper JSON escaping:
 
 ```bash
 mkdir -p ~/.claude
 
-cat > ~/.claude/worktree-manager.config.json << EOF
-{
-  "terminal": "${TERMINAL_VALUE}",
-  "shell": "${SHELL_VALUE}",
-  "claudeCommand": "${CLAUDE_CMD_VALUE}",
-  "worktreeBase": "${WORKTREE_BASE_VALUE}",
-  "portPool": {
-    "start": 8100,
-    "end": 8199
-  },
-  "portsPerWorktree": 2,
-  "registryPath": "~/.claude/worktree-registry.json",
-  "defaultCopyDirs": [".agents", ".env.example", ".env"],
-  "healthCheckTimeout": 30,
-  "healthCheckRetries": 6
-}
-EOF
+jq -n \
+  --arg terminal "${TERMINAL_VALUE}" \
+  --arg shell "${SHELL_VALUE}" \
+  --arg claudeCommand "${CLAUDE_CMD_VALUE}" \
+  --arg worktreeBase "${WORKTREE_BASE_VALUE}" \
+  '{
+    terminal: $terminal,
+    shell: $shell,
+    claudeCommand: $claudeCommand,
+    worktreeBase: $worktreeBase,
+    portPool: { start: 8100, end: 8199 },
+    portsPerWorktree: 2,
+    registryPath: "~/.claude/worktree-registry.json",
+    defaultCopyDirs: [".agents", ".env.example", ".env"],
+    healthCheckTimeout: 30,
+    healthCheckRetries: 6
+  }' > ~/.claude/worktree-manager.config.json
 ```
 
 ### Step 6: Confirm Success
