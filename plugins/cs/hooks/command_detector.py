@@ -185,6 +185,9 @@ def run_step(cwd: str, step_name: str, config: dict[str, Any]) -> None:
                 )
     except ImportError as e:
         sys.stderr.write(f"claude-spec: Could not import step {step_name}: {e}\n")
+    except Exception as e:
+        # Catch-all for step execution errors (fail-open)
+        sys.stderr.write(f"claude-spec: Step {step_name} execution error: {e}\n")
 
 
 def main() -> None:

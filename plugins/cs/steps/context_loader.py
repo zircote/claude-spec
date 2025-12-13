@@ -137,8 +137,10 @@ class ContextLoaderStep(BaseStep):
 
         except subprocess.TimeoutExpired:
             sys.stderr.write("context_loader: Git command timed out\n")
+            return ""  # Return empty on timeout - git state unavailable
         except Exception as e:
             sys.stderr.write(f"context_loader: Git error: {e}\n")
+            return ""  # Return empty on error - git state unavailable
 
         return "\n".join(parts) if len(parts) > 1 else ""
 

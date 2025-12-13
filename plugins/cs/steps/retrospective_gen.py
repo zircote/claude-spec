@@ -49,7 +49,15 @@ class RetrospectiveGeneratorStep(BaseStep):
             )
 
         # Sort by modification time, most recent first
-        project_dirs.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+        # Use 0 as fallback for dirs where stat() fails (permissions, broken symlinks)
+        def safe_mtime(d: Path) -> float:
+            try:
+                return d.stat().st_mtime
+            except OSError as e:
+                sys.stderr.write(f"retrospective_gen: Cannot stat {d}: {e}\n")
+                return 0
+
+        project_dirs.sort(key=safe_mtime, reverse=True)
         target_dir = project_dirs[0]
 
         # Check if RETROSPECTIVE.md already exists
