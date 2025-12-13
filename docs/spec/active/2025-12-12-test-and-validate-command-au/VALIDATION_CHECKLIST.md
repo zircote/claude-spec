@@ -64,12 +64,13 @@ This checklist documents the validation of all CS plugin capabilities as of 2025
 
 | Test | Expected | Actual | Status |
 |------|----------|--------|--------|
-| Hook reads JSON from stdin | Returns valid JSON | Returns `{"decision": "approve"}` | PASS |
-| Detects `.prompt-log-enabled` marker | Finds enabled projects | Correctly finds marker in `docs/spec/active/*/` | PASS |
-| Creates `.prompt-log.json` | Log file created | Log file created with NDJSON entries | PASS |
-| Session ID generation | Unique IDs | Format: `hook-{12 hex chars}` | PASS |
-| Command detection | Detects `/spec:` commands | Correctly parses `/spec:p`, `/spec:i`, etc. | PASS |
-| Content truncation | Long content truncated | Truncates at 50KB with notice | PASS |
+| Hook reads JSON from stdin | Returns valid JSON | Returns `{"decision": "approve"}` | ✅ PASS |
+| Detects `.prompt-log-enabled` marker | Finds enabled projects | Correctly finds marker in `docs/spec/active/*/` | ✅ PASS |
+| Creates `.prompt-log.json` | Log file created | Log file created with NDJSON entries | ✅ PASS |
+| Session ID generation | Unique IDs | Format: `hook-{12 hex chars}` | ✅ PASS |
+| Command detection | Detects `/spec:` commands | Correctly parses `/spec:p`, `/spec:i`, etc. | ✅ PASS |
+| Content truncation | Long content truncated | Truncates at 50KB with notice | ✅ PASS |
+| **E2E: Secret filtering** | AWS key replaced | `AKIAIOSFODNN7EXAMPLE` → `[SECRET:aws_access_key]` | ✅ PASS |
 
 ### Secret Detection Pipeline
 
@@ -98,15 +99,16 @@ This checklist documents the validation of all CS plugin capabilities as of 2025
 
 | Feature | Expected | Actual | Status |
 |---------|----------|--------|--------|
-| Parse NDJSON log | Read entries | Correctly parses entries | PASS |
-| Count by entry type | Separate counts | user_inputs, expanded_prompts, response_summaries | PASS |
-| Session tracking | Group by session_id | Correctly groups and counts sessions | PASS |
-| Question detection | Count prompts with ? | Correctly identifies questions | PASS |
-| Prompt length stats | min/max/avg | Correctly calculates | PASS |
-| Command tracking | Count commands used | Correctly aggregates | PASS |
-| Secret filter stats | Count filtered | Correctly counts filtered entries | PASS |
-| Markdown output | Valid markdown | Generates proper sections | PASS |
-| JSON output | Valid JSON | Correctly serializes analysis | PASS |
+| Parse NDJSON log | Read entries | Correctly parses entries | ✅ PASS |
+| Count by entry type | Separate counts | user_inputs, expanded_prompts, response_summaries | ✅ PASS |
+| Session tracking | Group by session_id | Correctly groups and counts sessions | ✅ PASS |
+| Question detection | Count prompts with ? | Correctly identifies questions | ✅ PASS |
+| Prompt length stats | min/max/avg | Correctly calculates | ✅ PASS |
+| Command tracking | Count commands used | Correctly aggregates | ✅ PASS |
+| Secret filter stats | Count filtered | Correctly counts filtered entries | ✅ PASS |
+| Markdown output | Valid markdown | Generates proper sections | ✅ PASS |
+| JSON output | Valid JSON | Correctly serializes analysis | ✅ PASS |
+| **E2E: Full analysis** | Generate from live log | 2 prompts, 1 secret filtered, insights generated | ✅ PASS |
 
 ### Log Entry Serialization
 
@@ -167,12 +169,12 @@ This checklist documents the validation of all CS plugin capabilities as of 2025
 ### Full Project Lifecycle
 
 1. **Start**: Run `/cs:p test project`
-   - [ ] Project directory created
-   - [ ] Logging enabled automatically
+   - [x] Project directory created ✅
+   - [x] Logging enabled automatically ✅
 
 2. **During**: Submit prompts
-   - [ ] Prompts captured to `.prompt-log.json`
-   - [ ] Secrets filtered
+   - [x] Prompts captured to `.prompt-log.json` ✅
+   - [x] Secrets filtered (AWS key → `[SECRET:aws_access_key]`) ✅
 
 3. **Progress**: Run `/cs:i`
    - [ ] PROGRESS.md updated
