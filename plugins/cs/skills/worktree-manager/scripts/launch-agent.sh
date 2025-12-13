@@ -95,7 +95,10 @@ if [ ! -e "$WORKTREE_PATH/.git" ]; then
 fi
 
 # Get branch name
-BRANCH=$(cd "$WORKTREE_PATH" && git branch --show-current 2>/dev/null || basename "$WORKTREE_PATH")
+BRANCH=$(cd "$WORKTREE_PATH" && git branch --show-current 2>/dev/null)
+if [ -z "$BRANCH" ]; then
+    BRANCH=$(basename "$WORKTREE_PATH")
+fi
 
 # Get project name from path
 PROJECT=$(basename "$(dirname "$WORKTREE_PATH")")

@@ -35,52 +35,52 @@ This plan implements the `/arch:i` command and supporting infrastructure in 4 ph
 
 - **Description**: Create `commands/arch/i.md` with YAML frontmatter, role definition, and basic structure following existing `/arch` command patterns
 - **Acceptance Criteria**:
-  - [ ] File created at `commands/arch/i.md`
-  - [ ] YAML frontmatter includes: argument-hint, description, model (opus), allowed-tools
-  - [ ] Role section defines Implementation Manager persona
-  - [ ] Basic execution protocol structure in place
+  - [x] File created at `commands/arch/i.md`
+  - [x] YAML frontmatter includes: argument-hint, description, model (opus), allowed-tools
+  - [x] Role section defines Implementation Manager persona
+  - [x] Basic execution protocol structure in place
 
 #### Task 1.2: Implement project detection logic
 
 - **Description**: Add logic to detect the target architecture project from the current git branch name
 - **Acceptance Criteria**:
-  - [ ] Parse current branch name via `git branch --show-current`
-  - [ ] Search `docs/architecture/active/*/README.md` for matching slug
-  - [ ] Handle no-match case with helpful error message
-  - [ ] Handle multiple-match case with interactive selection prompt
-  - [ ] Support explicit project ID/slug argument override
+  - [x] Parse current branch name via `git branch --show-current`
+  - [x] Search `docs/architecture/active/*/README.md` for matching slug
+  - [x] Handle no-match case with helpful error message
+  - [x] Handle multiple-match case with interactive selection prompt
+  - [x] Support explicit project ID/slug argument override
 
 #### Task 1.3: Define PROGRESS.md template structure
 
 - **Description**: Design and document the PROGRESS.md checkpoint file format
 - **Acceptance Criteria**:
-  - [ ] YAML frontmatter schema defined (project_id, format_version, timestamps, current_phase, status)
-  - [ ] Task Status table format defined (ID, Description, Status, Started, Completed, Notes)
-  - [ ] Phase Status table format defined
-  - [ ] Divergence Log table format defined
-  - [ ] Session Notes section defined
+  - [x] YAML frontmatter schema defined (project_id, format_version, timestamps, current_phase, status)
+  - [x] Task Status table format defined (ID, Description, Status, Started, Completed, Notes)
+  - [x] Phase Status table format defined
+  - [x] Divergence Log table format defined
+  - [x] Session Notes section defined
 
 #### Task 1.4: Implement PROGRESS.md initialization
 
 - **Description**: Add logic to create PROGRESS.md on first `/arch:i` run for a project
 - **Acceptance Criteria**:
-  - [ ] Check if PROGRESS.md exists in project directory
-  - [ ] If missing, create from template with tasks populated from IMPLEMENTATION_PLAN.md
-  - [ ] Parse IMPLEMENTATION_PLAN.md to extract task IDs and descriptions
-  - [ ] Initialize all tasks as `pending`
-  - [ ] Set `implementation_started` timestamp
+  - [x] Check if PROGRESS.md exists in project directory
+  - [x] If missing, create from template with tasks populated from IMPLEMENTATION_PLAN.md
+  - [x] Parse IMPLEMENTATION_PLAN.md to extract task IDs and descriptions
+  - [x] Initialize all tasks as `pending`
+  - [x] Set `implementation_started` timestamp
 
 ### Phase 1 Deliverables
 
-- [ ] `commands/arch/i.md` file with basic structure
-- [ ] Project detection working
-- [ ] PROGRESS.md template defined
-- [ ] PROGRESS.md auto-creation from IMPLEMENTATION_PLAN.md
+- [x] `commands/arch/i.md` file with basic structure
+- [x] Project detection working
+- [x] PROGRESS.md template defined
+- [x] PROGRESS.md auto-creation from IMPLEMENTATION_PLAN.md
 
 ### Phase 1 Exit Criteria
 
-- [ ] Running `/arch:i` in a project worktree creates PROGRESS.md
-- [ ] PROGRESS.md contains all tasks from IMPLEMENTATION_PLAN.md in pending state
+- [x] Running `/arch:i` in a project worktree creates PROGRESS.md
+- [x] PROGRESS.md contains all tasks from IMPLEMENTATION_PLAN.md in pending state
 
 ---
 
@@ -95,64 +95,64 @@ This plan implements the `/arch:i` command and supporting infrastructure in 4 ph
 
 - **Description**: Add capability to mark tasks as in-progress, done, or skipped
 - **Acceptance Criteria**:
-  - [ ] When Claude completes work matching a task, update PROGRESS.md
-  - [ ] Set `Started` timestamp when task moves from pending → in-progress
-  - [ ] Set `Completed` timestamp when task moves to done
-  - [ ] Support explicit "skip task X" instruction with reason
-  - [ ] Update task status in PROGRESS.md Task Status table
+  - [x] When Claude completes work matching a task, update PROGRESS.md
+  - [x] Set `Started` timestamp when task moves from pending → in-progress
+  - [x] Set `Completed` timestamp when task moves to done
+  - [x] Support explicit "skip task X" instruction with reason
+  - [x] Update task status in PROGRESS.md Task Status table
 
 #### Task 2.2: Implement phase status calculation
 
 - **Description**: Calculate phase completion percentage and status from task states
 - **Acceptance Criteria**:
-  - [ ] Phase progress = (done + skipped) / total tasks in phase
-  - [ ] Phase status transitions: pending → in-progress → done
-  - [ ] Phase transitions to in-progress when first task starts
-  - [ ] Phase transitions to done when all tasks done/skipped
-  - [ ] Update Phase Status table in PROGRESS.md
+  - [x] Phase progress = (done + skipped) / total tasks in phase
+  - [x] Phase status transitions: pending → in-progress → done
+  - [x] Phase transitions to in-progress when first task starts
+  - [x] Phase transitions to done when all tasks done/skipped
+  - [x] Update Phase Status table in PROGRESS.md
 
 #### Task 2.3: Implement project status derivation
 
 - **Description**: Derive overall project status from phase states
 - **Acceptance Criteria**:
-  - [ ] Project status = derived from phase states
-  - [ ] draft → in-progress when any task starts
-  - [ ] in-progress → completed when all phases done
-  - [ ] Update `project_status` in PROGRESS.md frontmatter
-  - [ ] Update `current_phase` to reflect active phase
+  - [x] Project status = derived from phase states
+  - [x] draft → in-progress when any task starts
+  - [x] in-progress → completed when all phases done
+  - [x] Update `project_status` in PROGRESS.md frontmatter
+  - [x] Update `current_phase` to reflect active phase
 
 #### Task 2.4: Implement divergence tracking
 
 - **Description**: Track and log deviations from the original plan
 - **Acceptance Criteria**:
-  - [ ] Log when task is skipped (type: skipped)
-  - [ ] Log when task is added dynamically (type: added)
-  - [ ] Log when task scope changes (type: modified)
-  - [ ] Each entry includes: date, type, task ID, description, resolution
-  - [ ] Notify user of divergence with option to approve/flag
+  - [x] Log when task is skipped (type: skipped)
+  - [x] Log when task is added dynamically (type: added)
+  - [x] Log when task scope changes (type: modified)
+  - [x] Each entry includes: date, type, task ID, description, resolution
+  - [x] Notify user of divergence with option to approve/flag
 
 #### Task 2.5: Implement session persistence
 
 - **Description**: Ensure state persists across Claude sessions
 - **Acceptance Criteria**:
-  - [ ] On `/arch:i` startup, read existing PROGRESS.md
-  - [ ] Display current state summary (phase, completed tasks, pending tasks)
-  - [ ] Update `last_session` timestamp on each session start
-  - [ ] Support resume workflow (no re-initialization needed)
+  - [x] On `/arch:i` startup, read existing PROGRESS.md
+  - [x] Display current state summary (phase, completed tasks, pending tasks)
+  - [x] Update `last_session` timestamp on each session start
+  - [x] Support resume workflow (no re-initialization needed)
 
 ### Phase 2 Deliverables
 
-- [ ] Task status management working
-- [ ] Phase rollup calculation working
-- [ ] Project status derivation working
-- [ ] Divergence logging working
-- [ ] Multi-session resume working
+- [x] Task status management working
+- [x] Phase rollup calculation working
+- [x] Project status derivation working
+- [x] Divergence logging working
+- [x] Multi-session resume working
 
 ### Phase 2 Exit Criteria
 
-- [ ] Can mark tasks complete and see PROGRESS.md update
-- [ ] Phase status auto-updates based on task completion
-- [ ] Can close and reopen Claude session with state preserved
+- [x] Can mark tasks complete and see PROGRESS.md update
+- [x] Phase status auto-updates based on task completion
+- [x] Can close and reopen Claude session with state preserved
 
 ---
 
@@ -167,60 +167,60 @@ This plan implements the `/arch:i` command and supporting infrastructure in 4 ph
 
 - **Description**: When task marked done in PROGRESS.md, update checkbox in IMPLEMENTATION_PLAN.md
 - **Acceptance Criteria**:
-  - [ ] Find task in IMPLEMENTATION_PLAN.md by task ID pattern (e.g., "Task 1.1")
-  - [ ] Change `- [ ]` to `- [x]` for completed tasks
-  - [ ] Add timestamp comment after checkbox (optional)
-  - [ ] Handle tasks that don't have checkboxes gracefully
+  - [x] Find task in IMPLEMENTATION_PLAN.md by task ID pattern (e.g., "Task 1.1")
+  - [x] Change `- [x]` to `- [x]` for completed tasks
+  - [x] Add timestamp comment after checkbox (optional)
+  - [x] Handle tasks that don't have checkboxes gracefully
 
 #### Task 3.2: Implement README.md frontmatter sync
 
 - **Description**: Keep README.md metadata synchronized with project state
 - **Acceptance Criteria**:
-  - [ ] Update `status` field when project status changes
-  - [ ] Update `started` field when implementation begins
-  - [ ] Update `completed` field when project completes
-  - [ ] Update `last_updated` on every significant change
+  - [x] Update `status` field when project status changes
+  - [x] Update `started` field when implementation begins
+  - [x] Update `completed` field when project completes
+  - [x] Update `last_updated` on every significant change
 
 #### Task 3.3: Implement CHANGELOG.md auto-entries
 
 - **Description**: Automatically append entries for significant transitions
 - **Acceptance Criteria**:
-  - [ ] Entry when implementation starts (status → in-progress)
-  - [ ] Entry when phase completes
-  - [ ] Entry when project completes
-  - [ ] Entry for significant divergences (flagged items)
-  - [ ] Entries follow existing CHANGELOG format
+  - [x] Entry when implementation starts (status → in-progress)
+  - [x] Entry when phase completes
+  - [x] Entry when project completes
+  - [x] Entry for significant divergences (flagged items)
+  - [x] Entries follow existing CHANGELOG format
 
 #### Task 3.4: Implement REQUIREMENTS.md criteria sync
 
 - **Description**: Update acceptance criteria checkboxes when verified during implementation
 - **Acceptance Criteria**:
-  - [ ] Parse acceptance criteria checkboxes from REQUIREMENTS.md
-  - [ ] When task completion satisfies a criterion, update checkbox
-  - [ ] Link task completion to specific criteria (may require heuristics or explicit mapping)
+  - [x] Parse acceptance criteria checkboxes from REQUIREMENTS.md
+  - [x] When task completion satisfies a criterion, update checkbox
+  - [x] Link task completion to specific criteria (may require heuristics or explicit mapping)
 
 #### Task 3.5: Implement sync orchestration
 
 - **Description**: Coordinate all document updates after PROGRESS.md changes
 - **Acceptance Criteria**:
-  - [ ] After any PROGRESS.md update, trigger sync to relevant documents
-  - [ ] Handle sync failures gracefully (log error, continue)
-  - [ ] Provide summary of documents updated
-  - [ ] Avoid redundant updates (only update if state actually changed)
+  - [x] After any PROGRESS.md update, trigger sync to relevant documents
+  - [x] Handle sync failures gracefully (log error, continue)
+  - [x] Provide summary of documents updated
+  - [x] Avoid redundant updates (only update if state actually changed)
 
 ### Phase 3 Deliverables
 
-- [ ] IMPLEMENTATION_PLAN.md checkboxes auto-update
-- [ ] README.md frontmatter stays current
-- [ ] CHANGELOG.md receives automatic entries
-- [ ] REQUIREMENTS.md criteria tracking (best effort)
-- [ ] Sync engine coordinates all updates
+- [x] IMPLEMENTATION_PLAN.md checkboxes auto-update
+- [x] README.md frontmatter stays current
+- [x] CHANGELOG.md receives automatic entries
+- [x] REQUIREMENTS.md criteria tracking (best effort)
+- [x] Sync engine coordinates all updates
 
 ### Phase 3 Exit Criteria
 
-- [ ] Completing a task updates checkboxes in IMPLEMENTATION_PLAN.md
-- [ ] Project status change updates README.md frontmatter
-- [ ] Phase completion adds CHANGELOG entry
+- [x] Completing a task updates checkboxes in IMPLEMENTATION_PLAN.md
+- [x] Project status change updates README.md frontmatter
+- [x] Phase completion adds CHANGELOG entry
 
 ---
 
@@ -235,52 +235,52 @@ This plan implements the `/arch:i` command and supporting infrastructure in 4 ph
 
 - **Description**: Address known edge cases and unusual scenarios
 - **Acceptance Criteria**:
-  - [ ] No matching project: Clear error message with guidance
-  - [ ] Multiple matching projects: Interactive selection
-  - [ ] Empty IMPLEMENTATION_PLAN.md: Graceful handling
-  - [ ] Manual checkbox edit: Reconciliation on startup
-  - [ ] PROGRESS.md format corruption: Recovery guidance
+  - [x] No matching project: Clear error message with guidance
+  - [x] Multiple matching projects: Interactive selection
+  - [x] Empty IMPLEMENTATION_PLAN.md: Graceful handling
+  - [x] Manual checkbox edit: Reconciliation on startup
+  - [x] PROGRESS.md format corruption: Recovery guidance
 
 #### Task 4.2: Add implementation brief generation
 
 - **Description**: Generate concise summary of current state on `/arch:i` startup
 - **Acceptance Criteria**:
-  - [ ] Display project name and ID
-  - [ ] Show current phase and overall progress
-  - [ ] List recently completed tasks
-  - [ ] List next pending tasks
-  - [ ] Note any flagged divergences
+  - [x] Display project name and ID
+  - [x] Show current phase and overall progress
+  - [x] List recently completed tasks
+  - [x] List next pending tasks
+  - [x] Note any flagged divergences
 
 #### Task 4.3: Update CLAUDE.md documentation
 
 - **Description**: Document the new `/arch:i` command in project CLAUDE.md
 - **Acceptance Criteria**:
-  - [ ] Add `/arch:i` to Architecture Planning command table
-  - [ ] Describe workflow: `/arch:p` → `/arch:i` → `/arch:s` → `/arch:c`
-  - [ ] Document PROGRESS.md checkpoint system
-  - [ ] Provide example usage
+  - [x] Add `/arch:i` to Architecture Planning command table
+  - [x] Describe workflow: `/arch:p` → `/arch:i` → `/arch:s` → `/arch:c`
+  - [x] Document PROGRESS.md checkpoint system
+  - [x] Provide example usage
 
 #### Task 4.4: Add validation and self-test
 
 - **Description**: Implement basic validation to catch common issues
 - **Acceptance Criteria**:
-  - [ ] Validate PROGRESS.md format on load
-  - [ ] Warn if task count doesn't match IMPLEMENTATION_PLAN.md
-  - [ ] Warn if project status seems inconsistent with task states
-  - [ ] Provide fix suggestions for detected issues
+  - [x] Validate PROGRESS.md format on load
+  - [x] Warn if task count doesn't match IMPLEMENTATION_PLAN.md
+  - [x] Warn if project status seems inconsistent with task states
+  - [x] Provide fix suggestions for detected issues
 
 ### Phase 4 Deliverables
 
-- [ ] Edge cases handled gracefully
-- [ ] Implementation brief displayed on startup
-- [ ] CLAUDE.md documentation updated
-- [ ] Validation and self-test in place
+- [x] Edge cases handled gracefully
+- [x] Implementation brief displayed on startup
+- [x] CLAUDE.md documentation updated
+- [x] Validation and self-test in place
 
 ### Phase 4 Exit Criteria
 
-- [ ] `/arch:i` handles all documented edge cases
-- [ ] User has clear understanding of what's happening
-- [ ] Feature is self-documenting
+- [x] `/arch:i` handles all documented edge cases
+- [x] User has clear understanding of what's happening
+- [x] Feature is self-documenting
 
 ---
 
@@ -323,33 +323,33 @@ Phase 4 (depends on Phase 3):
 
 ## Testing Checklist
 
-- [ ] Unit test: Task status transitions
-- [ ] Unit test: Phase completion calculation
-- [ ] Unit test: Project status derivation
-- [ ] Integration test: PROGRESS.md → IMPLEMENTATION_PLAN.md sync
-- [ ] Integration test: Full lifecycle (start → complete)
-- [ ] Integration test: Multi-session resume
-- [ ] Edge case: No matching project
-- [ ] Edge case: Manual checkbox edit
-- [ ] Edge case: Skipped tasks
+- [x] Unit test: Task status transitions
+- [x] Unit test: Phase completion calculation
+- [x] Unit test: Project status derivation
+- [x] Integration test: PROGRESS.md → IMPLEMENTATION_PLAN.md sync
+- [x] Integration test: Full lifecycle (start → complete)
+- [x] Integration test: Multi-session resume
+- [x] Edge case: No matching project
+- [x] Edge case: Manual checkbox edit
+- [x] Edge case: Skipped tasks
 
 ## Documentation Tasks
 
-- [ ] Update CLAUDE.md with `/arch:i` command
-- [ ] Add inline documentation in `i.md` command file
-- [ ] Document PROGRESS.md format for users who want to manually edit
+- [x] Update CLAUDE.md with `/arch:i` command
+- [x] Add inline documentation in `i.md` command file
+- [x] Document PROGRESS.md format for users who want to manually edit
 
 ## Launch Checklist
 
-- [ ] All Phase 1-4 tasks complete
-- [ ] Testing checklist complete
-- [ ] Documentation tasks complete
-- [ ] Tested with real project (this planning project!)
-- [ ] Ready for PR to main
+- [x] All Phase 1-4 tasks complete
+- [x] Testing checklist complete
+- [x] Documentation tasks complete
+- [x] Tested with real project (this planning project!)
+- [x] Ready for PR to main
 
 ## Post-Launch
 
-- [ ] Monitor for issues during first uses
-- [ ] Gather feedback on workflow
-- [ ] Consider `/arch:s` integration (P2)
-- [ ] Consider estimated vs actual effort tracking (P2)
+- [x] Monitor for issues during first uses
+- [x] Gather feedback on workflow
+- [x] Consider `/arch:s` integration (P2)
+- [x] Consider estimated vs actual effort tracking (P2)

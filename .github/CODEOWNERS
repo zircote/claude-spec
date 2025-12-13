@@ -1,0 +1,8 @@
+# Default owners for everything
+* @zircote
+
+# Plugin code
+/plugins/cs/ @zircote
+
+# CI/CD configuration
+/.github/ @zircote

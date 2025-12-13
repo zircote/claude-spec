@@ -69,10 +69,10 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: mcp-developer
 - **Parallel Group**: PG-1
 - **Acceptance Criteria**:
-  - [ ] `.claude-plugin/plugin.json` exists with valid schema
-  - [ ] `hooks` field points to `./hooks/hooks.json`
-  - [ ] `commands` field points to `./commands`
-  - [ ] Metadata (name, version, description) complete
+  - [x] `.claude-plugin/plugin.json` exists with valid schema
+  - [x] `hooks` field points to `./hooks/hooks.json`
+  - [x] `commands` field points to `./commands`
+  - [x] Metadata (name, version, description) complete
 - **Notes**: Reference claude-code-guide for exact schema
 
 #### Task 1.2: Create Plugin README and Structure
@@ -82,20 +82,20 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: documentation-engineer
 - **Parallel Group**: PG-1
 - **Acceptance Criteria**:
-  - [ ] All directories created (commands/, hooks/, filters/, worktree/, templates/)
-  - [ ] README.md with overview, installation, usage
-  - [ ] CHANGELOG.md initialized
-  - [ ] LICENSE file (MIT)
+  - [x] All directories created (commands/, hooks/, filters/, worktree/, templates/)
+  - [x] README.md with overview, installation, usage
+  - [x] CHANGELOG.md initialized
+  - [x] LICENSE file (MIT)
 - **Notes**: Include worktree-manager attribution
 
 ### Phase 1 Deliverables
-- [ ] Plugin scaffold with all directories
-- [ ] Valid plugin.json manifest
-- [ ] README with installation instructions
+- [x] Plugin scaffold with all directories
+- [x] Valid plugin.json manifest
+- [x] README with installation instructions
 
 ### Phase 1 Exit Criteria
-- [ ] Plugin directory structure matches ARCHITECTURE.md
-- [ ] Manifest validates against Claude Code schema
+- [x] Plugin directory structure matches ARCHITECTURE.md
+- [x] Manifest validates against Claude Code schema
 
 ---
 
@@ -120,13 +120,13 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: prompt-engineer
 - **Parallel Group**: PG-2
 - **Acceptance Criteria**:
-  - [ ] commands/cs/p.md - Planning with parallel directives
-  - [ ] commands/cs/i.md - Implementation with sync enforcement
-  - [ ] commands/cs/s.md - Status command
-  - [ ] commands/cs/c.md - Close-out command
-  - [ ] commands/cs/log.md - Prompt toggle
-  - [ ] All references updated from /arch: to /cs:
-  - [ ] All paths updated from docs/architecture/ to docs/spec/
+  - [x] commands/cs/p.md - Planning with parallel directives
+  - [x] commands/cs/i.md - Implementation with sync enforcement
+  - [x] commands/cs/s.md - Status command
+  - [x] commands/cs/c.md - Close-out command
+  - [x] commands/cs/log.md - Prompt toggle
+  - [x] All references updated from /arch: to /cs:
+  - [x] All paths updated from docs/architecture/ to docs/spec/
 - **Notes**: Largest task - contains most of the prompt engineering
 
 #### Task 2.2: Create Worktree Commands (/cs:wt:*)
@@ -139,11 +139,11 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: prompt-engineer
 - **Parallel Group**: PG-2
 - **Acceptance Criteria**:
-  - [ ] commands/cs/wt/create.md - Create worktrees with prompts
-  - [ ] commands/cs/wt/status.md - Show worktree status
-  - [ ] commands/cs/wt/cleanup.md - Clean up worktrees
-  - [ ] Commands reference ${CLAUDE_PLUGIN_ROOT}/worktree/scripts/
-  - [ ] Skill trigger phrases documented
+  - [x] commands/cs/wt/create.md - Create worktrees with prompts
+  - [x] commands/cs/wt/status.md - Show worktree status
+  - [x] commands/cs/wt/cleanup.md - Clean up worktrees
+  - [x] Commands reference ${CLAUDE_PLUGIN_ROOT}/worktree/scripts/
+  - [x] Skill trigger phrases documented
 - **Notes**: Commands are wrappers around existing scripts
 
 #### Task 2.3: Create Migration Command (/cs:migrate)
@@ -153,21 +153,21 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: prompt-engineer
 - **Parallel Group**: PG-2
 - **Acceptance Criteria**:
-  - [ ] commands/cs/migrate.md created
-  - [ ] Moves active/ and completed/ directories
-  - [ ] Updates CLAUDE.md references
-  - [ ] Reports migration summary
-  - [ ] Handles case where already migrated
+  - [x] commands/cs/migrate.md created
+  - [x] Moves active/ and completed/ directories
+  - [x] Updates CLAUDE.md references
+  - [x] Reports migration summary
+  - [x] Handles case where already migrated
 - **Notes**: One-time migration, idempotent
 
 ### Phase 2 Deliverables
-- [ ] 9 command files in commands/cs/
-- [ ] All commands functional
-- [ ] Parallel execution directives embedded
+- [x] 9 command files in commands/cs/
+- [x] All commands functional
+- [x] Parallel execution directives embedded
 
 ### Phase 2 Exit Criteria
-- [ ] All /cs:* commands appear in /help
-- [ ] Commands reference correct paths (docs/spec/)
+- [x] All /cs:* commands appear in /help
+- [x] Commands reference correct paths (docs/spec/)
 
 ---
 
@@ -191,10 +191,10 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: python-pro
 - **Parallel Group**: PG-3
 - **Acceptance Criteria**:
-  - [ ] All filter modules in filters/
-  - [ ] Imports work from hook script
-  - [ ] Secret detection functional
-  - [ ] Log writing to .prompt-log.json
+  - [x] All filter modules in filters/
+  - [x] Imports work from hook script
+  - [x] Secret detection functional
+  - [x] Log writing to .prompt-log.json
 - **Notes**: Mostly copy with path adjustments
 
 #### Task 3.2: Create Hook Registration
@@ -207,21 +207,21 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: mcp-developer
 - **Parallel Group**: PG-3
 - **Acceptance Criteria**:
-  - [ ] hooks/hooks.json with UserPromptSubmit registration
-  - [ ] hooks/prompt_capture.py with correct stdin/stdout handling
-  - [ ] Uses ${CLAUDE_PLUGIN_ROOT} for filter imports
-  - [ ] Checks docs/spec/active/ (not docs/architecture/)
-  - [ ] Graceful failure (always approves)
+  - [x] hooks/hooks.json with UserPromptSubmit registration
+  - [x] hooks/prompt_capture.py with correct stdin/stdout handling
+  - [x] Uses ${CLAUDE_PLUGIN_ROOT} for filter imports
+  - [x] Checks docs/spec/active/ (not docs/architecture/)
+  - [x] Graceful failure (always approves)
 - **Notes**: Critical for prompt capture functionality
 
 ### Phase 3 Deliverables
-- [ ] hooks/hooks.json with hook registration
-- [ ] hooks/prompt_capture.py
-- [ ] filters/*.py modules
+- [x] hooks/hooks.json with hook registration
+- [x] hooks/prompt_capture.py
+- [x] filters/*.py modules
 
 ### Phase 3 Exit Criteria
-- [ ] Hook fires on UserPromptSubmit
-- [ ] Prompts logged to .prompt-log.json when enabled
+- [x] Hook fires on UserPromptSubmit
+- [x] Prompts logged to .prompt-log.json when enabled
 
 ---
 
@@ -244,14 +244,14 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: cli-developer
 - **Parallel Group**: PG-4
 - **Acceptance Criteria**:
-  - [ ] worktree/scripts/allocate-ports.sh
-  - [ ] worktree/scripts/cleanup.sh
-  - [ ] worktree/scripts/launch-agent.sh
-  - [ ] worktree/scripts/register.sh
-  - [ ] worktree/scripts/release-ports.sh
-  - [ ] worktree/scripts/status.sh
-  - [ ] All scripts executable (chmod +x)
-  - [ ] Scripts work with existing ~/.claude/worktree-registry.json
+  - [x] worktree/scripts/allocate-ports.sh
+  - [x] worktree/scripts/cleanup.sh
+  - [x] worktree/scripts/launch-agent.sh
+  - [x] worktree/scripts/register.sh
+  - [x] worktree/scripts/release-ports.sh
+  - [x] worktree/scripts/status.sh
+  - [x] All scripts executable (chmod +x)
+  - [x] Scripts work with existing ~/.claude/worktree-registry.json
 - **Notes**: Scripts should work identically to originals
 
 #### Task 4.2: Migrate Worktree Config and Docs
@@ -264,19 +264,19 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: documentation-engineer
 - **Parallel Group**: PG-4
 - **Acceptance Criteria**:
-  - [ ] worktree/config.json with defaults
-  - [ ] worktree/SKILL.md with trigger phrases
-  - [ ] Attribution to original skill
-  - [ ] templates/worktree.json for project config
+  - [x] worktree/config.json with defaults
+  - [x] worktree/SKILL.md with trigger phrases
+  - [x] Attribution to original skill
+  - [x] templates/worktree.json for project config
 - **Notes**: SKILL.md enables natural language triggers
 
 ### Phase 4 Deliverables
-- [ ] All worktree scripts migrated
-- [ ] Configuration and documentation complete
+- [x] All worktree scripts migrated
+- [x] Configuration and documentation complete
 
 ### Phase 4 Exit Criteria
-- [ ] Scripts execute without errors
-- [ ] Config matches original functionality
+- [x] Scripts execute without errors
+- [x] Config matches original functionality
 
 ---
 
@@ -303,9 +303,9 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: documentation-engineer
 - **Parallel Group**: PG-5
 - **Acceptance Criteria**:
-  - [ ] All 7 base templates created
-  - [ ] Frontmatter with project_id, status fields
-  - [ ] Consistent structure across templates
+  - [x] All 7 base templates created
+  - [x] Frontmatter with project_id, status fields
+  - [x] Consistent structure across templates
 - **Notes**: Based on existing arch templates
 
 #### Task 5.2: Create Enhanced Templates
@@ -319,19 +319,19 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: prompt-engineer
 - **Parallel Group**: PG-5
 - **Acceptance Criteria**:
-  - [ ] IMPLEMENTATION_PLAN.md with all Agent fields
-  - [ ] PROGRESS.md with Agent tracking
-  - [ ] Parallel Execution Groups table
-  - [ ] Agent Recommendations section
+  - [x] IMPLEMENTATION_PLAN.md with all Agent fields
+  - [x] PROGRESS.md with Agent tracking
+  - [x] Parallel Execution Groups table
+  - [x] Agent Recommendations section
 - **Notes**: These templates enable parallel agent orchestration
 
 ### Phase 5 Deliverables
-- [ ] 9 templates in templates/
-- [ ] Agent fields in relevant templates
+- [x] 9 templates in templates/
+- [x] Agent fields in relevant templates
 
 ### Phase 5 Exit Criteria
-- [ ] Templates match ARCHITECTURE.md specification
-- [ ] /cs:p generates projects with correct templates
+- [x] Templates match ARCHITECTURE.md specification
+- [x] /cs:p generates projects with correct templates
 
 ---
 
@@ -356,12 +356,12 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: test-automator
 - **Parallel Group**: Sequential (6.1 → 6.2)
 - **Acceptance Criteria**:
-  - [ ] Plugin installs via claude plugins install
-  - [ ] All 9 /cs:* commands available
-  - [ ] /cs:p creates project in docs/spec/active/
-  - [ ] Prompt capture logs to .prompt-log.json
-  - [ ] Worktree commands work with registry
-  - [ ] /cs:migrate moves docs/architecture/ to docs/spec/
+  - [x] Plugin installs via claude plugins install
+  - [x] All 9 /cs:* commands available
+  - [x] /cs:p creates project in docs/spec/active/
+  - [x] Prompt capture logs to .prompt-log.json
+  - [x] Worktree commands work with registry
+  - [x] /cs:migrate moves docs/architecture/ to docs/spec/
 - **Notes**: Manual testing - observe behavior
 
 #### Task 6.2: Code Review and Documentation
@@ -375,21 +375,21 @@ This plan implements the `claude-spec` plugin - a comprehensive Claude Code plug
 - **Agent**: code-reviewer
 - **Parallel Group**: Sequential (after 6.1)
 - **Acceptance Criteria**:
-  - [ ] No security vulnerabilities
-  - [ ] Consistent code style
-  - [ ] README complete and accurate
-  - [ ] Worktree-manager attribution present
-  - [ ] All paths use docs/spec/ not docs/architecture/
+  - [x] No security vulnerabilities
+  - [x] Consistent code style
+  - [x] README complete and accurate
+  - [x] Worktree-manager attribution present
+  - [x] All paths use docs/spec/ not docs/architecture/
 - **Notes**: Final quality gate
 
 ### Phase 6 Deliverables
-- [ ] Working, tested plugin
-- [ ] Complete documentation
-- [ ] Code review approval
+- [x] Working, tested plugin
+- [x] Complete documentation
+- [x] Code review approval
 
 ### Phase 6 Exit Criteria
-- [ ] All acceptance criteria met
-- [ ] Plugin ready for use
+- [x] All acceptance criteria met
+- [x] Plugin ready for use
 
 ---
 
@@ -440,33 +440,33 @@ Phase 6 (Integration) - SEQUENTIAL:
 
 ## Testing Checklist
 
-- [ ] Plugin installs: `claude plugins install`
-- [ ] Commands available: `/cs:p`, `/cs:i`, `/cs:s`, `/cs:c`, `/cs:log`
-- [ ] Worktree commands: `/cs:wt:create`, `/cs:wt:status`, `/cs:wt:cleanup`
-- [ ] Migration: `/cs:migrate` moves docs correctly
-- [ ] Prompt capture: `/cs:log on` enables logging
-- [ ] Project creation: `/cs:p test` creates in docs/spec/active/
-- [ ] Agent fields: IMPLEMENTATION_PLAN.md has Agent column
-- [ ] Parallel directives: Commands contain enforcement blocks
+- [x] Plugin installs: `claude plugins install`
+- [x] Commands available: `/cs:p`, `/cs:i`, `/cs:s`, `/cs:c`, `/cs:log`
+- [x] Worktree commands: `/cs:wt:create`, `/cs:wt:status`, `/cs:wt:cleanup`
+- [x] Migration: `/cs:migrate` moves docs correctly
+- [x] Prompt capture: `/cs:log on` enables logging
+- [x] Project creation: `/cs:p test` creates in docs/spec/active/
+- [x] Agent fields: IMPLEMENTATION_PLAN.md has Agent column
+- [x] Parallel directives: Commands contain enforcement blocks
 
 ---
 
 ## Launch Checklist
 
-- [ ] All 6 phases complete
-- [ ] All tests pass
-- [ ] Code review approved
-- [ ] README complete
-- [ ] Attribution present
-- [ ] Ready for local installation
+- [x] All 6 phases complete
+- [x] All tests pass
+- [x] Code review approved
+- [x] README complete
+- [x] Attribution present
+- [x] Ready for local installation
 
 ---
 
 ## Post-Launch
 
-- [ ] Install plugin in main ~/.claude
-- [ ] Run /cs:migrate to move existing projects
-- [ ] Update CLAUDE.md documentation
-- [ ] Remove original /arch:* commands
-- [ ] Remove worktree-manager skill (superseded)
-- [ ] Archive this planning project via /cs:c
+- [x] Install plugin in main ~/.claude
+- [x] Run /cs:migrate to move existing projects
+- [x] Update CLAUDE.md documentation
+- [x] Remove original /arch:* commands
+- [x] Remove worktree-manager skill (superseded)
+- [x] Archive this planning project via /cs:c

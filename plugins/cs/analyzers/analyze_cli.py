@@ -20,7 +20,12 @@ if PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
 try:
-    from analyzers.log_analyzer import analyze_log, generate_interaction_analysis, LogAnalysis
+    from analyzers.log_analyzer import (
+        LogAnalysis,
+        analyze_log,
+        generate_interaction_analysis,
+    )
+
     ANALYZER_AVAILABLE = True
 except ImportError as e:
     ANALYZER_AVAILABLE = False
@@ -87,20 +92,19 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Analyze prompt logs for spec project retrospectives"
     )
+    parser.add_argument("project_dir", help="Path to the spec project directory")
     parser.add_argument(
-        "project_dir",
-        help="Path to the spec project directory"
-    )
-    parser.add_argument(
-        "--format", "-f",
+        "--format",
+        "-f",
         choices=["markdown", "json", "text"],
         default="markdown",
-        help="Output format (default: markdown)"
+        help="Output format (default: markdown)",
     )
     parser.add_argument(
-        "--metrics-only", "-m",
+        "--metrics-only",
+        "-m",
         action="store_true",
-        help="Only show metrics, skip insights and recommendations"
+        help="Only show metrics, skip insights and recommendations",
     )
 
     args = parser.parse_args()
@@ -111,7 +115,9 @@ def main() -> int:
 
     # Validate project directory
     if not os.path.isdir(args.project_dir):
-        print(f"Error: Project directory not found: {args.project_dir}", file=sys.stderr)
+        print(
+            f"Error: Project directory not found: {args.project_dir}", file=sys.stderr
+        )
         return 1
 
     # Run analysis

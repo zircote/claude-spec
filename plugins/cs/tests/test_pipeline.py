@@ -12,7 +12,7 @@ PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
 if PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from filters.pipeline import filter_pipeline, SECRET_PATTERNS
+from filters.pipeline import filter_pipeline
 
 
 class TestSecretPatterns(unittest.TestCase):
