@@ -23,32 +23,19 @@ A comprehensive Claude Code plugin for project specification and implementation 
 
 ## Installation
 
-### Local Installation
+### From GitHub (Recommended)
 
-1. Create local marketplace configuration:
-```bash
-mkdir -p ~/.claude/marketplaces
-cat > ~/.claude/marketplaces/local.json << 'EOF'
-{
-  "name": "Local Plugin Marketplace",
-  "plugins": [
-    {
-      "name": "claude-spec",
-      "path": "/path/to/claude-spec"
-    }
-  ]
-}
-EOF
+```
+/plugin marketplace add zircote/claude-spec
+/plugin install cs@claude-spec-marketplace
 ```
 
-2. Install the plugin:
-```bash
-claude plugins install --marketplace ~/.claude/marketplaces/local.json claude-spec
-```
+### From Local Clone (Development)
 
-3. Verify installation:
 ```bash
-claude plugins list
+git clone https://github.com/zircote/claude-spec.git
+cd claude-spec
+claude plugins install --marketplace ./.claude-plugin/marketplace.json cs
 ```
 
 ## Usage
