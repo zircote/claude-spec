@@ -196,9 +196,12 @@ class TestMain:
         monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
 
         # Mock is_session_start_enabled to return False
+        # Use raising=False in case the original import failed in CI
         original_config = session_start.CONFIG_AVAILABLE
         session_start.CONFIG_AVAILABLE = True
-        monkeypatch.setattr("session_start.is_session_start_enabled", lambda: False)
+        monkeypatch.setattr(
+            "session_start.is_session_start_enabled", lambda: False, raising=False
+        )
 
         main()
 
