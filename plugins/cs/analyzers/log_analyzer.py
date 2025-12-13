@@ -7,10 +7,8 @@ Calculates metrics, identifies patterns, and generates recommendations.
 
 import os
 import sys
-from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional
 
 # Add parent directory for imports
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -25,6 +23,7 @@ from filters.log_writer import read_log
 @dataclass
 class SessionStats:
     """Statistics for a single session."""
+
     session_id: str
     entry_count: int
     user_inputs: int
@@ -32,13 +31,14 @@ class SessionStats:
     response_summaries: int
     questions_asked: int  # Entries ending with ?
     filtered_content: int
-    start_time: Optional[str] = None
-    end_time: Optional[str] = None
+    start_time: str | None = None
+    end_time: str | None = None
 
 
 @dataclass
 class LogAnalysis:
     """Complete analysis of a prompt log."""
+
     total_entries: int = 0
     user_inputs: int = 0
     expanded_prompts: int = 0
@@ -57,25 +57,25 @@ class LogAnalysis:
     prompt_length_max: int = 0
     prompt_length_avg: float = 0.0
 
-    commands_used: Dict[str, int] = field(default_factory=dict)
-    session_stats: List[SessionStats] = field(default_factory=list)
+    commands_used: dict[str, int] = field(default_factory=dict)
+    session_stats: list[SessionStats] = field(default_factory=list)
 
-    first_entry_time: Optional[str] = None
-    last_entry_time: Optional[str] = None
+    first_entry_time: str | None = None
+    last_entry_time: str | None = None
 
-    def duration_minutes(self) -> Optional[float]:
+    def duration_minutes(self) -> float | None:
         """Calculate total duration in minutes if timestamps available."""
         if not self.first_entry_time or not self.last_entry_time:
             return None
         try:
-            start = datetime.fromisoformat(self.first_entry_time.replace('Z', '+00:00'))
-            end = datetime.fromisoformat(self.last_entry_time.replace('Z', '+00:00'))
+            start = datetime.fromisoformat(self.first_entry_time.replace("Z", "+00:00"))
+            end = datetime.fromisoformat(self.last_entry_time.replace("Z", "+00:00"))
             return (end - start).total_seconds() / 60
         except (ValueError, TypeError):
             return None
 
 
-def analyze_log(project_dir: str) -> Optional[LogAnalysis]:
+def analyze_log(project_dir: str) -> LogAnalysis | None:
     """
     Analyze the prompt log for a project.
 
@@ -94,10 +94,10 @@ def analyze_log(project_dir: str) -> Optional[LogAnalysis]:
     analysis.total_entries = len(entries)
 
     # Track sessions
-    sessions: Dict[str, List[LogEntry]] = {}
+    sessions: dict[str, list[LogEntry]] = {}
 
     # Track prompt lengths for user inputs
-    prompt_lengths: List[int] = []
+    prompt_lengths: list[int] = []
 
     # Process each entry
     for entry in entries:
@@ -117,7 +117,9 @@ def analyze_log(project_dir: str) -> Optional[LogAnalysis]:
 
         # Track commands
         if entry.command:
-            analysis.commands_used[entry.command] = analysis.commands_used.get(entry.command, 0) + 1
+            analysis.commands_used[entry.command] = (
+                analysis.commands_used.get(entry.command, 0) + 1
+            )
 
         # Track filtered content (secrets only - no profanity filtering in this plugin)
         if entry.filter_applied and entry.filter_applied.secret_count > 0:
@@ -139,22 +141,38 @@ def analyze_log(project_dir: str) -> Optional[LogAnalysis]:
     # Analyze sessions
     analysis.session_count = len(sessions)
     if analysis.session_count > 0:
-        analysis.avg_entries_per_session = analysis.total_entries / analysis.session_count
+        analysis.avg_entries_per_session = (
+            analysis.total_entries / analysis.session_count
+        )
 
     for session_id, session_entries in sessions.items():
-        session_questions = sum(1 for e in session_entries if "?" in e.content and e.entry_type == "user_input")
-        session_filtered = sum(1 for e in session_entries if e.filter_applied and e.filter_applied.secret_count > 0)
+        session_questions = sum(
+            1
+            for e in session_entries
+            if "?" in e.content and e.entry_type == "user_input"
+        )
+        session_filtered = len(
+            [
+                e
+                for e in session_entries
+                if e.filter_applied and e.filter_applied.secret_count > 0
+            ]
+        )
 
         stats = SessionStats(
             session_id=session_id,
             entry_count=len(session_entries),
             user_inputs=sum(1 for e in session_entries if e.entry_type == "user_input"),
-            expanded_prompts=sum(1 for e in session_entries if e.entry_type == "expanded_prompt"),
-            response_summaries=sum(1 for e in session_entries if e.entry_type == "response_summary"),
+            expanded_prompts=sum(
+                1 for e in session_entries if e.entry_type == "expanded_prompt"
+            ),
+            response_summaries=sum(
+                1 for e in session_entries if e.entry_type == "response_summary"
+            ),
             questions_asked=session_questions,
             filtered_content=session_filtered,
             start_time=session_entries[0].timestamp if session_entries else None,
-            end_time=session_entries[-1].timestamp if session_entries else None
+            end_time=session_entries[-1].timestamp if session_entries else None,
         )
         analysis.session_stats.append(stats)
 
@@ -276,19 +294,29 @@ def generate_interaction_analysis(analysis: LogAnalysis) -> str:
     recommendations = []
 
     if analysis.clarification_heavy_sessions > 0:
-        recommendations.append("Spend more time on initial requirements gathering before starting implementation.")
+        recommendations.append(
+            "Spend more time on initial requirements gathering before starting implementation."
+        )
 
     if analysis.total_questions > analysis.user_inputs * 0.3:
-        recommendations.append("Provide more context in the initial project description.")
+        recommendations.append(
+            "Provide more context in the initial project description."
+        )
 
     if analysis.session_count > 5:
-        recommendations.append("Consider using /cs:p with more specific scope to reduce session count.")
+        recommendations.append(
+            "Consider using /cs:p with more specific scope to reduce session count."
+        )
 
     if analysis.secrets_filtered > 0:
-        recommendations.append("Be mindful of including secrets in prompts - they were filtered but consider avoiding them entirely.")
+        recommendations.append(
+            "Be mindful of including secrets in prompts - they were filtered but consider avoiding them entirely."
+        )
 
     if not recommendations:
-        recommendations.append("Interaction patterns were efficient. Continue current prompting practices.")
+        recommendations.append(
+            "Interaction patterns were efficient. Continue current prompting practices."
+        )
 
     for rec in recommendations:
         lines.append(f"- {rec}")

@@ -13,7 +13,7 @@ PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
 if PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from filters.log_entry import LogEntry, FilterInfo, EntryMetadata
+from filters.log_entry import EntryMetadata, FilterInfo, LogEntry
 
 
 class TestFilterInfo(unittest.TestCase):
@@ -28,7 +28,9 @@ class TestFilterInfo(unittest.TestCase):
 
     def test_to_dict(self):
         """FilterInfo should serialize to dictionary."""
-        info = FilterInfo(secret_count=2, secret_types=["aws_key", "api_token"], was_truncated=True)
+        info = FilterInfo(
+            secret_count=2, secret_types=["aws_key", "api_token"], was_truncated=True
+        )
         d = info.to_dict()
         self.assertEqual(d["secret_count"], 2)
         self.assertEqual(d["secret_types"], ["aws_key", "api_token"])
@@ -36,7 +38,11 @@ class TestFilterInfo(unittest.TestCase):
 
     def test_from_dict(self):
         """FilterInfo should deserialize from dictionary."""
-        data = {"secret_count": 1, "secret_types": ["github_token"], "was_truncated": False}
+        data = {
+            "secret_count": 1,
+            "secret_types": ["github_token"],
+            "was_truncated": False,
+        }
         info = FilterInfo.from_dict(data)
         self.assertEqual(info.secret_count, 1)
         self.assertEqual(info.secret_types, ["github_token"])
@@ -56,9 +62,7 @@ class TestLogEntry(unittest.TestCase):
     def test_create_basic_entry(self):
         """LogEntry.create should generate valid entry with timestamp."""
         entry = LogEntry.create(
-            session_id="test-session",
-            entry_type="user_input",
-            content="Hello, world!"
+            session_id="test-session", entry_type="user_input", content="Hello, world!"
         )
         self.assertEqual(entry.session_id, "test-session")
         self.assertEqual(entry.entry_type, "user_input")
@@ -73,7 +77,7 @@ class TestLogEntry(unittest.TestCase):
             session_id="s1",
             entry_type="user_input",
             content="/cs:p test project",
-            command="/cs:p"
+            command="/cs:p",
         )
         self.assertEqual(entry.command, "/cs:p")
 
@@ -84,7 +88,7 @@ class TestLogEntry(unittest.TestCase):
             session_id="s1",
             entry_type="user_input",
             content="content",
-            filter_info=filter_info
+            filter_info=filter_info,
         )
         self.assertEqual(entry.filter_applied.secret_count, 1)
         self.assertEqual(entry.filter_applied.secret_types, ["aws_key"])
@@ -92,9 +96,7 @@ class TestLogEntry(unittest.TestCase):
     def test_to_json(self):
         """LogEntry should serialize to valid JSON."""
         entry = LogEntry.create(
-            session_id="s1",
-            entry_type="user_input",
-            content="test"
+            session_id="s1", entry_type="user_input", content="test"
         )
         json_str = entry.to_json()
         # Should be valid JSON
@@ -119,7 +121,7 @@ class TestLogEntry(unittest.TestCase):
             content="Full prompt text here",
             command="/cs:i",
             cwd="/path/to/project",
-            filter_info=FilterInfo(secret_count=2, secret_types=["a", "b"])
+            filter_info=FilterInfo(secret_count=2, secret_types=["a", "b"]),
         )
 
         json_str = original.to_json()
@@ -134,9 +136,7 @@ class TestLogEntry(unittest.TestCase):
     def test_metadata_content_length(self):
         """LogEntry should track content length in metadata."""
         entry = LogEntry.create(
-            session_id="s1",
-            entry_type="user_input",
-            content="12345"
+            session_id="s1", entry_type="user_input", content="12345"
         )
         self.assertEqual(entry.metadata.content_length, 5)
 

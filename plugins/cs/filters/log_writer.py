@@ -9,10 +9,8 @@ import fcntl
 import json
 import os
 import sys
-from typing import List
 
 from .log_entry import LogEntry
-
 
 PROMPT_LOG_FILENAME = ".prompt-log.json"
 
@@ -67,12 +65,12 @@ def append_to_log(project_dir: str, entry: LogEntry) -> bool:
 
         return True
 
-    except (OSError, IOError) as e:
+    except OSError as e:
         sys.stderr.write(f"claude-spec prompt_capture: Error writing log: {e}\n")
         return False
 
 
-def read_log(project_dir: str) -> List[LogEntry]:
+def read_log(project_dir: str) -> list[LogEntry]:
     """
     Read all entries from the prompt log.
 
@@ -90,7 +88,7 @@ def read_log(project_dir: str) -> List[LogEntry]:
     entries = []
 
     try:
-        with open(log_path, "r", encoding="utf-8") as f:
+        with open(log_path, encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if not line:
@@ -102,13 +100,13 @@ def read_log(project_dir: str) -> List[LogEntry]:
                         f"claude-spec prompt_capture: Skipping corrupted line "
                         f"{line_num} in {log_path}\n"
                     )
-    except (OSError, IOError) as e:
+    except OSError as e:
         sys.stderr.write(f"claude-spec prompt_capture: Error reading log: {e}\n")
 
     return entries
 
 
-def get_recent_entries(project_dir: str, count: int = 10) -> List[LogEntry]:
+def get_recent_entries(project_dir: str, count: int = 10) -> list[LogEntry]:
     """
     Get the most recent log entries.
 

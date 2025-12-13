@@ -85,10 +85,13 @@ if [ -d "$WORKTREE_PATH" ]; then
     # Try to find the main repo to run git worktree remove
     if [ -n "$REPO_PATH" ] && [ -d "$REPO_PATH" ]; then
         cd "$REPO_PATH"
-        git worktree remove "$WORKTREE_PATH" --force 2>/dev/null && echo "  Removed via git worktree" || {
+        if git worktree remove "$WORKTREE_PATH" --force 2>/dev/null; then
+            echo "  Removed via git worktree"
+        else
             echo "  Git worktree remove failed, removing directory directly..."
-            rm -rf "$WORKTREE_PATH" && echo "  Removed directory"
-        }
+            rm -rf "$WORKTREE_PATH"
+            echo "  Removed directory"
+        fi
     else
         # Just remove the directory
         rm -rf "$WORKTREE_PATH" && echo "  Removed directory"
