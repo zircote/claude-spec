@@ -153,3 +153,30 @@ def test_something(temp_project_dir, monkeypatch):
 ```
 
 Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planning.
+
+## Completed Spec Projects
+
+- `docs/spec/completed/2025-12-12-quality-release-ci-github-act/` - Quality Release CI/CD with GitHub Actions
+  - Completed: 2025-12-13
+  - Outcome: success
+  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
+
+- `docs/spec/completed/2025-12-12-test-and-validate-command-au/` - Test and Validate Command
+  - Completed: 2025-12-13
+  - Outcome: success
+  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
+
+- `docs/spec/completed/2025-12-12-prompt-capture-log/` - Prompt Capture Logging
+  - Completed: 2025-12-12
+  - Outcome: partial (hooks integration needs validation)
+  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
+
+- `docs/spec/completed/2025-12-12-arch-lifecycle-automation/` - Architecture Lifecycle Automation
+  - Completed: 2025-12-12
+  - Outcome: success
+  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
+
+- `docs/spec/completed/2025-12-12-claude-spec-plugin/` - Claude Spec Plugin (initial)
+  - Completed: 2025-12-12
+  - Outcome: success
+  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
