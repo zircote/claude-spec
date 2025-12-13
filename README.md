@@ -218,7 +218,7 @@ When using `--prompt`, these variables are substituted:
 
 ### Configuration
 
-Edit `skills/worktree-manager/config.json`:
+Edit `~/.claude/plugins/local/claude-spec/skills/worktree-manager/config.json`:
 
 ```json
 {
@@ -231,7 +231,9 @@ Edit `skills/worktree-manager/config.json`:
 }
 ```
 
-Supported terminals: `ghostty`, `iterm2`, `tmux`, `wezterm`, `kitty`, `alacritty`
+Supported terminals: `ghostty`, `iterm2` [tabs|windows], `tmux`, `wezterm`, `kitty`, `alacritty`
+
+*`iterm2-tab` and `iterm-tab` are aliases for `iterm2` and `iterm` respectively that create new sessions in a tab of the current window as opposed to a new window for each session.*
 
 ## Document Synchronization
 
@@ -331,4 +333,4 @@ MIT License - see [LICENSE](plugins/cs/LICENSE) for details.
 
 ## Attribution
 
-The worktree management functionality is based on the original `worktree-manager` skill from the Claude Code ecosystem.
+The worktree management functionality is based on the original `worktree-manager` skill from [Wirasm/worktree-manager-skill.](https://github.com/Wirasm/worktree-manager-skill)

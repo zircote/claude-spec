@@ -1,5 +1,5 @@
 {
-  "terminal": "iterm2",
+  "terminal": "iterm2-tab",
   "shell": "bash",
   "claudeCommand": "cc",
   "portPool": {
