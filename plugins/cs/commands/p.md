@@ -38,13 +38,29 @@ IF NO_GIT:
 ```bash
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
 WORKTREE_BASE="${HOME}/Projects/worktrees"
-SLUG=$(echo "$ARGUMENTS" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g')
+SLUG=$(echo "$ARGUMENTS" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//; s/-$//')
 SLUG="${SLUG:0:30}"
 BRANCH_NAME="plan/${SLUG}"
 WORKTREE_PATH="${WORKTREE_BASE}/${REPO_NAME}/${SLUG}"
 
 mkdir -p "${WORKTREE_BASE}/${REPO_NAME}"
 git worktree add -b "${BRANCH_NAME}" "${WORKTREE_PATH}" HEAD
+```
+
+### Step 3b: Enable Prompt Logging in Worktree (CRITICAL)
+
+**This step MUST run BEFORE launching the agent to capture the first prompt.**
+
+The marker is placed at **worktree root** (not in docs/spec/active/) because:
+- The spec directory is created DURING `/cs:p` elicitation
+- The directory name depends on the slug derived from the first prompt
+- Placing at root ensures the first prompt can be captured
+
+```bash
+# Create prompt log marker at WORKTREE ROOT
+touch "${WORKTREE_PATH}/.prompt-log-enabled"
+
+echo "Prompt logging enabled at: ${WORKTREE_PATH}/.prompt-log-enabled"
 ```
 
 ### Step 4: Launch Agent WITH Prompt
@@ -86,6 +102,23 @@ You are a Principal Product Architect and Senior Business Analyst operating with
 
 You embody the Socratic method: you guide discovery through strategic questions rather than assumptions. You never guess what the user wants - you ask until absolute clarity is achieved.
 </role>
+
+<interaction_directive>
+## User Interaction Requirements
+
+**MANDATORY**: Use the `AskUserQuestion` tool for ALL structured decision points. Do NOT ask questions in plain text when options can be enumerated.
+
+### When to Use AskUserQuestion
+
+| Scenario | Use AskUserQuestion |
+|----------|---------------------|
+| Collision detection (existing project found) | Yes - continue/update/supersede options |
+| Worktree decision (on protected branch) | Yes - create worktree/continue options |
+| Priority clarification (P0/P1/P2) | Yes - priority options |
+| Socratic elicitation (open-ended discovery) | No - use plain text for exploratory questions |
+
+**Note**: Socratic questioning during requirements elicitation is intentionally open-ended and should NOT use AskUserQuestion. However, structured decision points (like collision handling) MUST use AskUserQuestion.
+</interaction_directive>
 
 <parallel_execution_directive>
 ## Parallel Specialist Agent Mandate
@@ -410,9 +443,10 @@ before proceeding. Only continue after user acknowledges.
 
 5. **Enable Prompt Logging**:
    ```bash
-   touch docs/spec/active/[YYYY-MM-DD]-[slug]/.prompt-log-enabled
+   touch .prompt-log-enabled
    ```
    This enables automatic capture of all user prompts for retrospective analysis.
+   The marker is at project root to capture the first prompt before spec directories exist.
 
 6. **Check for Collisions**:
    - Scan `docs/spec/` and `docs/architecture/` (legacy) for similar project names
@@ -430,11 +464,22 @@ find docs/spec docs/architecture -name "*[slug]*" -type d 2>/dev/null
 grep -r "[project keywords]" docs/spec/*/README.md docs/architecture/*/README.md 2>/dev/null
 ```
 
-If matches found, inform user:
-> "I found an existing project that may be related: [path]. Should I:
-> A) Continue with a new, separate project
-> B) Review and potentially update the existing project
-> C) Supersede the existing project with this new one"
+If matches found, use AskUserQuestion:
+
+**AskUserQuestion for Collision Handling:**
+```
+Use AskUserQuestion with:
+  header: "Collision"
+  question: "I found an existing project that may be related: [path]. How should I proceed?"
+  multiSelect: false
+  options:
+    - label: "Continue with new project"
+      description: "Create a separate project alongside the existing one"
+    - label: "Review existing project"
+      description: "Open and potentially update the existing project instead"
+    - label: "Supersede existing project"
+      description: "Archive the old project and create this as its replacement"
+```
 </initialization_protocol>
 
 <planning_philosophy>
@@ -1292,8 +1337,8 @@ mkdir -p "docs/spec/active/${DATE}-${SLUG}"
 # Initialize README.md with metadata
 # Initialize CHANGELOG.md with creation entry
 
-# Enable prompt logging for retrospective analysis
-touch "docs/spec/active/${DATE}-${SLUG}/.prompt-log-enabled"
+# Enable prompt logging for retrospective analysis (marker at project root)
+touch ".prompt-log-enabled"
 ```
 
 ### Step 2: Begin Socratic Questioning

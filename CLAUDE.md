@@ -67,10 +67,11 @@ plugins/cs/
 
 1. **UserPromptSubmit Hook** (`hooks/prompt_capture.py`):
    - Receives JSON via stdin from Claude Code
-   - Checks for `.prompt-log-enabled` marker in `docs/spec/active/*/`
+   - Checks for `.prompt-log-enabled` marker at project root
    - Filters secrets via `filters/pipeline.py`
-   - Appends to `.prompt-log.json` via `filters/log_writer.py`
+   - Appends to `.prompt-log.json` at project root via `filters/log_writer.py`
    - Always returns `{"decision": "approve"}` (never blocks)
+   - Note: Marker at project root ensures first prompt is captured before spec dirs exist
 
 2. **Filter Pipeline** (`filters/pipeline.py`):
    - Pre-compiled regex patterns for 15+ secret types (AWS, GitHub, API keys, etc.)
@@ -85,14 +86,15 @@ plugins/cs/
 ### Project Artifact Structure
 
 ```
-docs/spec/
-├── active/           # In-progress projects
-│   └── YYYY-MM-DD-slug/
-│       ├── README.md, REQUIREMENTS.md, ARCHITECTURE.md
-│       ├── IMPLEMENTATION_PLAN.md, PROGRESS.md
-│       ├── .prompt-log-enabled (marker)
-│       └── .prompt-log.json (log file)
-└── completed/        # Archived with RETROSPECTIVE.md
+project-root/
+├── .prompt-log-enabled   # Marker at root to capture first prompt
+├── .prompt-log.json      # Log file at root (archived to completed/)
+└── docs/spec/
+    ├── active/           # In-progress projects
+    │   └── YYYY-MM-DD-slug/
+    │       ├── README.md, REQUIREMENTS.md, ARCHITECTURE.md
+    │       └── IMPLEMENTATION_PLAN.md, PROGRESS.md
+    └── completed/        # Archived with RETROSPECTIVE.md + .prompt-log.json
 ```
 
 ## Key Patterns
@@ -155,6 +157,12 @@ def test_something(temp_project_dir, monkeypatch):
 Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planning.
 
 ## Completed Spec Projects
+
+- `docs/spec/completed/2025-12-13-worktree-config-install/` - Worktree Manager Configuration Installation
+  - Completed: 2025-12-13
+  - Outcome: success
+  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
+  - Key changes: User config at ~/.claude/worktree-manager.config.json, prompt log at project root
 
 - `docs/spec/completed/2025-12-12-quality-release-ci-github-act/` - Quality Release CI/CD with GitHub Actions
   - Completed: 2025-12-13

@@ -47,9 +47,9 @@ security:
 test:
 	uv run pytest --cov=filters --cov=hooks --cov=analyzers --cov-report=term-missing -v
 
-# Shell script linting
+# Shell script linting (exclude SC1091: can't follow dynamic $SCRIPT_DIR sources)
 shellcheck:
-	shellcheck skills/worktree-manager/scripts/*.sh
+	shellcheck -x -e SC1091 skills/worktree-manager/scripts/*.sh skills/worktree-manager/scripts/lib/*.sh
 
 # Run all CI checks (mirrors GitHub Actions workflow)
 ci: format-check lint typecheck security shellcheck test
