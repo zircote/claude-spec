@@ -244,7 +244,10 @@ class TestRunPostSteps:
         def mock_get_steps(cmd, step_type):
             return [{"name": "nonexistent-step"}]
 
-        monkeypatch.setattr("post_command.get_enabled_steps", mock_get_steps)
+        # Use raising=False in case the original import failed
+        monkeypatch.setattr(
+            "post_command.get_enabled_steps", mock_get_steps, raising=False
+        )
 
         run_post_steps(str(tmp_path), "cs:c")
 
