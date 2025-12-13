@@ -2,7 +2,6 @@
 Tests for the log analyzer module.
 """
 
-import json
 import os
 import sys
 import tempfile
@@ -88,6 +87,25 @@ class TestAnalyzeLog(unittest.TestCase):
 
         self.assertEqual(analysis.commands_used["/cs:p"], 2)
         self.assertEqual(analysis.commands_used["/cs:i"], 1)
+
+    def test_command_tracking_with_none_commands(self):
+        """analyze_log should handle entries with None or missing commands."""
+        entries = [
+            LogEntry.create(session_id="s1", entry_type="user_input", content="test", command="/cs:p"),
+            LogEntry.create(session_id="s1", entry_type="user_input", content="no command"),  # command=None
+            LogEntry.create(session_id="s1", entry_type="user_input", content="test", command=""),  # empty command
+            LogEntry.create(session_id="s1", entry_type="user_input", content="test", command="/cs:i"),
+        ]
+        self._write_log_entries(entries)
+
+        analysis = analyze_log(self.temp_dir)
+
+        self.assertEqual(analysis.total_entries, 4)
+        self.assertEqual(analysis.commands_used["/cs:p"], 1)
+        self.assertEqual(analysis.commands_used["/cs:i"], 1)
+        # None and empty commands should not appear in commands_used
+        self.assertNotIn(None, analysis.commands_used)
+        self.assertNotIn("", analysis.commands_used)
 
     def test_secret_filtering_stats(self):
         """analyze_log should count filtered secrets."""

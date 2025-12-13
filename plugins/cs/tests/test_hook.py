@@ -2,13 +2,11 @@
 Tests for the prompt capture hook.
 """
 
-import json
 import os
 import shutil
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
 
 # Add parent directory for imports
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
