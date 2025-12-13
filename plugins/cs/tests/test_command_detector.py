@@ -1,5 +1,6 @@
 """Tests for command_detector hook."""
 
+import builtins
 import io
 import json
 import sys
@@ -287,13 +288,13 @@ class TestRunStep:
 
     def test_import_error(self, tmp_path, monkeypatch, capsys):
         """Test handling of import error."""
-        # Mock __import__ to raise ImportError
-        original_import = __builtins__["__import__"]
+        # Save reference to real import before patching
+        real_import = builtins.__import__
 
         def mock_import(name, *args, **kwargs):
             if name == "context_loader":
                 raise ImportError("Module not found")
-            return original_import(name, *args, **kwargs)
+            return real_import(name, *args, **kwargs)
 
         monkeypatch.setattr("builtins.__import__", mock_import)
 
@@ -310,10 +311,13 @@ class TestRunStep:
         mock_result.success = True
         mock_module.run.return_value = mock_result
 
+        # Save reference to real import before patching
+        real_import = builtins.__import__
+
         def mock_import(name, *args, **kwargs):
             if name == "context_loader":
                 return mock_module
-            return __builtins__["__import__"](name, *args, **kwargs)
+            return real_import(name, *args, **kwargs)
 
         monkeypatch.setattr("builtins.__import__", mock_import)
 
@@ -329,10 +333,13 @@ class TestRunStep:
         mock_result.message = "Step failed"
         mock_module.run.return_value = mock_result
 
+        # Save reference to real import before patching
+        real_import = builtins.__import__
+
         def mock_import(name, *args, **kwargs):
             if name == "context_loader":
                 return mock_module
-            return __builtins__["__import__"](name, *args, **kwargs)
+            return real_import(name, *args, **kwargs)
 
         monkeypatch.setattr("builtins.__import__", mock_import)
 
