@@ -5,7 +5,6 @@ Analyzes .prompt-log.json to generate insights for retrospectives.
 Calculates metrics, identifies patterns, and generates recommendations.
 """
 
-import json
 import os
 import sys
 from collections import Counter
@@ -20,7 +19,7 @@ if PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
 from filters.log_entry import LogEntry
-from filters.log_writer import read_log, PROMPT_LOG_FILENAME
+from filters.log_writer import read_log
 
 
 @dataclass
@@ -125,11 +124,11 @@ def analyze_log(project_dir: str) -> Optional[LogAnalysis]:
             analysis.secrets_filtered += entry.filter_applied.secret_count
             analysis.total_filtered_content += 1
 
-        # Group by session
-        if entry.session_id:
-            if entry.session_id not in sessions:
-                sessions[entry.session_id] = []
-            sessions[entry.session_id].append(entry)
+        # Group by session, use "unknown" for missing/empty session_id
+        session_key = entry.session_id if entry.session_id else "unknown"
+        if session_key not in sessions:
+            sessions[session_key] = []
+        sessions[session_key].append(entry)
 
     # Calculate prompt length stats
     if prompt_lengths:

@@ -1,10 +1,10 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "zircote-marketplace",
+  "name": "claude-spec-marketplace",
   "version": "1.0.0",
   "description": "Project specification and implementation lifecycle management",
   "owner": {
-    "name": "Robert Allen",
+    "name": "Claude Spec Contributors",
     "email": "zircote@gmail.com"
   },
   "plugins": [

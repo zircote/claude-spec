@@ -56,7 +56,8 @@ Before generating the retrospective, check for and analyze prompt capture logs:
 if [ -f "${PROJECT_PATH}/.prompt-log-enabled" ]; then
     echo "Prompt logging was enabled - analyzing interaction patterns..."
 
-    # Run analyzer and capture output (uses plugin's analyzer)
+    # Run analyzer and capture output (uses plugin's analyzer).
+    # If the analyzer script does not exist or fails, the close-out continues without interaction analysis.
     ANALYZER_PATH="${CLAUDE_PLUGIN_ROOT}/analyzers/analyze_cli.py"
     INTERACTION_ANALYSIS=$(python3 "${ANALYZER_PATH}" "${PROJECT_PATH}" 2>/dev/null)
 

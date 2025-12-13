@@ -38,7 +38,8 @@ IF NO_GIT:
 ```bash
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
 WORKTREE_BASE="${HOME}/Projects/worktrees"
-SLUG=$(echo "$ARGUMENTS" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | cut -c1-30)
+SLUG=$(echo "$ARGUMENTS" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g')
+SLUG="${SLUG:0:30}"
 BRANCH_NAME="plan/${SLUG}"
 WORKTREE_PATH="${WORKTREE_BASE}/${REPO_NAME}/${SLUG}"
 
@@ -52,7 +53,7 @@ git worktree add -b "${BRANCH_NAME}" "${WORKTREE_PATH}" HEAD
 ${CLAUDE_PLUGIN_ROOT}/skills/worktree-manager/scripts/launch-agent.sh \
     "${WORKTREE_PATH}" \
     "" \
-    --prompt "/cs:p $ARGUMENTS"
+    --prompt "/cs:p $(printf '%q' "$ARGUMENTS")"
 ```
 
 ### Step 5: Output Message and HALT
