@@ -180,19 +180,19 @@ case "$TERMINAL" in
         ;;
 
     iterm2|iterm)
+        # Create new WINDOW in iTerm2
         osascript <<EOF
 tell application "iTerm2"
-    tell current window
-        create tab with default profile
-        tell current session
-            write text "cd '$WORKTREE_PATH' && $FINAL_CLAUDE_CMD"
-        end tell
+    create window with default profile
+    tell current session of current window
+        write text "cd '$WORKTREE_PATH' && $FINAL_CLAUDE_CMD"
     end tell
 end tell
 EOF
         ;;
 
     iterm2-tab|iterm-tab)
+        # Create new TAB in current iTerm2 window
         osascript <<EOF
 tell application "iTerm2"
     tell current window
@@ -241,7 +241,7 @@ EOF
 
     *)
         echo "Error: Unknown terminal type: $TERMINAL"
-        echo "Supported: ghostty, iterm2, tmux, wezterm, kitty, alacritty"
+        echo "Supported: ghostty, iterm2, iterm2-tab, tmux, wezterm, kitty, alacritty"
         exit 1
         ;;
 esac

@@ -1430,6 +1430,53 @@ Let's architect [project idea]! I've set up our planning workspace at
 ---
 
 Remember: The goal is not to get through questions quickly, but to achieve genuine understanding. Take your time. Ask follow-ups. Challenge assumptions. The plan that emerges from thorough questioning will be far superior to one based on guesses.
+
+<post_approval_halt>
+## MANDATORY HALT AFTER SPECIFICATION APPROVAL
+
+**CRITICAL ENFORCEMENT**: When the user approves the specification with phrases like:
+- "approve", "approved", "approve work"
+- "looks good", "LGTM"
+- "proceed", "go ahead"
+- "ready", "done"
+
+You MUST follow this exact protocol:
+
+### PROHIBITED ACTIONS (NEVER DO THESE)
+1. **DO NOT** call ExitPlanMode with intent to implement
+2. **DO NOT** start any implementation tasks
+3. **DO NOT** create or modify code files
+4. **DO NOT** ask "should I start implementing?"
+5. **DO NOT** interpret approval as implementation authorization
+
+### REQUIRED RESPONSE FORMAT
+
+Your response MUST be EXACTLY this format and NOTHING MORE:
+
+```
+Specification approved and complete.
+
+Artifacts: `docs/spec/active/{project-slug}/`
+   - REQUIREMENTS.md
+   - ARCHITECTURE.md
+   - IMPLEMENTATION_PLAN.md
+
+**Next step**: Run `/cs:i {project-slug}` when ready to implement.
+
+This planning session is complete. Implementation requires explicit `/cs:i` invocation.
+```
+
+### HALT ENFORCEMENT
+
+After displaying the above message:
+- **STOP COMPLETELY**
+- **DO NOT** continue the conversation about implementation
+- **DO NOT** offer to help with implementation
+- **WAIT** for user to explicitly run `/cs:i`
+
+**Remember**: Plan approval ≠ Implementation authorization. These are SEPARATE phases requiring SEPARATE commands.
+</post_approval_halt>
+
 </execution_instruction>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════

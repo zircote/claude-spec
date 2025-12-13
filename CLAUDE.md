@@ -55,30 +55,92 @@ plugins/cs/
 │   ├── log_entry.py   # Log entry schema (dataclass)
 │   └── log_writer.py  # Atomic JSON file writer
 ├── hooks/
-│   └── prompt_capture.py  # UserPromptSubmit hook handler
+│   ├── hooks.json         # Hook registration for Claude Code
+│   ├── session_start.py   # SessionStart hook - loads context
+│   ├── command_detector.py # UserPromptSubmit hook - detects /cs:* commands
+│   ├── post_command.py    # Stop hook - runs post-steps
+│   ├── prompt_capture.py  # UserPromptSubmit hook - logs prompts
+│   └── lib/
+│       └── config_loader.py  # Lifecycle configuration loader
+├── steps/              # Pre/post step modules
+│   ├── base.py         # StepResult, BaseStep classes
+│   ├── context_loader.py    # Load CLAUDE.md, git state, structure
+│   ├── security_reviewer.py # Run bandit security scan
+│   ├── log_archiver.py      # Archive prompt logs to completed/
+│   ├── marker_cleaner.py    # Clean up temp files
+│   └── retrospective_gen.py # Generate RETROSPECTIVE.md
 ├── analyzers/
 │   ├── log_analyzer.py    # Log file analysis
 │   └── analyze_cli.py     # CLI for retrospective analysis
 ├── skills/worktree-manager/  # Worktree automation (config at ~/.claude/worktree-manager.config.json)
-└── tests/             # Pytest test suite (97% coverage)
+└── tests/             # Pytest test suite (200 tests)
 ```
 
 ### Data Flow
 
-1. **UserPromptSubmit Hook** (`hooks/prompt_capture.py`):
-   - Receives JSON via stdin from Claude Code
-   - Checks for `.prompt-log-enabled` marker at project root
-   - Filters secrets via `filters/pipeline.py`
-   - Appends to `.prompt-log.json` at project root via `filters/log_writer.py`
-   - Always returns `{"decision": "approve"}` (never blocks)
-   - Note: Marker at project root ensures first prompt is captured before spec dirs exist
+1. **SessionStart Hook** (`hooks/session_start.py`):
+   - Fires when Claude Code session starts
+   - Checks if project is claude-spec managed (has docs/spec/ or .prompt-log-enabled)
+   - Loads context: CLAUDE.md files, git state, project structure
+   - Outputs context to stdout (added to Claude's initial memory)
+   - Respects lifecycle config for which context types to load
 
-2. **Filter Pipeline** (`filters/pipeline.py`):
+2. **UserPromptSubmit Hooks**:
+   - `hooks/command_detector.py` (runs first):
+     - Detects /cs:* commands in user prompts
+     - Saves command state to `.cs-session-state.json`
+     - Triggers pre-steps (e.g., security review for /cs:c)
+     - Always returns `{"decision": "approve"}`
+   - `hooks/prompt_capture.py` (runs second):
+     - Checks for `.prompt-log-enabled` marker at project root
+     - Filters secrets via `filters/pipeline.py`
+     - Appends to `.prompt-log.json` at project root
+     - Always returns `{"decision": "approve"}` (never blocks)
+
+3. **Stop Hook** (`hooks/post_command.py`):
+   - Fires when Claude Code session ends
+   - Reads command state from `.cs-session-state.json`
+   - Triggers post-steps (e.g., log archival, retrospective gen for /cs:c)
+   - Cleans up session state file
+   - Returns `{"continue": false}`
+
+4. **Filter Pipeline** (`filters/pipeline.py`):
    - Pre-compiled regex patterns for 15+ secret types (AWS, GitHub, API keys, etc.)
    - Order: secrets → truncation
    - Returns `FilterResult` with statistics
 
-3. **Log Writer** (`filters/log_writer.py`):
+### Lifecycle Configuration
+
+Pre/post steps are configured via `~/.claude/worktree-manager.config.json`:
+
+```json
+{
+  "lifecycle": {
+    "sessionStart": {
+      "enabled": true,
+      "loadContext": {
+        "claudeMd": true,
+        "gitState": true,
+        "projectStructure": true
+      }
+    },
+    "commands": {
+      "cs:c": {
+        "preSteps": [
+          { "name": "security-review", "enabled": true, "timeout": 120 }
+        ],
+        "postSteps": [
+          { "name": "generate-retrospective", "enabled": true },
+          { "name": "archive-logs", "enabled": true },
+          { "name": "cleanup-markers", "enabled": true }
+        ]
+      }
+    }
+  }
+}
+```
+
+5. **Log Writer** (`filters/log_writer.py`):
    - Atomic writes with file locking (`fcntl.flock`)
    - Creates backup before modifications
    - JSON array format with `LogEntry` schema
@@ -165,7 +227,17 @@ Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planni
 | `/cs:wt:status` | Show worktree status |
 | `/cs:wt:cleanup` | Clean up stale worktrees |
 
+## Active Spec Projects
+
+(None - all projects completed)
+
 ## Completed Spec Projects
+
+- `docs/spec/completed/2025-12-13-pre-post-steps-commands/` - Pre and Post Steps for cs:* Commands
+  - Completed: 2025-12-13
+  - Outcome: success
+  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
+  - Key changes: Lifecycle hook system (SessionStart, UserPromptSubmit, Stop), 230 tests, 96% coverage
 
 - `docs/spec/completed/2025-12-13-worktree-config-install/` - Worktree Manager Configuration Installation
   - Completed: 2025-12-13

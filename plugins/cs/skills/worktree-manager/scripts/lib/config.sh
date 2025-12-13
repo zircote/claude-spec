@@ -138,3 +138,102 @@ show_config_summary() {
     echo "  worktreeBase:  $(get_config "worktreeBase" "$HOME/Projects/worktrees")"
     echo "  portPool:      $(get_config_nested "portPool.start" "8100")-$(get_config_nested "portPool.end" "8199")"
 }
+
+# =============================================================================
+# Lifecycle Configuration Functions
+# =============================================================================
+
+# Get lifecycle steps for a specific command and phase
+# Arguments:
+#   $1 - command name (e.g., "cs:c", "cs:p")
+#   $2 - phase ("preSteps" or "postSteps")
+# Returns: JSON array of steps, or "[]" if not found
+get_lifecycle_steps() {
+    local command="$1"
+    local phase="$2"
+
+    # If jq not available, return empty array
+    if ! command -v jq &> /dev/null; then
+        echo "[]"
+        return
+    fi
+
+    # Build the jq path for lifecycle.commands.<command>.<phase>
+    # Note: command contains ":" which needs proper quoting in jq
+    local jq_path=".lifecycle.commands[\"${command}\"].${phase}"
+    local value=""
+
+    # Try user config first
+    if [ -f "$USER_CONFIG" ]; then
+        value=$(jq -r "${jq_path} // empty" "$USER_CONFIG" 2>/dev/null)
+    fi
+
+    # Fall back to template
+    if [ -z "$value" ] && [ -f "$TEMPLATE_CONFIG" ]; then
+        value=$(jq -r "${jq_path} // empty" "$TEMPLATE_CONFIG" 2>/dev/null)
+    fi
+
+    # Return value or empty array
+    if [ -z "$value" ] || [ "$value" = "null" ]; then
+        echo "[]"
+    else
+        echo "$value"
+    fi
+}
+
+# Check if session start context loading is enabled for a specific type
+# Arguments:
+#   $1 - context type ("claudeMd", "gitState", "projectStructure")
+# Returns: 0 if enabled (true), 1 if disabled (false)
+is_session_context_enabled() {
+    local context_type="$1"
+    local enabled
+
+    enabled=$(get_config_nested "lifecycle.sessionStart.loadContext.${context_type}" "true")
+
+    [ "$enabled" = "true" ]
+}
+
+# Check if session start is globally enabled
+# Returns: 0 if enabled, 1 if disabled
+is_session_start_enabled() {
+    local enabled
+    enabled=$(get_config_nested "lifecycle.sessionStart.enabled" "true")
+    [ "$enabled" = "true" ]
+}
+
+# Get all enabled pre-steps for a command
+# Arguments:
+#   $1 - command name (e.g., "cs:c")
+# Returns: JSON array of enabled steps only
+get_enabled_pre_steps() {
+    local command="$1"
+    local steps
+
+    steps=$(get_lifecycle_steps "$command" "preSteps")
+
+    # If jq available, filter to enabled only
+    if command -v jq &> /dev/null; then
+        echo "$steps" | jq '[.[] | select(.enabled == true)]' 2>/dev/null || echo "[]"
+    else
+        echo "[]"
+    fi
+}
+
+# Get all enabled post-steps for a command
+# Arguments:
+#   $1 - command name (e.g., "cs:c")
+# Returns: JSON array of enabled steps only
+get_enabled_post_steps() {
+    local command="$1"
+    local steps
+
+    steps=$(get_lifecycle_steps "$command" "postSteps")
+
+    # If jq available, filter to enabled only
+    if command -v jq &> /dev/null; then
+        echo "$steps" | jq '[.[] | select(.enabled == true)]' 2>/dev/null || echo "[]"
+    else
+        echo "[]"
+    fi
+}
