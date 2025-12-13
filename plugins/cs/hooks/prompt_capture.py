@@ -19,7 +19,7 @@ Usage:
 Input format:
     {
         "hook_event_name": "UserPromptSubmit",
-        "user_prompt": "string",
+        "prompt": "string",
         "session_id": "string",
         "cwd": "string",
         "permission_mode": "string"
@@ -37,7 +37,7 @@ import json
 import os
 import sys
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Edge case limits
 MAX_PROMPT_LENGTH = 100000  # 100KB max per prompt to prevent memory issues
@@ -55,9 +55,10 @@ if PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
 try:
-    from filters.pipeline import filter_pipeline
     from filters.log_entry import LogEntry
     from filters.log_writer import append_to_log
+    from filters.pipeline import filter_pipeline
+
     FILTERS_AVAILABLE = True
 except ImportError as e:
     # Filters not available - will pass through without logging
@@ -65,12 +66,12 @@ except ImportError as e:
     sys.stderr.write(f"claude-spec prompt_capture: Filter import error: {e}\n")
 
 
-def pass_through() -> Dict[str, Any]:
+def pass_through() -> dict[str, Any]:
     """Return a pass-through response that allows the prompt to proceed."""
     return {"decision": "approve"}
 
 
-def read_input() -> Optional[Dict[str, Any]]:
+def read_input() -> dict[str, Any] | None:
     """Read and parse JSON input from stdin."""
     try:
         return json.load(sys.stdin)
@@ -82,7 +83,7 @@ def read_input() -> Optional[Dict[str, Any]]:
         return None
 
 
-def write_output(response: Dict[str, Any]) -> None:
+def write_output(response: dict[str, Any]) -> None:
     """Write JSON response to stdout."""
     try:
         print(json.dumps(response), file=sys.stdout)
@@ -91,7 +92,7 @@ def write_output(response: Dict[str, Any]) -> None:
         print('{"decision": "approve"}', file=sys.stdout)
 
 
-def find_enabled_project_dir(cwd: str) -> Optional[str]:
+def find_enabled_project_dir(cwd: str) -> str | None:
     """
     Find an active spec project directory with logging enabled.
 
@@ -145,8 +146,10 @@ def truncate_content(content: str, max_length: int = MAX_LOG_ENTRY_SIZE) -> str:
     """Truncate content if too long, preserving information about truncation."""
     if len(content) <= max_length:
         return content
-    truncate_notice = f"\n...[TRUNCATED: {len(content) - max_length + 100} chars removed]..."
-    return content[:max_length - len(truncate_notice)] + truncate_notice
+    truncate_notice = (
+        f"\n...[TRUNCATED: {len(content) - max_length + 100} chars removed]..."
+    )
+    return content[: max_length - len(truncate_notice)] + truncate_notice
 
 
 def generate_session_id() -> str:
@@ -154,7 +157,7 @@ def generate_session_id() -> str:
     return f"hook-{uuid.uuid4().hex[:12]}"
 
 
-def detect_command(prompt: str) -> Optional[str]:
+def detect_command(prompt: str) -> str | None:
     """
     Detect /spec: command in the prompt.
 
@@ -183,8 +186,9 @@ def main() -> None:
         return
 
     # Extract fields with defaults
+    # Note: Claude Code sends "prompt", not "user_prompt"
     cwd = input_data.get("cwd", "")
-    user_prompt = input_data.get("user_prompt", "")
+    user_prompt = input_data.get("prompt", "") or input_data.get("user_prompt", "")
     session_id = input_data.get("session_id", "") or generate_session_id()
 
     # Edge case: empty prompt
@@ -228,7 +232,7 @@ def main() -> None:
         content=log_content,
         command=command,
         cwd=cwd,
-        filter_info=filter_result.to_filter_info()
+        filter_info=filter_result.to_filter_info(),
     )
 
     # Attempt to write (failure doesn't block user)
