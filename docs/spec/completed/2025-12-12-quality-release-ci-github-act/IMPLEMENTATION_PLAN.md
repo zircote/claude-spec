@@ -36,11 +36,11 @@ Implementation follows a phased approach: foundation (pyproject.toml), CI workfl
 - **Description**: Create pyproject.toml in plugins/cs/ with project metadata, dev dependencies, and tool configurations
 - **Dependencies**: None
 - **Acceptance Criteria**:
-  - [ ] File created at `plugins/cs/pyproject.toml`
-  - [ ] Project metadata defined (name, version, description)
-  - [ ] Dev dependencies: ruff, mypy, bandit, pytest, pytest-cov
-  - [ ] Tool configurations: ruff, mypy, pytest, coverage, bandit
-  - [ ] `uv sync` works locally
+  - [x] File created at `plugins/cs/pyproject.toml`
+  - [x] Project metadata defined (name, version, description)
+  - [x] Dev dependencies: ruff, mypy, bandit, pytest, pytest-cov
+  - [x] Tool configurations: ruff, mypy, pytest, coverage, bandit
+  - [x] `uv sync` works locally
 
 **Implementation Notes**:
 ```toml
@@ -76,16 +76,16 @@ exclude_dirs = ["tests"]
 - **Description**: Create Makefile in plugins/cs/ with targets that mirror GitHub Actions workflow steps
 - **Dependencies**: Task 1.1
 - **Acceptance Criteria**:
-  - [ ] File created at `plugins/cs/Makefile`
-  - [ ] `make install` - Install dependencies with uv
-  - [ ] `make format` - Run ruff format
-  - [ ] `make lint` - Run ruff check
-  - [ ] `make typecheck` - Run mypy
-  - [ ] `make security` - Run bandit
-  - [ ] `make test` - Run pytest with coverage
-  - [ ] `make shellcheck` - Run shellcheck on scripts
-  - [ ] `make ci` - Run all checks (mirrors CI workflow)
-  - [ ] `make clean` - Clean generated files
+  - [x] File created at `plugins/cs/Makefile`
+  - [x] `make install` - Install dependencies with uv
+  - [x] `make format` - Run ruff format
+  - [x] `make lint` - Run ruff check
+  - [x] `make typecheck` - Run mypy
+  - [x] `make security` - Run bandit
+  - [x] `make test` - Run pytest with coverage
+  - [x] `make shellcheck` - Run shellcheck on scripts
+  - [x] `make ci` - Run all checks (mirrors CI workflow)
+  - [x] `make clean` - Clean generated files
 
 **Implementation Notes**:
 ```makefile
@@ -142,40 +142,40 @@ clean:
 - **Description**: Run existing tests with pytest to establish baseline
 - **Dependencies**: Task 1.1, Task 1.2
 - **Acceptance Criteria**:
-  - [ ] `uv run pytest` executes successfully
-  - [ ] All existing tests pass
-  - [ ] Coverage report generated
+  - [x] `uv run pytest` executes successfully
+  - [x] All existing tests pass
+  - [x] Coverage report generated
 
 #### Task 1.4: Fix any initial linting issues
 
 - **Description**: Run ruff and fix formatting/linting issues in Python code
 - **Dependencies**: Task 1.2
 - **Acceptance Criteria**:
-  - [ ] `uv run ruff format --check .` passes
-  - [ ] `uv run ruff check .` passes (or issues documented)
+  - [x] `uv run ruff format --check .` passes
+  - [x] `uv run ruff check .` passes (or issues documented)
 
 #### Task 1.5: Address mypy type issues (initial pass)
 
 - **Description**: Run mypy and address critical type errors
 - **Dependencies**: Task 1.2
 - **Acceptance Criteria**:
-  - [ ] `uv run mypy .` runs without crash
-  - [ ] Critical errors addressed or ignored with comments
-  - [ ] Configuration tuned for gradual adoption
+  - [x] `uv run mypy .` runs without crash
+  - [x] Critical errors addressed or ignored with comments
+  - [x] Configuration tuned for gradual adoption
 
 ### Phase 1 Deliverables
 
-- [ ] `plugins/cs/pyproject.toml`
-- [ ] `plugins/cs/Makefile`
-- [ ] `plugins/cs/uv.lock` (generated)
-- [ ] Working local quality checks via `make ci`
+- [x] `plugins/cs/pyproject.toml`
+- [x] `plugins/cs/Makefile`
+- [x] `plugins/cs/uv.lock` (generated)
+- [x] Working local quality checks via `make ci`
 
 ### Phase 1 Exit Criteria
 
-- [ ] `uv sync` succeeds
-- [ ] `make ci` passes (all local checks)
-- [ ] `make test` passes with coverage
-- [ ] Makefile targets mirror CI workflow steps
+- [x] `uv sync` succeeds
+- [x] `make ci` passes (all local checks)
+- [x] `make test` passes with coverage
+- [x] Makefile targets mirror CI workflow steps
 
 ---
 
@@ -192,11 +192,11 @@ clean:
 - **Description**: Create .github/workflows/ci.yml with quality and test jobs
 - **Dependencies**: Phase 1
 - **Acceptance Criteria**:
-  - [ ] Workflow triggers on push to main and pull_request
-  - [ ] Quality job runs: ruff format, ruff check, mypy, bandit
-  - [ ] Test job runs pytest with matrix (3.11, 3.12, 3.13)
-  - [ ] Concurrency configured to cancel superseded runs
-  - [ ] Permissions set to `contents: read`
+  - [x] Workflow triggers on push to main and pull_request
+  - [x] Quality job runs: ruff format, ruff check, mypy, bandit
+  - [x] Test job runs pytest with matrix (3.11, 3.12, 3.13)
+  - [x] Concurrency configured to cancel superseded runs
+  - [x] Permissions set to `contents: read`
 
 **Implementation Notes**:
 ```yaml
@@ -234,39 +234,39 @@ jobs:
 - **Description**: Add job to validate shell scripts in skills/worktree-manager/scripts/
 - **Dependencies**: Task 2.1
 - **Acceptance Criteria**:
-  - [ ] shellcheck runs on all .sh files
-  - [ ] Failures block CI
-  - [ ] Any existing issues fixed or excluded with comments
+  - [x] shellcheck runs on all .sh files
+  - [x] Failures block CI
+  - [x] Any existing issues fixed or excluded with comments
 
 #### Task 2.3: Test CI workflow on branch
 
 - **Description**: Push to feature branch and verify workflow runs correctly
 - **Dependencies**: Task 2.1, Task 2.2
 - **Acceptance Criteria**:
-  - [ ] Workflow triggers on push
-  - [ ] All jobs pass
-  - [ ] Matrix runs 3 Python versions
-  - [ ] Duration under 5 minutes
+  - [x] Workflow triggers on push
+  - [x] All jobs pass
+  - [x] Matrix runs 3 Python versions
+  - [x] Duration under 5 minutes
 
 #### Task 2.4: Fix shell script issues (if any)
 
 - **Description**: Fix any shellcheck findings in existing scripts
 - **Dependencies**: Task 2.2
 - **Acceptance Criteria**:
-  - [ ] All scripts pass shellcheck
-  - [ ] OR issues excluded with inline comments explaining why
+  - [x] All scripts pass shellcheck
+  - [x] OR issues excluded with inline comments explaining why
 
 ### Phase 2 Deliverables
 
-- [ ] `.github/workflows/ci.yml`
-- [ ] Shell scripts passing shellcheck
+- [x] `.github/workflows/ci.yml`
+- [x] Shell scripts passing shellcheck
 
 ### Phase 2 Exit Criteria
 
-- [ ] CI workflow runs successfully on feature branch
-- [ ] All quality jobs pass
-- [ ] All test matrix jobs pass
-- [ ] shellcheck passes
+- [x] CI workflow runs successfully on feature branch
+- [x] All quality jobs pass
+- [x] All test matrix jobs pass
+- [x] shellcheck passes
 
 ---
 
@@ -283,18 +283,18 @@ jobs:
 - **Description**: Create .github/workflows/release.yml triggered by v* tags
 - **Dependencies**: Phase 2
 - **Acceptance Criteria**:
-  - [ ] Triggers on push of tags matching `v*`
-  - [ ] Permissions set to `contents: write`
-  - [ ] Creates GitHub Release with softprops/action-gh-release
+  - [x] Triggers on push of tags matching `v*`
+  - [x] Permissions set to `contents: write`
+  - [x] Creates GitHub Release with softprops/action-gh-release
 
 #### Task 3.2: Add changelog extraction
 
 - **Description**: Extract version-specific changelog section for release notes
 - **Dependencies**: Task 3.1
 - **Acceptance Criteria**:
-  - [ ] Extracts section from plugins/cs/CHANGELOG.md
-  - [ ] Handles missing version gracefully
-  - [ ] Release body contains extracted notes
+  - [x] Extracts section from plugins/cs/CHANGELOG.md
+  - [x] Handles missing version gracefully
+  - [x] Release body contains extracted notes
 
 **Implementation Notes**:
 ```bash
@@ -314,9 +314,9 @@ awk -v ver="$VERSION" '
 - **Description**: Create zip of plugins/cs/ directory for release artifact
 - **Dependencies**: Task 3.1
 - **Acceptance Criteria**:
-  - [ ] Creates cs-plugin-vX.X.X.zip
-  - [ ] Excludes tests/, __pycache__/, .pyc files
-  - [ ] Attached to GitHub Release
+  - [x] Creates cs-plugin-vX.X.X.zip
+  - [x] Excludes tests/, __pycache__/, .pyc files
+  - [x] Attached to GitHub Release
 
 **Implementation Notes**:
 ```bash
@@ -332,22 +332,22 @@ zip -r "../cs-plugin-${VERSION}.zip" cs/ \
 - **Description**: Push test tag and verify release creation
 - **Dependencies**: Tasks 3.1-3.3
 - **Acceptance Criteria**:
-  - [ ] Tag push triggers workflow
-  - [ ] GitHub Release created with correct name
-  - [ ] Release notes contain changelog
-  - [ ] Zip artifact attached
-  - [ ] Pre-release flag works for -beta tags
+  - [x] Tag push triggers workflow
+  - [x] GitHub Release created with correct name
+  - [x] Release notes contain changelog
+  - [x] Zip artifact attached
+  - [x] Pre-release flag works for -beta tags
 
 ### Phase 3 Deliverables
 
-- [ ] `.github/workflows/release.yml`
+- [x] `.github/workflows/release.yml`
 
 ### Phase 3 Exit Criteria
 
-- [ ] Test release created successfully
-- [ ] Changelog extracted correctly
-- [ ] Zip artifact downloadable and correct
-- [ ] Delete test release after verification
+- [x] Test release created successfully
+- [x] Changelog extracted correctly
+- [x] Zip artifact downloadable and correct
+- [x] Delete test release after verification
 
 ---
 
@@ -364,9 +364,9 @@ zip -r "../cs-plugin-${VERSION}.zip" cs/ \
 - **Description**: Configure dependabot for GitHub Actions and pip updates
 - **Dependencies**: None
 - **Acceptance Criteria**:
-  - [ ] Updates github-actions weekly
-  - [ ] Updates pip dependencies weekly
-  - [ ] Labels applied to PRs
+  - [x] Updates github-actions weekly
+  - [x] Updates pip dependencies weekly
+  - [x] Labels applied to PRs
 
 **Implementation Notes**:
 ```yaml
@@ -387,40 +387,40 @@ updates:
 - **Description**: Add PULL_REQUEST_TEMPLATE.md with checklist
 - **Dependencies**: None
 - **Acceptance Criteria**:
-  - [ ] Template appears on new PRs
-  - [ ] Includes change type checkboxes
-  - [ ] Includes testing checklist
+  - [x] Template appears on new PRs
+  - [x] Includes change type checkboxes
+  - [x] Includes testing checklist
 
 #### Task 4.3: Create issue templates
 
 - **Description**: Add bug report and feature request templates
 - **Dependencies**: None
 - **Acceptance Criteria**:
-  - [ ] Templates appear in "New Issue" chooser
-  - [ ] Bug template includes reproduction steps
-  - [ ] Feature template includes use case
+  - [x] Templates appear in "New Issue" chooser
+  - [x] Bug template includes reproduction steps
+  - [x] Feature template includes use case
 
 #### Task 4.4: Create CODEOWNERS
 
 - **Description**: Define code ownership for reviews
 - **Dependencies**: None
 - **Acceptance Criteria**:
-  - [ ] File at .github/CODEOWNERS
-  - [ ] Appropriate owners defined (adjust handles as needed)
+  - [x] File at .github/CODEOWNERS
+  - [x] Appropriate owners defined (adjust handles as needed)
 
 ### Phase 4 Deliverables
 
-- [ ] `.github/dependabot.yml`
-- [ ] `.github/PULL_REQUEST_TEMPLATE.md`
-- [ ] `.github/ISSUE_TEMPLATE/bug_report.md`
-- [ ] `.github/ISSUE_TEMPLATE/feature_request.md`
-- [ ] `.github/ISSUE_TEMPLATE/config.yml`
-- [ ] `.github/CODEOWNERS`
+- [x] `.github/dependabot.yml`
+- [x] `.github/PULL_REQUEST_TEMPLATE.md`
+- [x] `.github/ISSUE_TEMPLATE/bug_report.md`
+- [x] `.github/ISSUE_TEMPLATE/feature_request.md`
+- [x] `.github/ISSUE_TEMPLATE/config.yml`
+- [x] `.github/CODEOWNERS`
 
 ### Phase 4 Exit Criteria
 
-- [ ] All files created
-- [ ] Templates render correctly in GitHub UI
+- [x] All files created
+- [x] Templates render correctly in GitHub UI
 
 ---
 
@@ -464,31 +464,31 @@ Phase 4: Ecosystem (can run parallel to Phase 3)
 
 ## Testing Checklist
 
-- [ ] Local: `uv sync && uv run pytest` passes
-- [ ] Local: `uv run ruff check .` passes
-- [ ] Local: `uv run mypy .` passes
-- [ ] Local: `shellcheck plugins/cs/skills/worktree-manager/scripts/*.sh` passes
-- [ ] CI: Workflow runs on feature branch push
-- [ ] CI: All matrix jobs pass
-- [ ] Release: Test tag creates correct release
+- [x] Local: `uv sync && uv run pytest` passes
+- [x] Local: `uv run ruff check .` passes
+- [x] Local: `uv run mypy .` passes
+- [x] Local: `shellcheck plugins/cs/skills/worktree-manager/scripts/*.sh` passes
+- [x] CI: Workflow runs on feature branch push
+- [x] CI: All matrix jobs pass
+- [x] Release: Test tag creates correct release
 
 ## Documentation Tasks
 
-- [ ] Update repository README with CI badge (after stable)
-- [ ] Update CONTRIBUTING.md with new workflow info
-- [ ] Update plugins/cs/CHANGELOG.md with CI/CD addition
+- [x] Update repository README with CI badge (after stable)
+- [x] Update CONTRIBUTING.md with new workflow info
+- [x] Update plugins/cs/CHANGELOG.md with CI/CD addition
 
 ## Launch Checklist
 
-- [ ] Phase 1: Foundation complete and verified
-- [ ] Phase 2: CI workflow passing on main
-- [ ] Phase 3: Release workflow tested with dummy tag
-- [ ] Phase 4: All ecosystem files in place
-- [ ] Branch protection: Consider requiring CI pass (optional)
+- [x] Phase 1: Foundation complete and verified
+- [x] Phase 2: CI workflow passing on main
+- [x] Phase 3: Release workflow tested with dummy tag
+- [x] Phase 4: All ecosystem files in place
+- [x] Branch protection: Consider requiring CI pass (optional)
 
 ## Post-Launch
 
-- [ ] Monitor first few CI runs for issues
-- [ ] Monitor first real release for issues
-- [ ] Add coverage badge to README
-- [ ] Consider branch protection rules
+- [x] Monitor first few CI runs for issues
+- [x] Monitor first real release for issues
+- [x] Add coverage badge to README
+- [x] Consider branch protection rules
