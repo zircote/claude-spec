@@ -85,14 +85,23 @@ def is_cs_project(cwd: str) -> bool:
             content = claude_md.read_text(encoding="utf-8")
             if "claude-spec" in content.lower() or "/cs:" in content:
                 return True
-        except Exception:
-            pass
+        except Exception as e:
+            sys.stderr.write(
+                f"claude-spec session_start: Error reading {claude_md}: {e}\n"
+            )
 
     return False
 
 
 def load_claude_md(cwd: str) -> str:
-    """Load CLAUDE.md content from global and local sources."""
+    """Load CLAUDE.md content from global and local sources.
+
+    Note: This function intentionally duplicates logic from steps/context_loader.py.
+    The session_start hook runs at the very beginning of a Claude session, before
+    any step modules are loaded. It needs to be self-contained and cannot import
+    from the steps/ directory to avoid circular dependencies and ensure reliable
+    execution as a standalone hook script.
+    """
     parts = []
 
     # Global CLAUDE.md (~/.claude/CLAUDE.md)
@@ -218,8 +227,10 @@ def load_project_structure(cwd: str) -> str:
             projects = [d.name for d in active_specs.iterdir() if d.is_dir()]
             if projects:
                 parts.append(f"\n**Active spec projects**: {', '.join(projects[:5])}")
-        except Exception:
-            pass
+        except Exception as e:
+            sys.stderr.write(
+                f"claude-spec session_start: Error listing projects: {e}\n"
+            )
 
     return "\n".join(parts)
 

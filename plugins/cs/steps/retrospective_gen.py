@@ -113,11 +113,20 @@ class RetrospectiveGeneratorStep(BaseStep):
             duration = None
             if len(timestamps) >= 2:
                 try:
-                    first = datetime.fromisoformat(timestamps[0].replace("Z", "+00:00"))
-                    last = datetime.fromisoformat(timestamps[-1].replace("Z", "+00:00"))
+                    # Handle both Zulu time (Z suffix) and explicit timezone offsets
+                    first_ts = timestamps[0]
+                    last_ts = timestamps[-1]
+                    if first_ts.endswith("Z"):
+                        first_ts = first_ts[:-1] + "+00:00"
+                    if last_ts.endswith("Z"):
+                        last_ts = last_ts[:-1] + "+00:00"
+                    first = datetime.fromisoformat(first_ts)
+                    last = datetime.fromisoformat(last_ts)
                     duration = str(last - first)
-                except Exception:
-                    pass
+                except Exception as e:
+                    sys.stderr.write(
+                        f"retrospective_gen: Failed to calculate duration: {e}\n"
+                    )
 
             return {
                 "total_prompts": total_entries,
@@ -160,8 +169,10 @@ class RetrospectiveGeneratorStep(BaseStep):
                     if in_content and line.strip() and not line.startswith("#"):
                         project_summary = line.strip()
                         break
-            except Exception:
-                pass
+            except Exception as e:
+                sys.stderr.write(
+                    f"retrospective_gen: Failed to read {readme_path}: {e}\n"
+                )
 
         # Build retrospective content
         content = f"""---

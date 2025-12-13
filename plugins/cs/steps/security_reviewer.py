@@ -37,11 +37,15 @@ class SecurityReviewerStep(BaseStep):
             findings.extend(bandit_result)
         else:
             # Bandit not available - skip detailed scan
-            return StepResult.ok(
+            result = StepResult.ok(
                 "Security review skipped (bandit not installed)",
                 findings=[],
                 findings_count=0,
-            ).add_warning("Install bandit for security scanning: pip install bandit")
+            )
+            result.add_warning(
+                "Install bandit for security scanning: pip install bandit"
+            )
+            return result
 
         result = StepResult.ok(
             f"Security review complete: {len(findings)} findings",
@@ -108,8 +112,10 @@ class SecurityReviewerStep(BaseStep):
                         findings.append(
                             f"[{severity}/{confidence}] {filename}:{line} - {text}"
                         )
-                except json.JSONDecodeError:
-                    pass
+                except json.JSONDecodeError as e:
+                    sys.stderr.write(
+                        f"security_reviewer: Failed to parse bandit output: {e}\n"
+                    )
 
         except subprocess.TimeoutExpired:
             sys.stderr.write(f"security_reviewer: Bandit timed out after {timeout}s\n")
