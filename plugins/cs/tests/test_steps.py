@@ -121,6 +121,70 @@ class TestSecurityReviewerStep:
         step = SecurityReviewerStep(str(tmp_path), config={"timeout": 60})
         assert step.config.get("timeout") == 60
 
+    def test_scan_complete_in_result_data(self, tmp_path):
+        """Test scan_complete is included in result data."""
+        step = SecurityReviewerStep(str(tmp_path))
+        result = step.run()
+
+        assert "scan_complete" in result.data
+
+    def test_returns_warning_when_scan_incomplete(self, tmp_path, monkeypatch):
+        """Test warning added when scan is incomplete."""
+
+        # Mock _run_bandit to simulate incomplete scan
+        step = SecurityReviewerStep(str(tmp_path))
+
+        def mock_run_bandit(timeout):
+            return (["finding1"], False)  # findings but incomplete
+
+        monkeypatch.setattr(step, "_run_bandit", mock_run_bandit)
+
+        result = step.execute()
+
+        assert result.success is True
+        assert result.data.get("scan_complete") is False
+        assert len(result.warnings) > 0
+        assert any("incomplete" in w.lower() for w in result.warnings)
+
+    def test_indicates_scan_error_when_bandit_available_but_fails(
+        self, tmp_path, monkeypatch
+    ):
+        """Test indicates scan error when bandit is available but scan fails."""
+        import subprocess
+
+        step = SecurityReviewerStep(str(tmp_path))
+
+        # Mock _run_bandit to return empty with incomplete (scan error)
+        def mock_run_bandit(timeout):
+            return ([], False)
+
+        monkeypatch.setattr(step, "_run_bandit", mock_run_bandit)
+
+        # Mock subprocess.run to indicate bandit is available
+        def mock_subprocess_run(cmd, *args, **kwargs):
+            if cmd == ["bandit", "--version"]:
+                return subprocess.CompletedProcess(cmd, 0, "bandit 1.0", "")
+            raise FileNotFoundError()
+
+        monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
+
+        result = step.execute()
+
+        assert result.success is True
+        assert (
+            "incomplete" in result.message.lower() or "error" in result.message.lower()
+        )
+
+    def test_run_bandit_returns_tuple(self, tmp_path):
+        """Test _run_bandit returns tuple of (findings, scan_complete)."""
+        step = SecurityReviewerStep(str(tmp_path))
+        result = step._run_bandit(timeout=5)
+
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        assert isinstance(result[0], list)
+        assert isinstance(result[1], bool)
+
 
 class TestLogArchiverStep:
     """Tests for LogArchiverStep."""
@@ -162,6 +226,19 @@ class TestLogArchiverStep:
 
         assert result.success is True
         assert result.data.get("archived") is False
+
+    def test_handles_no_project_dirs(self, tmp_path):
+        """Test handling when completed dir exists but has no projects."""
+        (tmp_path / ".prompt-log.json").write_text("[]")
+        completed = tmp_path / "docs" / "spec" / "completed"
+        completed.mkdir(parents=True)
+
+        step = LogArchiverStep(str(tmp_path))
+        result = step.run()
+
+        assert result.success is True
+        assert result.data.get("archived") is False
+        assert len(result.warnings) > 0
 
 
 class TestMarkerCleanerStep:
@@ -263,6 +340,57 @@ class TestRetrospectiveGeneratorStep:
         retro = project / "RETROSPECTIVE.md"
         content = retro.read_text()
         assert "Commands Used" in content or "Total Prompts" in content
+
+    def test_handles_no_project_dirs(self, tmp_path):
+        """Test handling when completed dir exists but has no projects."""
+        completed = tmp_path / "docs" / "spec" / "completed"
+        completed.mkdir(parents=True)
+
+        step = RetrospectiveGeneratorStep(str(tmp_path))
+        result = step.run()
+
+        assert result.success is True
+        assert result.data.get("generated") is False
+
+    def test_handles_log_with_zulu_timestamps(self, tmp_path):
+        """Test handles timestamps with Z suffix (Zulu time)."""
+        project = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        project.mkdir(parents=True)
+        (project / "README.md").write_text("# Test")
+
+        # Create log with Z suffix timestamps
+        log = [
+            {"timestamp": "2025-01-01T00:00:00Z", "command": "/cs:p"},
+            {"timestamp": "2025-01-01T02:00:00Z", "command": "/cs:c"},
+        ]
+        (tmp_path / ".prompt-log.json").write_text(json.dumps(log))
+
+        step = RetrospectiveGeneratorStep(str(tmp_path))
+        result = step.run()
+
+        assert result.success is True
+        retro = project / "RETROSPECTIVE.md"
+        content = retro.read_text()
+        # Should have calculated duration
+        assert "Duration" in content
+
+    def test_handles_log_with_timezone_offset(self, tmp_path):
+        """Test handles timestamps with explicit timezone offset."""
+        project = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        project.mkdir(parents=True)
+        (project / "README.md").write_text("# Test")
+
+        # Create log with timezone offset timestamps
+        log = [
+            {"timestamp": "2025-01-01T00:00:00+00:00", "command": "/cs:p"},
+            {"timestamp": "2025-01-01T02:00:00+00:00", "command": "/cs:c"},
+        ]
+        (tmp_path / ".prompt-log.json").write_text(json.dumps(log))
+
+        step = RetrospectiveGeneratorStep(str(tmp_path))
+        result = step.run()
+
+        assert result.success is True
 
 
 class TestModuleLevelRunFunctions:
