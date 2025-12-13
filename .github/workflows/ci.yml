@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run shellcheck
-        run: shellcheck skills/worktree-manager/scripts/*.sh
+        run: shellcheck -x -e SC1091 skills/worktree-manager/scripts/*.sh skills/worktree-manager/scripts/lib/*.sh
         working-directory: plugins/cs
 
   test:

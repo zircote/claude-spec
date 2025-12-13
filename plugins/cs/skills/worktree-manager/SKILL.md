@@ -110,7 +110,7 @@ After collecting answers, write the config:
 
 ```bash
 mkdir -p ~/.claude
-cat > ~/.claude/worktree-manager.config.json << 'EOF'
+cat > ~/.claude/worktree-manager.config.json << EOF
 {
   "terminal": "${TERMINAL_ANSWER}",
   "shell": "${SHELL_ANSWER}",

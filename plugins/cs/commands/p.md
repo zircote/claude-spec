@@ -38,7 +38,7 @@ IF NO_GIT:
 ```bash
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
 WORKTREE_BASE="${HOME}/Projects/worktrees"
-SLUG=$(echo "$ARGUMENTS" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g')
+SLUG=$(echo "$ARGUMENTS" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//; s/-$//')
 SLUG="${SLUG:0:30}"
 BRANCH_NAME="plan/${SLUG}"
 WORKTREE_PATH="${WORKTREE_BASE}/${REPO_NAME}/${SLUG}"
@@ -1337,8 +1337,8 @@ mkdir -p "docs/spec/active/${DATE}-${SLUG}"
 # Initialize README.md with metadata
 # Initialize CHANGELOG.md with creation entry
 
-# Enable prompt logging for retrospective analysis
-touch "docs/spec/active/${DATE}-${SLUG}/.prompt-log-enabled"
+# Enable prompt logging for retrospective analysis (marker at project root)
+touch ".prompt-log-enabled"
 ```
 
 ### Step 2: Begin Socratic Questioning
