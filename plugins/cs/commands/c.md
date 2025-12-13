@@ -20,8 +20,10 @@ $ARGUMENTS
 ## Step 1: Locate and Validate Project
 
 ```bash
-# If project-id provided (e.g., SPEC-2025-12-11-001)
-grep -r "project_id: ${PROJECT_ID}" docs/spec/*/README.md
+# Search both docs/spec/ (new) and docs/architecture/ (legacy) for backward compatibility
+
+# If project-id provided (e.g., SPEC-2025-12-11-001 or ARCH-2025-12-11-001)
+grep -r "project_id: ${PROJECT_ID}" docs/spec/*/README.md docs/architecture/*/README.md 2>/dev/null
 
 # If path provided
 ls -la ${PROJECT_PATH}

@@ -1,6 +1,6 @@
 ---
 document_type: requirements
-project_id: ARCH-2025-12-12-002
+project_id: SPEC-2025-12-12-002
 version: 1.0.0
 last_updated: 2025-12-12
 status: draft
@@ -110,7 +110,7 @@ Create a self-contained Claude Code plugin that bundles all architecture plannin
 | FR-018 | `/cs:wt:cleanup` command | Clean up worktrees | Removes worktree, releases ports, updates registry |
 | FR-019 | Skill trigger phrases | Natural language activation | "spin up worktrees", "worktree status" etc. work |
 
-#### Parallel Agent Directives (from ARCH-2025-12-12-001)
+#### Parallel Agent Directives (from SPEC-2025-12-12-001)
 
 | ID | Requirement | Rationale | Acceptance Criteria |
 |----|-------------|-----------|---------------------|
@@ -321,7 +321,7 @@ claude-spec/
 | `/arch:c` | `/cs:c` | Close-out |
 | `/arch:log` | `/cs:log` | Prompt capture toggle |
 
-### Incorporated from ARCH-2025-12-12-001
+### Incorporated from SPEC-2025-12-12-001
 
 - FR-000: Worktree prompt logging initialization → FR-103
 - FR-000a: Document sync enforcement → FR-024

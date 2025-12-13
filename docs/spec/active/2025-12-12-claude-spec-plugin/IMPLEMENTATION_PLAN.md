@@ -1,6 +1,6 @@
 ---
 document_type: implementation_plan
-project_id: ARCH-2025-12-12-002
+project_id: SPEC-2025-12-12-002
 version: 1.0.0
 last_updated: 2025-12-12
 status: draft
