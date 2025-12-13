@@ -183,8 +183,10 @@ class ContextLoaderStep(BaseStep):
                     parts.append(
                         f"\n**Active spec projects**: {', '.join(projects[:5])}"
                     )
-            except Exception:
-                pass
+            except Exception as e:
+                sys.stderr.write(
+                    f"context_loader: Error listing active projects: {e}\n"
+                )
 
         return "\n".join(parts) if len(parts) > 1 else ""
 

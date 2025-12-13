@@ -159,8 +159,10 @@ get_lifecycle_steps() {
     fi
 
     # Build the jq path for lifecycle.commands.<command>.<phase>
-    # Note: command contains ":" which needs proper quoting in jq
-    local jq_path=".lifecycle.commands[\"${command}\"].${phase}"
+    # Properly escape the command for use as a jq object key
+    local escaped_command
+    escaped_command=$(printf '%s' "$command" | jq -R .)
+    local jq_path=".lifecycle.commands[${escaped_command}].${phase}"
     local value=""
 
     # Try user config first
