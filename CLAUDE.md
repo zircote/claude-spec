@@ -59,7 +59,7 @@ plugins/cs/
 ├── analyzers/
 │   ├── log_analyzer.py    # Log file analysis
 │   └── analyze_cli.py     # CLI for retrospective analysis
-├── skills/worktree-manager/  # Worktree automation
+├── skills/worktree-manager/  # Worktree automation (config at ~/.claude/worktree-manager.config.json)
 └── tests/             # Pytest test suite (97% coverage)
 ```
 
@@ -155,6 +155,15 @@ def test_something(temp_project_dir, monkeypatch):
 ```
 
 Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planning.
+
+### Worktree Commands
+
+| Command | Description |
+|---------|-------------|
+| `/cs:wt:setup` | Interactive configuration wizard (creates ~/.claude/worktree-manager.config.json) |
+| `/cs:wt:create` | Create git worktree with Claude agent |
+| `/cs:wt:status` | Show worktree status |
+| `/cs:wt:cleanup` | Clean up stale worktrees |
 
 ## Completed Spec Projects
 
