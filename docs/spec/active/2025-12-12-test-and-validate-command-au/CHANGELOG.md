@@ -1,0 +1,39 @@
+# Changelog
+
+All notable changes to this project specification will be documented in this file.
+
+## [Unreleased]
+
+### Added
+- Initial project creation
+- README.md with project metadata
+- Requirements elicitation begun
+- Prompt logging enabled for retrospective analysis
+- REQUIREMENTS.md with full capability inventory
+- VALIDATION_CHECKLIST.md with test results
+
+### Fixed (in CS Plugin)
+- Created missing `analyzers/` directory with `analyze_cli.py` and `log_analyzer.py`
+- Fixed malformed `hooks.json` structure
+- Fixed analyzer path in `/cs:c` command
+- Standardized log filename to `.prompt-log.json`
+- Fixed FilterInfo attribute mismatch in analyzer
+
+### Tested
+- Created 62 unit tests covering:
+  - LogEntry/FilterInfo serialization
+  - Secret detection patterns (18 types)
+  - Content truncation
+  - Log analysis and markdown generation
+  - Prompt capture hook functions
+- All tests passing
+
+## Summary
+
+This validation project identified and fixed 5 bugs in the CS plugin that were preventing prompt logging and interaction analysis from working correctly. The core issues were:
+
+1. Missing analyzer scripts
+2. Malformed hook registration
+3. Inconsistent file naming
+
+All fixes have been applied and verified with automated tests.
