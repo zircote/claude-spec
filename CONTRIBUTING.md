@@ -39,7 +39,7 @@ Thank you for your interest in contributing to claude-spec! This document provid
    ```
 3. Add upstream remote:
    ```bash
-   git remote add upstream https://github.com/ORIGINAL-ORG/claude-spec.git
+   git remote add upstream https://github.com/zircote/claude-spec.git
    ```
 
 ## Development Setup
@@ -47,21 +47,8 @@ Thank you for your interest in contributing to claude-spec! This document provid
 ### Install the Plugin Locally
 
 ```bash
-# Create a local marketplace pointing to your dev copy
-cat > ~/.claude/marketplaces/claude-spec-dev.json << EOF
-{
-  "name": "claude-spec-dev",
-  "plugins": [
-    {
-      "name": "cs-dev",
-      "path": "$(pwd)/plugins/cs"
-    }
-  ]
-}
-EOF
-
-# Install from local marketplace
-claude plugins install --marketplace ~/.claude/marketplaces/claude-spec-dev.json cs-dev
+# Install directly from your local clone
+claude plugins install --marketplace ./.claude-plugin/marketplace.json cs
 ```
 
 ### Test Your Changes
@@ -69,8 +56,8 @@ claude plugins install --marketplace ~/.claude/marketplaces/claude-spec-dev.json
 After making changes, reinstall to test:
 
 ```bash
-claude plugins uninstall cs-dev
-claude plugins install --marketplace ~/.claude/marketplaces/claude-spec-dev.json cs-dev
+claude plugins uninstall cs
+claude plugins install --marketplace ./.claude-plugin/marketplace.json cs
 ```
 
 ## Project Structure
