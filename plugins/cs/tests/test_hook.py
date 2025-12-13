@@ -65,16 +65,13 @@ class TestFindEnabledProjectDir(unittest.TestCase):
         self.assertIsNone(result)
 
     def test_finds_enabled_project(self):
-        """Should find project with .prompt-log-enabled marker."""
-        project_dir = os.path.join(self.active_dir, "2025-01-01-test-project")
-        os.makedirs(project_dir)
-
-        # Create the marker file
-        marker_path = os.path.join(project_dir, ".prompt-log-enabled")
+        """Should find project when .prompt-log-enabled marker exists at project root."""
+        # Create the marker file at project root (temp_dir)
+        marker_path = os.path.join(self.temp_dir, ".prompt-log-enabled")
         open(marker_path, "w").close()
 
         result = find_enabled_project_dir(self.temp_dir)
-        self.assertEqual(result, project_dir)
+        self.assertEqual(result, self.temp_dir)
 
     def test_empty_cwd(self):
         """Should return None for empty cwd."""
@@ -102,10 +99,9 @@ class TestIsLoggingEnabled(unittest.TestCase):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_enabled_when_marker_exists(self):
-        """Should return True when marker file exists."""
-        project_dir = os.path.join(self.active_dir, "test-project")
-        os.makedirs(project_dir)
-        open(os.path.join(project_dir, ".prompt-log-enabled"), "w").close()
+        """Should return True when marker file exists at project root."""
+        # Create the marker at project root (temp_dir)
+        open(os.path.join(self.temp_dir, ".prompt-log-enabled"), "w").close()
 
         self.assertTrue(is_logging_enabled(self.temp_dir))
 
@@ -246,8 +242,8 @@ class TestMain(unittest.TestCase):
         self.active_dir = os.path.join(self.temp_dir, "docs", "spec", "active")
         self.project_dir = os.path.join(self.active_dir, "test-project")
         os.makedirs(self.project_dir)
-        # Enable logging
-        open(os.path.join(self.project_dir, ".prompt-log-enabled"), "w").close()
+        # Enable logging at project root (temp_dir), not in spec project dir
+        open(os.path.join(self.temp_dir, ".prompt-log-enabled"), "w").close()
 
     def tearDown(self):
         """Clean up test fixtures."""
@@ -283,7 +279,7 @@ class TestMain(unittest.TestCase):
     def test_logging_disabled(self):
         """Should approve without logging when disabled."""
         # Remove the marker to disable logging
-        os.remove(os.path.join(self.project_dir, ".prompt-log-enabled"))
+        os.remove(os.path.join(self.temp_dir, ".prompt-log-enabled"))
 
         input_data = {
             "prompt": "test prompt",
@@ -320,8 +316,8 @@ class TestMain(unittest.TestCase):
         output = json.loads(mock_stdout.getvalue().strip())
         self.assertEqual(output["decision"], "approve")
 
-        # Check log file was created
-        log_path = os.path.join(self.project_dir, ".prompt-log.json")
+        # Check log file was created at project root (temp_dir)
+        log_path = os.path.join(self.temp_dir, ".prompt-log.json")
         self.assertTrue(os.path.exists(log_path))
 
         with open(log_path) as f:
@@ -336,7 +332,7 @@ class TestMain(unittest.TestCase):
             with patch("sys.stdout", new_callable=StringIO):
                 main()
 
-        log_path = os.path.join(self.project_dir, ".prompt-log.json")
+        log_path = os.path.join(self.temp_dir, ".prompt-log.json")
         with open(log_path) as f:
             log_entry = json.loads(f.readline())
         self.assertTrue(log_entry["session_id"].startswith("hook-"))
@@ -352,7 +348,7 @@ class TestMain(unittest.TestCase):
             with patch("sys.stdout", new_callable=StringIO):
                 main()
 
-        log_path = os.path.join(self.project_dir, ".prompt-log.json")
+        log_path = os.path.join(self.temp_dir, ".prompt-log.json")
         with open(log_path) as f:
             log_entry = json.loads(f.readline())
         self.assertEqual(log_entry["command"], "/spec:p")
@@ -368,7 +364,7 @@ class TestMain(unittest.TestCase):
             with patch("sys.stdout", new_callable=StringIO):
                 main()
 
-        log_path = os.path.join(self.project_dir, ".prompt-log.json")
+        log_path = os.path.join(self.temp_dir, ".prompt-log.json")
         with open(log_path) as f:
             log_entry = json.loads(f.readline())
         self.assertEqual(log_entry["content"], "fallback test")
