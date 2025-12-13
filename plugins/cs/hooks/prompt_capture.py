@@ -7,8 +7,11 @@ claude-spec project, filters sensitive content, and logs prompts to
 .prompt-log.json in the active project directory.
 
 Logging is controlled by:
-- Enable: Create .prompt-log-enabled marker file in project directory
+- Enable: Create .prompt-log-enabled marker file at project root
 - Disable: Remove .prompt-log-enabled marker file
+
+Marker and log file are at project root (not in docs/spec/active/) to ensure
+the first prompt can be captured before spec directories are created.
 
 When enabled, ALL user input is logged until disabled.
 
@@ -94,34 +97,25 @@ def write_output(response: dict[str, Any]) -> None:
 
 def find_enabled_project_dir(cwd: str) -> str | None:
     """
-    Find an active spec project directory with logging enabled.
+    Find the project root if logging is enabled.
 
-    Searches for .prompt-log-enabled marker in docs/spec/active/*/.
+    Checks for .prompt-log-enabled marker at project root (cwd).
+    The marker and log file are placed at project root to capture
+    the first prompt before spec directories are created.
 
     Args:
         cwd: Current working directory (project root)
 
     Returns:
-        Path to the project directory if found and enabled, None otherwise
+        Path to project root (cwd) if logging enabled, None otherwise
     """
     if not cwd:
         return None
 
-    active_dir = os.path.join(cwd, "docs", "spec", "active")
+    marker_path = os.path.join(cwd, ".prompt-log-enabled")
 
-    if not os.path.isdir(active_dir):
-        return None
-
-    try:
-        for project_folder in os.listdir(active_dir):
-            project_path = os.path.join(active_dir, project_folder)
-            if os.path.isdir(project_path):
-                marker_path = os.path.join(project_path, ".prompt-log-enabled")
-                if os.path.isfile(marker_path):
-                    return project_path
-    except OSError:
-        # Permission error or other filesystem issue
-        return None
+    if os.path.isfile(marker_path):
+        return cwd
 
     return None
 
@@ -130,11 +124,10 @@ def is_logging_enabled(cwd: str) -> bool:
     """
     Check if prompt logging is enabled for the current project.
 
-    Logging is enabled if a .prompt-log-enabled file exists in an active
-    spec project directory under docs/spec/active/.
+    Logging is enabled if a .prompt-log-enabled file exists at project root.
 
     Args:
-        cwd: Current working directory
+        cwd: Current working directory (project root)
 
     Returns:
         True if logging is enabled, False otherwise

@@ -30,9 +30,118 @@ Manage parallel development across ALL projects using git worktrees with Claude 
 
 | File | Purpose |
 |------|---------|
+| `~/.claude/worktree-manager.config.json` | **User config** - your personal terminal, shell, port range settings |
 | `~/.claude/worktree-registry.json` | **Global registry** - tracks all worktrees across all projects |
-| `./config.json` | **Skill config** - terminal, shell, port range settings |
+| `./config.template.json` | **Default config** - template used when user config doesn't exist |
 | `./scripts/` | **Helper scripts** - port allocation, registration, launch, cleanup |
+
+## First-Time Setup
+
+When this skill is first used and `~/.claude/worktree-manager.config.json` doesn't exist, run the interactive setup:
+
+### Step 1: Detect Shell
+
+```bash
+DETECTED_SHELL=$(basename "$SHELL")
+echo "Detected shell: $DETECTED_SHELL"
+```
+
+### Step 2: Ask Configuration Questions
+
+Use the `AskUserQuestion` tool with these questions:
+
+**Question 1 - Terminal:**
+```
+header: "Terminal"
+question: "Which terminal do you use for development?"
+options:
+  - label: "iTerm2 (Recommended for macOS)"
+    description: "macOS terminal with excellent tab support"
+  - label: "Ghostty"
+    description: "Fast, GPU-accelerated terminal"
+  - label: "tmux"
+    description: "Terminal multiplexer (creates detached sessions)"
+  - label: "Other"
+    description: "WezTerm, Kitty, or Alacritty"
+```
+
+**Question 2 - Shell:**
+```
+header: "Shell"
+question: "What shell do you use? (detected: ${DETECTED_SHELL})"
+options:
+  - label: "${DETECTED_SHELL} (Recommended)"
+    description: "Your current default shell"
+  - label: "bash"
+    description: "Bourne Again Shell"
+  - label: "zsh"
+    description: "Z Shell (macOS default)"
+  - label: "fish"
+    description: "Friendly Interactive Shell"
+```
+
+**Question 3 - Claude Command:**
+```
+header: "Claude"
+question: "How do you launch Claude Code?"
+options:
+  - label: "claude --dangerously-skip-permissions (Recommended)"
+    description: "Auto-approves tool use for worktree agents"
+  - label: "cc"
+    description: "Common alias for Claude Code"
+  - label: "claude"
+    description: "Standard command without auto-approve"
+```
+
+**Question 4 - Worktree Base:**
+```
+header: "Location"
+question: "Where should worktrees be created?"
+options:
+  - label: "~/Projects/worktrees (Recommended)"
+    description: "Keeps worktrees separate from source repos"
+  - label: "~/worktrees"
+    description: "Shorter path in home directory"
+```
+
+### Step 3: Write Config File
+
+After collecting answers, write the config:
+
+```bash
+mkdir -p ~/.claude
+cat > ~/.claude/worktree-manager.config.json << 'EOF'
+{
+  "terminal": "${TERMINAL_ANSWER}",
+  "shell": "${SHELL_ANSWER}",
+  "claudeCommand": "${CLAUDE_CMD_ANSWER}",
+  "worktreeBase": "${WORKTREE_BASE_ANSWER}",
+  "portPool": { "start": 8100, "end": 8199 },
+  "portsPerWorktree": 2,
+  "registryPath": "~/.claude/worktree-registry.json",
+  "defaultCopyDirs": [".agents", ".env.example", ".env"],
+  "healthCheckTimeout": 30,
+  "healthCheckRetries": 6
+}
+EOF
+
+echo "Configuration saved to ~/.claude/worktree-manager.config.json"
+```
+
+### Terminal Answer Mapping
+
+| User Selection | Config Value |
+|---------------|--------------|
+| iTerm2 (Recommended for macOS) | `iterm2-tab` |
+| Ghostty | `ghostty` |
+| tmux | `tmux` |
+| Other (WezTerm) | `wezterm` |
+| Other (Kitty) | `kitty` |
+| Other (Alacritty) | `alacritty` |
+
+### Reconfiguration
+
+To reconfigure at any time, run: `/cs:wt:setup`
 
 ## Quick Start
 
@@ -134,16 +243,20 @@ Release ports back to the global pool.
 
 ## Configuration
 
-Edit `config.json` to customize:
+Your personal settings are stored at `~/.claude/worktree-manager.config.json`.
+
+To set up or reconfigure: run `/cs:wt:setup` or follow the First-Time Setup section above.
+
+**Example config:**
 
 ```json
 {
-  "terminal": "iterm2",
-  "shell": "bash",
+  "terminal": "iterm2-tab",
+  "shell": "zsh",
   "claudeCommand": "cc",
+  "worktreeBase": "~/Projects/worktrees",
   "portPool": { "start": 8100, "end": 8199 },
   "portsPerWorktree": 2,
-  "worktreeBase": "~/Projects/worktrees",
   "registryPath": "~/.claude/worktree-registry.json",
   "defaultCopyDirs": [".agents", ".env.example", ".env"],
   "healthCheckTimeout": 30,
@@ -151,7 +264,12 @@ Edit `config.json` to customize:
 }
 ```
 
-**Terminal options:** `ghostty`, `iterm2`, `tmux`, `wezterm`, `kitty`, `alacritty`
+**Terminal options:** `ghostty`, `iterm2`, `iterm2-tab`, `tmux`, `wezterm`, `kitty`, `alacritty`
+
+**Config lookup precedence:**
+1. User config: `~/.claude/worktree-manager.config.json`
+2. Template: `./config.template.json`
+3. Hardcoded defaults
 
 ## Global Registry Schema
 
@@ -190,7 +308,7 @@ Location: `~/.claude/worktree-registry.json`
 
 When user says "spin up worktrees for feature/a, feature/b, feature/c":
 
-1. Read config.json to get terminal and claude command settings
+1. Read user config (or template fallback) to get terminal and claude command settings
 2. Allocate ports for all worktrees upfront
 3. For each branch (can parallelize):
    - Create git worktree

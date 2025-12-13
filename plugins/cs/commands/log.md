@@ -16,25 +16,26 @@ $ARGUMENTS
 <execution>
 ## Parse Command
 
+Marker and log files are at **project root** (not in docs/spec/active/) to ensure
+the first prompt can be captured before spec directories are created.
+
 Based on the argument provided:
 
 ### `on` - Enable logging
-1. Find the active spec project in `docs/spec/active/`
-2. Create `.prompt-log-enabled` marker file in the project directory
-3. Confirm logging is enabled
+1. Create `.prompt-log-enabled` marker file at project root
+2. Confirm logging is enabled
 
 ### `off` - Disable logging
-1. Find the active spec project
-2. Remove `.prompt-log-enabled` marker file
-3. Confirm logging is disabled
+1. Remove `.prompt-log-enabled` marker file from project root
+2. Confirm logging is disabled
 
 ### `status` - Show current status
-1. Check if `.prompt-log-enabled` exists in any active project
-2. Report logging status and project name
+1. Check if `.prompt-log-enabled` exists at project root
+2. Report logging status
 3. Show log file size if exists
 
 ### `show` - Display recent log entries
-1. Find `.prompt-log.json` in the active project
+1. Find `.prompt-log.json` at project root
 2. Display last 10 entries in readable format
 3. Show summary statistics
 
@@ -43,24 +44,18 @@ Based on the argument provided:
 Execute the appropriate action based on the argument:
 
 ```bash
-# Find active project
-ACTIVE_DIR="docs/spec/active"
-PROJECT_DIR=$(find "$ACTIVE_DIR" -maxdepth 1 -type d ! -name "active" | head -1)
-
-if [ -z "$PROJECT_DIR" ]; then
-    echo "No active spec project found"
-    exit 0
-fi
-
-PROJECT_NAME=$(basename "$PROJECT_DIR")
-MARKER_FILE="$PROJECT_DIR/.prompt-log-enabled"
-LOG_FILE="$PROJECT_DIR/.prompt-log.json"
+# Marker and log are at project root
+MARKER_FILE=".prompt-log-enabled"
+LOG_FILE=".prompt-log.json"
+PROJECT_NAME=$(basename "$(pwd)")
 ```
 
 For `on`:
 ```bash
 touch "$MARKER_FILE"
 echo "[OK] Prompt logging enabled for: $PROJECT_NAME"
+echo "     Marker: $MARKER_FILE"
+echo "     Log will be written to: $LOG_FILE"
 ```
 
 For `off`:
@@ -85,7 +80,7 @@ fi
 ```
 
 For `show`:
-- Read `.prompt-log.json`
+- Read `.prompt-log.json` from project root
 - Parse NDJSON entries
 - Display last 10 entries formatted nicely
 

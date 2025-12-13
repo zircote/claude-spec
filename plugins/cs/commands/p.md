@@ -38,13 +38,29 @@ IF NO_GIT:
 ```bash
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
 WORKTREE_BASE="${HOME}/Projects/worktrees"
-SLUG=$(echo "$ARGUMENTS" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g')
+SLUG=$(echo "$ARGUMENTS" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g')
 SLUG="${SLUG:0:30}"
 BRANCH_NAME="plan/${SLUG}"
 WORKTREE_PATH="${WORKTREE_BASE}/${REPO_NAME}/${SLUG}"
 
 mkdir -p "${WORKTREE_BASE}/${REPO_NAME}"
 git worktree add -b "${BRANCH_NAME}" "${WORKTREE_PATH}" HEAD
+```
+
+### Step 3b: Enable Prompt Logging in Worktree (CRITICAL)
+
+**This step MUST run BEFORE launching the agent to capture the first prompt.**
+
+The marker is placed at **worktree root** (not in docs/spec/active/) because:
+- The spec directory is created DURING `/cs:p` elicitation
+- The directory name depends on the slug derived from the first prompt
+- Placing at root ensures the first prompt can be captured
+
+```bash
+# Create prompt log marker at WORKTREE ROOT
+touch "${WORKTREE_PATH}/.prompt-log-enabled"
+
+echo "Prompt logging enabled at: ${WORKTREE_PATH}/.prompt-log-enabled"
 ```
 
 ### Step 4: Launch Agent WITH Prompt
@@ -410,9 +426,10 @@ before proceeding. Only continue after user acknowledges.
 
 5. **Enable Prompt Logging**:
    ```bash
-   touch docs/spec/active/[YYYY-MM-DD]-[slug]/.prompt-log-enabled
+   touch .prompt-log-enabled
    ```
    This enables automatic capture of all user prompts for retrospective analysis.
+   The marker is at project root to capture the first prompt before spec directories exist.
 
 6. **Check for Collisions**:
    - Scan `docs/spec/` and `docs/architecture/` (legacy) for similar project names

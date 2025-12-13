@@ -18,19 +18,14 @@ if ! [[ "$COUNT" =~ ^[0-9]+$ ]] || [ "$COUNT" -lt 1 ]; then
     exit 1
 fi
 
-# Find config and registry
+# Find script directory and load config
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CONFIG_FILE="$SCRIPT_DIR/../config.json"
+source "$SCRIPT_DIR/lib/config.sh"
 REGISTRY="${HOME}/.claude/worktree-registry.json"
 
-# Load port pool from config
-if [ -f "$CONFIG_FILE" ] && command -v jq &> /dev/null; then
-    PORT_START=$(jq -r '.portPool.start // 8100' "$CONFIG_FILE")
-    PORT_END=$(jq -r '.portPool.end // 8199' "$CONFIG_FILE")
-else
-    PORT_START=8100
-    PORT_END=8199
-fi
+# Load port pool from config (user config -> template -> defaults)
+PORT_START=$(get_config_nested "portPool.start" "8100")
+PORT_END=$(get_config_nested "portPool.end" "8199")
 
 # Check jq is available
 if ! command -v jq &> /dev/null; then
