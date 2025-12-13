@@ -2,11 +2,14 @@
 Tests for the prompt capture hook.
 """
 
+import json
 import os
 import shutil
 import sys
 import tempfile
 import unittest
+from io import StringIO
+from unittest.mock import patch
 
 # Add parent directory for imports
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -16,13 +19,17 @@ if PLUGIN_ROOT not in sys.path:
 
 # Import after path setup
 from hooks.prompt_capture import (
-    find_enabled_project_dir,
-    is_logging_enabled,
-    truncate_content,
+    MAX_LOG_ENTRY_SIZE,
+    MAX_PROMPT_LENGTH,
     detect_command,
+    find_enabled_project_dir,
     generate_session_id,
+    is_logging_enabled,
+    main,
     pass_through,
-    MAX_LOG_ENTRY_SIZE
+    read_input,
+    truncate_content,
+    write_output,
 )
 
 
@@ -73,6 +80,12 @@ class TestFindEnabledProjectDir(unittest.TestCase):
         """Should return None for empty cwd."""
         result = find_enabled_project_dir("")
         self.assertIsNone(result)
+
+    def test_oserror_in_listdir(self):
+        """Should return None on OSError during directory listing."""
+        with patch("os.listdir", side_effect=OSError("Permission denied")):
+            result = find_enabled_project_dir(self.temp_dir)
+            self.assertIsNone(result)
 
 
 class TestIsLoggingEnabled(unittest.TestCase):
@@ -176,6 +189,205 @@ class TestPassThrough(unittest.TestCase):
         """Should always return approve decision."""
         result = pass_through()
         self.assertEqual(result["decision"], "approve")
+
+
+class TestReadInput(unittest.TestCase):
+    """Tests for read_input function."""
+
+    def test_valid_json(self):
+        """Should parse valid JSON from stdin."""
+        input_data = {"prompt": "test", "cwd": "/test"}
+        with patch("sys.stdin", StringIO(json.dumps(input_data))):
+            result = read_input()
+        self.assertEqual(result, input_data)
+
+    def test_invalid_json(self):
+        """Should return None for invalid JSON."""
+        with patch("sys.stdin", StringIO("not valid json")):
+            with patch("sys.stderr", new_callable=StringIO):
+                result = read_input()
+        self.assertIsNone(result)
+
+    def test_read_error(self):
+        """Should return None on read error."""
+        with patch("sys.stdin.read", side_effect=Exception("Read error")):
+            with patch("sys.stderr", new_callable=StringIO):
+                result = read_input()
+        self.assertIsNone(result)
+
+
+class TestWriteOutput(unittest.TestCase):
+    """Tests for write_output function."""
+
+    def test_writes_json(self):
+        """Should write JSON to stdout."""
+        response = {"decision": "approve"}
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            write_output(response)
+        self.assertEqual(json.loads(mock_stdout.getvalue().strip()), response)
+
+    def test_handles_write_error(self):
+        """Should handle write errors gracefully."""
+        # Create an object that can't be serialized
+        with patch("json.dumps", side_effect=Exception("Serialization error")):
+            with patch("sys.stderr", new_callable=StringIO):
+                with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                    write_output({"test": "data"})
+        # Should fall back to hardcoded approve
+        self.assertIn("approve", mock_stdout.getvalue())
+
+
+class TestMain(unittest.TestCase):
+    """Tests for main function."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.active_dir = os.path.join(self.temp_dir, "docs", "spec", "active")
+        self.project_dir = os.path.join(self.active_dir, "test-project")
+        os.makedirs(self.project_dir)
+        # Enable logging
+        open(os.path.join(self.project_dir, ".prompt-log-enabled"), "w").close()
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_malformed_input(self):
+        """Should approve and return for malformed input."""
+        with patch("sys.stdin", StringIO("not json")):
+            with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                with patch("sys.stderr", new_callable=StringIO):
+                    main()
+        output = json.loads(mock_stdout.getvalue().strip())
+        self.assertEqual(output["decision"], "approve")
+
+    def test_empty_prompt(self):
+        """Should approve and return for empty prompt."""
+        input_data = {"prompt": "", "cwd": self.temp_dir, "session_id": "test"}
+        with patch("sys.stdin", StringIO(json.dumps(input_data))):
+            with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                main()
+        output = json.loads(mock_stdout.getvalue().strip())
+        self.assertEqual(output["decision"], "approve")
+
+    def test_whitespace_only_prompt(self):
+        """Should approve and return for whitespace-only prompt."""
+        input_data = {"prompt": "   \n\t  ", "cwd": self.temp_dir, "session_id": "test"}
+        with patch("sys.stdin", StringIO(json.dumps(input_data))):
+            with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                main()
+        output = json.loads(mock_stdout.getvalue().strip())
+        self.assertEqual(output["decision"], "approve")
+
+    def test_logging_disabled(self):
+        """Should approve without logging when disabled."""
+        # Remove the marker to disable logging
+        os.remove(os.path.join(self.project_dir, ".prompt-log-enabled"))
+
+        input_data = {
+            "prompt": "test prompt",
+            "cwd": self.temp_dir,
+            "session_id": "test",
+        }
+        with patch("sys.stdin", StringIO(json.dumps(input_data))):
+            with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                main()
+        output = json.loads(mock_stdout.getvalue().strip())
+        self.assertEqual(output["decision"], "approve")
+
+    def test_very_long_prompt_truncated(self):
+        """Should truncate extremely long prompts."""
+        long_prompt = "x" * (MAX_PROMPT_LENGTH + 1000)
+        input_data = {"prompt": long_prompt, "cwd": self.temp_dir, "session_id": "test"}
+        with patch("sys.stdin", StringIO(json.dumps(input_data))):
+            with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                main()
+        output = json.loads(mock_stdout.getvalue().strip())
+        self.assertEqual(output["decision"], "approve")
+
+    def test_successful_logging(self):
+        """Should log prompt when enabled."""
+        input_data = {
+            "prompt": "test prompt for logging",
+            "cwd": self.temp_dir,
+            "session_id": "test-session-123",
+        }
+        with patch("sys.stdin", StringIO(json.dumps(input_data))):
+            with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                main()
+
+        output = json.loads(mock_stdout.getvalue().strip())
+        self.assertEqual(output["decision"], "approve")
+
+        # Check log file was created
+        log_path = os.path.join(self.project_dir, ".prompt-log.json")
+        self.assertTrue(os.path.exists(log_path))
+
+        with open(log_path) as f:
+            log_entry = json.loads(f.readline())
+        self.assertEqual(log_entry["content"], "test prompt for logging")
+        self.assertEqual(log_entry["session_id"], "test-session-123")
+
+    def test_generates_session_id_if_missing(self):
+        """Should generate session ID if not provided."""
+        input_data = {"prompt": "test", "cwd": self.temp_dir}
+        with patch("sys.stdin", StringIO(json.dumps(input_data))):
+            with patch("sys.stdout", new_callable=StringIO):
+                main()
+
+        log_path = os.path.join(self.project_dir, ".prompt-log.json")
+        with open(log_path) as f:
+            log_entry = json.loads(f.readline())
+        self.assertTrue(log_entry["session_id"].startswith("hook-"))
+
+    def test_detects_spec_command(self):
+        """Should detect and log /spec: commands."""
+        input_data = {
+            "prompt": "/spec:p new project idea",
+            "cwd": self.temp_dir,
+            "session_id": "test",
+        }
+        with patch("sys.stdin", StringIO(json.dumps(input_data))):
+            with patch("sys.stdout", new_callable=StringIO):
+                main()
+
+        log_path = os.path.join(self.project_dir, ".prompt-log.json")
+        with open(log_path) as f:
+            log_entry = json.loads(f.readline())
+        self.assertEqual(log_entry["command"], "/spec:p")
+
+    def test_uses_user_prompt_fallback(self):
+        """Should fall back to user_prompt field if prompt not present."""
+        input_data = {
+            "user_prompt": "fallback test",
+            "cwd": self.temp_dir,
+            "session_id": "test",
+        }
+        with patch("sys.stdin", StringIO(json.dumps(input_data))):
+            with patch("sys.stdout", new_callable=StringIO):
+                main()
+
+        log_path = os.path.join(self.project_dir, ".prompt-log.json")
+        with open(log_path) as f:
+            log_entry = json.loads(f.readline())
+        self.assertEqual(log_entry["content"], "fallback test")
+
+    def test_filters_not_available(self):
+        """Should approve without logging when filters are not available."""
+        input_data = {
+            "prompt": "test prompt",
+            "cwd": self.temp_dir,
+            "session_id": "test",
+        }
+        # Patch FILTERS_AVAILABLE to False
+        with patch("hooks.prompt_capture.FILTERS_AVAILABLE", False):
+            with patch("sys.stdin", StringIO(json.dumps(input_data))):
+                with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                    main()
+
+        output = json.loads(mock_stdout.getvalue().strip())
+        self.assertEqual(output["decision"], "approve")
 
 
 if __name__ == "__main__":

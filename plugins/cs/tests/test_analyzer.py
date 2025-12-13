@@ -13,8 +13,12 @@ PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
 if PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
-from analyzers.log_analyzer import analyze_log, generate_interaction_analysis, LogAnalysis
-from filters.log_entry import LogEntry, FilterInfo
+from analyzers.log_analyzer import (
+    LogAnalysis,
+    analyze_log,
+    generate_interaction_analysis,
+)
+from filters.log_entry import FilterInfo, LogEntry
 from filters.log_writer import PROMPT_LOG_FILENAME
 
 
@@ -28,6 +32,7 @@ class TestAnalyzeLog(unittest.TestCase):
     def tearDown(self):
         """Clean up temporary files."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def _write_log_entries(self, entries):
@@ -45,9 +50,7 @@ class TestAnalyzeLog(unittest.TestCase):
     def test_single_entry(self):
         """analyze_log should handle single entry."""
         entry = LogEntry.create(
-            session_id="s1",
-            entry_type="user_input",
-            content="Hello"
+            session_id="s1", entry_type="user_input", content="Hello"
         )
         self._write_log_entries([entry])
 
@@ -62,7 +65,9 @@ class TestAnalyzeLog(unittest.TestCase):
         """analyze_log should aggregate multiple entries."""
         entries = [
             LogEntry.create(session_id="s1", entry_type="user_input", content="First"),
-            LogEntry.create(session_id="s1", entry_type="user_input", content="Second?"),
+            LogEntry.create(
+                session_id="s1", entry_type="user_input", content="Second?"
+            ),
             LogEntry.create(session_id="s2", entry_type="user_input", content="Third"),
         ]
         self._write_log_entries(entries)
@@ -77,9 +82,24 @@ class TestAnalyzeLog(unittest.TestCase):
     def test_command_tracking(self):
         """analyze_log should track commands used."""
         entries = [
-            LogEntry.create(session_id="s1", entry_type="user_input", content="test", command="/cs:p"),
-            LogEntry.create(session_id="s1", entry_type="user_input", content="test", command="/cs:p"),
-            LogEntry.create(session_id="s1", entry_type="user_input", content="test", command="/cs:i"),
+            LogEntry.create(
+                session_id="s1",
+                entry_type="user_input",
+                content="test",
+                command="/cs:p",
+            ),
+            LogEntry.create(
+                session_id="s1",
+                entry_type="user_input",
+                content="test",
+                command="/cs:p",
+            ),
+            LogEntry.create(
+                session_id="s1",
+                entry_type="user_input",
+                content="test",
+                command="/cs:i",
+            ),
         ]
         self._write_log_entries(entries)
 
@@ -91,10 +111,24 @@ class TestAnalyzeLog(unittest.TestCase):
     def test_command_tracking_with_none_commands(self):
         """analyze_log should handle entries with None or missing commands."""
         entries = [
-            LogEntry.create(session_id="s1", entry_type="user_input", content="test", command="/cs:p"),
-            LogEntry.create(session_id="s1", entry_type="user_input", content="no command"),  # command=None
-            LogEntry.create(session_id="s1", entry_type="user_input", content="test", command=""),  # empty command
-            LogEntry.create(session_id="s1", entry_type="user_input", content="test", command="/cs:i"),
+            LogEntry.create(
+                session_id="s1",
+                entry_type="user_input",
+                content="test",
+                command="/cs:p",
+            ),
+            LogEntry.create(
+                session_id="s1", entry_type="user_input", content="no command"
+            ),  # command=None
+            LogEntry.create(
+                session_id="s1", entry_type="user_input", content="test", command=""
+            ),  # empty command
+            LogEntry.create(
+                session_id="s1",
+                entry_type="user_input",
+                content="test",
+                command="/cs:i",
+            ),
         ]
         self._write_log_entries(entries)
 
@@ -115,7 +149,7 @@ class TestAnalyzeLog(unittest.TestCase):
                 session_id="s1",
                 entry_type="user_input",
                 content="filtered",
-                filter_info=filter_info
+                filter_info=filter_info,
             ),
         ]
         self._write_log_entries(entries)
@@ -144,7 +178,9 @@ class TestAnalyzeLog(unittest.TestCase):
         """analyze_log should identify clarification-heavy sessions."""
         # Create a session with > 10 questions
         entries = [
-            LogEntry.create(session_id="s1", entry_type="user_input", content=f"Question {i}?")
+            LogEntry.create(
+                session_id="s1", entry_type="user_input", content=f"Question {i}?"
+            )
             for i in range(15)
         ]
         self._write_log_entries(entries)
@@ -164,7 +200,7 @@ class TestGenerateInteractionAnalysis(unittest.TestCase):
             user_inputs=8,
             session_count=2,
             avg_entries_per_session=5.0,
-            total_questions=3
+            total_questions=3,
         )
 
         markdown = generate_interaction_analysis(analysis)
@@ -177,9 +213,7 @@ class TestGenerateInteractionAnalysis(unittest.TestCase):
 
     def test_includes_commands(self):
         """generate_interaction_analysis should include commands used."""
-        analysis = LogAnalysis(
-            commands_used={"/cs:p": 5, "/cs:i": 3}
-        )
+        analysis = LogAnalysis(commands_used={"/cs:p": 5, "/cs:i": 3})
 
         markdown = generate_interaction_analysis(analysis)
 
@@ -189,10 +223,7 @@ class TestGenerateInteractionAnalysis(unittest.TestCase):
 
     def test_includes_filtering_stats(self):
         """generate_interaction_analysis should include filtering statistics."""
-        analysis = LogAnalysis(
-            total_filtered_content=3,
-            secrets_filtered=5
-        )
+        analysis = LogAnalysis(total_filtered_content=3, secrets_filtered=5)
 
         markdown = generate_interaction_analysis(analysis)
 
@@ -201,10 +232,7 @@ class TestGenerateInteractionAnalysis(unittest.TestCase):
 
     def test_short_prompt_insight(self):
         """Should flag short average prompts."""
-        analysis = LogAnalysis(
-            user_inputs=10,
-            prompt_length_avg=30.0
-        )
+        analysis = LogAnalysis(user_inputs=10, prompt_length_avg=30.0)
 
         markdown = generate_interaction_analysis(analysis)
 
@@ -212,10 +240,7 @@ class TestGenerateInteractionAnalysis(unittest.TestCase):
 
     def test_detailed_prompt_insight(self):
         """Should note detailed prompts positively."""
-        analysis = LogAnalysis(
-            user_inputs=10,
-            prompt_length_avg=600.0
-        )
+        analysis = LogAnalysis(user_inputs=10, prompt_length_avg=600.0)
 
         markdown = generate_interaction_analysis(analysis)
 

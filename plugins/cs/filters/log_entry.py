@@ -6,47 +6,48 @@ Defines the structure for prompt log entries in NDJSON format.
 
 import json
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 
 @dataclass
 class FilterInfo:
     """Information about content filtering applied to an entry."""
+
     secret_count: int = 0
-    secret_types: List[str] = field(default_factory=list)
+    secret_types: list[str] = field(default_factory=list)
     was_truncated: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "FilterInfo":
+    def from_dict(cls, data: dict[str, Any]) -> "FilterInfo":
         """Create FilterInfo from dictionary."""
         return cls(
             secret_count=data.get("secret_count", 0),
             secret_types=data.get("secret_types", []),
-            was_truncated=data.get("was_truncated", False)
+            was_truncated=data.get("was_truncated", False),
         )
 
 
 @dataclass
 class EntryMetadata:
     """Metadata about the log entry context."""
+
     content_length: int = 0
     cwd: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "EntryMetadata":
+    def from_dict(cls, data: dict[str, Any]) -> "EntryMetadata":
         """Create EntryMetadata from dictionary."""
         return cls(
-            content_length=data.get("content_length", 0),
-            cwd=data.get("cwd", "")
+            content_length=data.get("content_length", 0), cwd=data.get("cwd", "")
         )
 
 
@@ -60,15 +61,16 @@ class LogEntry:
     - expanded_prompt: Full slash command expansion
     - response_summary: Summarized Claude response
     """
+
     timestamp: str
     session_id: str
     entry_type: str  # user_input, expanded_prompt, response_summary
-    command: Optional[str]  # /spec:p, /spec:i, etc. or None
+    command: str | None  # /spec:p, /spec:i, etc. or None
     content: str
     filter_applied: FilterInfo = field(default_factory=FilterInfo)
     metadata: EntryMetadata = field(default_factory=EntryMetadata)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
             "timestamp": self.timestamp,
@@ -77,7 +79,7 @@ class LogEntry:
             "command": self.command,
             "content": self.content,
             "filter_applied": self.filter_applied.to_dict(),
-            "metadata": self.metadata.to_dict()
+            "metadata": self.metadata.to_dict(),
         }
 
     def to_json(self) -> str:
@@ -85,7 +87,7 @@ class LogEntry:
         return json.dumps(self.to_dict(), ensure_ascii=False)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "LogEntry":
+    def from_dict(cls, data: dict[str, Any]) -> "LogEntry":
         """Create LogEntry from dictionary."""
         return cls(
             timestamp=data.get("timestamp", ""),
@@ -94,7 +96,7 @@ class LogEntry:
             command=data.get("command"),
             content=data.get("content", ""),
             filter_applied=FilterInfo.from_dict(data.get("filter_applied", {})),
-            metadata=EntryMetadata.from_dict(data.get("metadata", {}))
+            metadata=EntryMetadata.from_dict(data.get("metadata", {})),
         )
 
     @classmethod
@@ -108,9 +110,9 @@ class LogEntry:
         session_id: str,
         entry_type: str,
         content: str,
-        command: Optional[str] = None,
+        command: str | None = None,
         cwd: str = "",
-        filter_info: Optional[FilterInfo] = None
+        filter_info: FilterInfo | None = None,
     ) -> "LogEntry":
         """
         Factory method to create a new log entry with current timestamp.
@@ -127,14 +129,11 @@ class LogEntry:
             New LogEntry instance
         """
         return cls(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             session_id=session_id,
             entry_type=entry_type,
             command=command,
             content=content,
             filter_applied=filter_info or FilterInfo(),
-            metadata=EntryMetadata(
-                content_length=len(content),
-                cwd=cwd
-            )
+            metadata=EntryMetadata(content_length=len(content), cwd=cwd),
         )

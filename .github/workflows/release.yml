@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Extract changelog
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          NOTES=$(awk -v ver="$VERSION" '
+            /^## \[/ {
+              if (found) exit
+              if ($0 ~ "\\[" ver "\\]") { found=1; next }
+            }
+            found { print }
+          ' plugins/cs/CHANGELOG.md)
+
+          if [ -z "$NOTES" ]; then
+            NOTES="Release $VERSION"
+          fi
+
+          # Use heredoc for multiline output
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Create plugin archive
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cd plugins
+          zip -r "../cs-plugin-v${VERSION}.zip" cs/ \
+            -x "cs/tests/*" \
+            -x "cs/.venv/*" \
+            -x "cs/.pytest_cache/*" \
+            -x "cs/.mypy_cache/*" \
+            -x "cs/.ruff_cache/*" \
+            -x "cs/__pycache__/*" \
+            -x "cs/**/__pycache__/*" \
+            -x "*.pyc" \
+            -x "cs/uv.lock" \
+            -x "cs/.coverage"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "v${{ steps.version.outputs.version }}"
+          body: ${{ steps.changelog.outputs.notes }}
+          files: cs-plugin-v${{ steps.version.outputs.version }}.zip
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: false
