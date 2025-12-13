@@ -1,5 +1,6 @@
 """Tests for post_command hook."""
 
+import builtins
 import io
 import json
 import sys
@@ -269,12 +270,13 @@ class TestRunStepPost:
 
     def test_import_error(self, tmp_path, monkeypatch, capsys):
         """Test handling of import error."""
-        original_import = __builtins__["__import__"]
+        # Save reference to real import before patching
+        real_import = builtins.__import__
 
         def mock_import(name, *args, **kwargs):
             if name == "log_archiver":
                 raise ImportError("Module not found")
-            return original_import(name, *args, **kwargs)
+            return real_import(name, *args, **kwargs)
 
         monkeypatch.setattr("builtins.__import__", mock_import)
 
@@ -290,10 +292,13 @@ class TestRunStepPost:
         mock_result.success = True
         mock_module.run.return_value = mock_result
 
+        # Save reference to real import before patching
+        real_import = builtins.__import__
+
         def mock_import(name, *args, **kwargs):
             if name == "log_archiver":
                 return mock_module
-            return __builtins__["__import__"](name, *args, **kwargs)
+            return real_import(name, *args, **kwargs)
 
         monkeypatch.setattr("builtins.__import__", mock_import)
 
@@ -309,10 +314,13 @@ class TestRunStepPost:
         mock_result.message = "Archive failed"
         mock_module.run.return_value = mock_result
 
+        # Save reference to real import before patching
+        real_import = builtins.__import__
+
         def mock_import(name, *args, **kwargs):
             if name == "log_archiver":
                 return mock_module
-            return __builtins__["__import__"](name, *args, **kwargs)
+            return real_import(name, *args, **kwargs)
 
         monkeypatch.setattr("builtins.__import__", mock_import)
 
