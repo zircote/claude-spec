@@ -34,7 +34,7 @@ Based on the argument provided:
 3. Show log file size if exists
 
 ### `show` - Display recent log entries
-1. Find PROMPT_LOG.json in the active project
+1. Find `.prompt-log.json` in the active project
 2. Display last 10 entries in readable format
 3. Show summary statistics
 
@@ -54,7 +54,7 @@ fi
 
 PROJECT_NAME=$(basename "$PROJECT_DIR")
 MARKER_FILE="$PROJECT_DIR/.prompt-log-enabled"
-LOG_FILE="$PROJECT_DIR/PROMPT_LOG.json"
+LOG_FILE="$PROJECT_DIR/.prompt-log.json"
 ```
 
 For `on`:
@@ -85,7 +85,7 @@ fi
 ```
 
 For `show`:
-- Read PROMPT_LOG.json
+- Read `.prompt-log.json`
 - Parse NDJSON entries
 - Display last 10 entries formatted nicely
 

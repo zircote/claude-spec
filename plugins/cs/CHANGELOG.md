@@ -2,6 +2,29 @@
 
 All notable changes to the claude-spec plugin will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- `analyzers/` directory with log analysis tools
+  - `analyze_cli.py` - CLI for generating interaction analysis
+  - `log_analyzer.py` - Core analysis logic for prompt logs
+- `tests/` directory with 62 unit tests
+  - `test_log_entry.py` - LogEntry/FilterInfo serialization tests
+  - `test_pipeline.py` - Secret detection and truncation tests
+  - `test_analyzer.py` - Log analysis tests
+  - `test_hook.py` - Prompt capture hook tests
+
+### Fixed
+- **hooks.json**: Fixed malformed nested structure that prevented hook registration
+- **c.md**: Fixed analyzer path from `~/.claude/hooks/analyzers/` to `${CLAUDE_PLUGIN_ROOT}/analyzers/`
+- **c.md**: Fixed log filename reference from `PROMPT_LOG.json` to `.prompt-log.json`
+- **log.md**: Fixed log filename references to use `.prompt-log.json` consistently
+- **log_analyzer.py**: Removed `profanity_count` references (FilterInfo only has `secret_count`)
+
+### Changed
+- Interaction analysis now generated from plugin's own analyzer scripts
+- All prompt log references standardized to `.prompt-log.json`
+
 ## [1.0.0] - 2025-12-12
 
 ### Added
