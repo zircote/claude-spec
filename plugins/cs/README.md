@@ -117,7 +117,7 @@ Moves `docs/architecture/` to `docs/spec/` and updates CLAUDE.md references.
 
 Your worktree settings are stored at `~/.claude/worktree-manager.config.json`.
 
-Run `/cs:wt:setup` to configure, or see `skills/worktree-manager/SKILL.md` for first-time setup instructions.
+Run `/cs:wt:setup` to configure, or see `~/.claude/plugins/skills/worktree-manager/SKILL.md` for first-time setup instructions.
 
 ```json
 {
@@ -130,7 +130,7 @@ Run `/cs:wt:setup` to configure, or see `skills/worktree-manager/SKILL.md` for f
 }
 ```
 
-Config lookup: user config → `skills/worktree-manager/config.template.json` → defaults
+Config lookup: user config → `~/.claude/plugins/skills/worktree-manager/config.template.json` → defaults
 
 ## Project Structure
 
