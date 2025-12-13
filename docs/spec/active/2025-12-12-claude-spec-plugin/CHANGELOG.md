@@ -5,8 +5,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Project initialized as ARCH-2025-12-12-002
-- Supersedes ARCH-2025-12-12-001 (Parallel Agent Directives)
+- Project initialized as SPEC-2025-12-12-002
+- Supersedes SPEC-2025-12-12-001 (Parallel Agent Directives)
 - REQUIREMENTS.md with 30+ requirements across plugin infrastructure, commands, worktree management
 - DECISIONS.md with 7 ADRs covering key architectural choices
 
@@ -27,7 +27,7 @@ All notable changes to this project will be documented in this file.
 - ADR-006: Hidden `.prompt-log.json` file
 - ADR-007: Dynamic agent catalog from host's CLAUDE.md
 
-### Incorporated from ARCH-2025-12-12-001
+### Incorporated from SPEC-2025-12-12-001
 - Parallel agent directives (built into commands)
 - Document sync enforcement
 - Worktree initialization fix

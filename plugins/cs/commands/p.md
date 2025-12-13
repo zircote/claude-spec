@@ -343,7 +343,7 @@ before proceeding. Only continue after user acknowledges.
    This enables automatic capture of all user prompts for retrospective analysis.
 
 6. **Check for Collisions**:
-   - Scan `docs/spec/` for similar project names
+   - Scan `docs/spec/` and `docs/architecture/` (legacy) for similar project names
    - If potential collision found, ask user to confirm or differentiate
 
 7. **Update CLAUDE.md** (if exists):
@@ -352,10 +352,10 @@ before proceeding. Only continue after user acknowledges.
 
 ### Collision Detection
 
-Before creating artifacts, search for:
+Before creating artifacts, search for (including legacy docs/architecture/ location):
 ```bash
-find docs/spec -name "*[slug]*" -type d 2>/dev/null
-grep -r "[project keywords]" docs/spec/*/README.md 2>/dev/null
+find docs/spec docs/architecture -name "*[slug]*" -type d 2>/dev/null
+grep -r "[project keywords]" docs/spec/*/README.md docs/architecture/*/README.md 2>/dev/null
 ```
 
 If matches found, inform user:
@@ -1193,8 +1193,8 @@ This step only runs if:
 DATE=$(date +%Y-%m-%d)
 SLUG=[derive-from-project-seed]
 
-# Check for collisions
-find docs/spec -name "*${SLUG}*" -type d 2>/dev/null
+# Check for collisions (including legacy docs/architecture/ location)
+find docs/spec docs/architecture -name "*${SLUG}*" -type d 2>/dev/null
 
 # Create directory structure
 mkdir -p "docs/spec/active/${DATE}-${SLUG}"

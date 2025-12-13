@@ -1,6 +1,6 @@
 ---
 document_type: decisions
-project_id: ARCH-2025-12-12-002
+project_id: SPEC-2025-12-12-002
 ---
 
 # Claude Spec Plugin - Architecture Decision Records
@@ -39,7 +39,7 @@ Maintain **custom prompt capture system** within the plugin.
 - Duplicate logging (ours + Claude's internal)
 
 **Neutral:**
-- Aligns with original design from ARCH-2025-12-12-001
+- Aligns with original design from SPEC-2025-12-12-001
 
 ---
 

@@ -1,5 +1,5 @@
 ---
-project_id: ARCH-2025-12-12-002
+project_id: SPEC-2025-12-12-002
 project_name: "Claude Spec Plugin"
 slug: claude-spec-plugin
 status: draft
@@ -29,7 +29,7 @@ Extract and consolidate the architecture planning workflow into a standalone, di
 3. **Worktree Manager** - Git worktree automation for isolated development environments
    - Attribution: Based on original `~/.claude/skills/worktree-manager/` skill
 
-This is a plugin-first redesign that incorporates the parallel agent directives (from superseded ARCH-2025-12-12-001) as a native feature.
+This is a plugin-first redesign that incorporates the parallel agent directives (from superseded SPEC-2025-12-12-001) as a native feature.
 
 ## Goals
 
@@ -37,7 +37,7 @@ This is a plugin-first redesign that incorporates the parallel agent directives 
 - **Self-contained**: All dependencies bundled within the plugin
 - **Parallel-native**: Built-in parallel specialist agent orchestration
 - **Dynamic integration**: Reads agent catalog from host's CLAUDE.md
-- **Backward compatible**: Supports existing `docs/architecture/active/` projects
+- **Backward compatible**: Supports existing `docs/architecture/active/` projects via `/cs:migrate`
 - **Extensible**: Foundation for future plugin extractions
 
 ## Status
@@ -55,4 +55,4 @@ This is a plugin-first redesign that incorporates the parallel agent directives 
 
 ## Supersedes
 
-- [ARCH-2025-12-12-001: Parallel Agent Directives](../2025-12-12-arch-parallel-agent-directives/README.md) - Requirements and research incorporated into this project
+- **SPEC-2025-12-12-001: Parallel Agent Directives** - Requirements and research incorporated into this project (original project archived)

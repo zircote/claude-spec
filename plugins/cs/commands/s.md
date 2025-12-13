@@ -20,8 +20,9 @@ $ARGUMENTS
 ## Operation: List All Projects (--list or no argument)
 
 ```bash
+# Check both docs/spec/ (new) and docs/architecture/ (legacy) for backward compatibility
 echo "=== ACTIVE PROJECTS ==="
-for dir in docs/spec/active/*/; do
+for dir in docs/spec/active/*/ docs/architecture/active/*/; do
   if [ -d "$dir" ]; then
     echo "DIR: $dir"
     grep -E "^(project_id|project_name|status|created|expires):" "$dir/README.md" 2>/dev/null | head -5
@@ -30,7 +31,7 @@ for dir in docs/spec/active/*/; do
 done
 
 echo "=== APPROVED (Awaiting Implementation) ==="
-for dir in docs/spec/approved/*/; do
+for dir in docs/spec/approved/*/ docs/architecture/approved/*/; do
   if [ -d "$dir" ]; then
     echo "DIR: $dir"
     grep -E "^(project_id|project_name|status|approved):" "$dir/README.md" 2>/dev/null | head -4
@@ -39,11 +40,11 @@ for dir in docs/spec/approved/*/; do
 done
 
 echo "=== COMPLETED ==="
-ls -1 docs/spec/completed/ 2>/dev/null | head -10
+ls -1 docs/spec/completed/ docs/architecture/completed/ 2>/dev/null | head -10
 echo "[Use --list-completed for full list]"
 
 echo "=== SUPERSEDED ==="
-ls -1 docs/spec/superseded/ 2>/dev/null | head -5
+ls -1 docs/spec/superseded/ docs/architecture/superseded/ 2>/dev/null | head -5
 ```
 
 Format output as:
@@ -77,7 +78,8 @@ Spec Project Portfolio
 ## Operation: View Specific Project (project-id or path)
 
 ```bash
-PROJECT_PATH=$(find docs/spec -name "*${PROJECT_SLUG}*" -type d | head -1)
+# Search both docs/spec/ (new) and docs/architecture/ (legacy) for backward compatibility
+PROJECT_PATH=$(find docs/spec docs/architecture -name "*${PROJECT_SLUG}*" -type d 2>/dev/null | head -1)
 cat "${PROJECT_PATH}/README.md"
 ```
 
@@ -129,7 +131,8 @@ View documents:
 TODAY=$(date +%Y-%m-%d)
 echo "Checking for expired projects..."
 
-for readme in docs/spec/active/*/README.md docs/spec/approved/*/README.md; do
+# Check both docs/spec/ (new) and docs/architecture/ (legacy) for backward compatibility
+for readme in docs/spec/active/*/README.md docs/spec/approved/*/README.md docs/architecture/active/*/README.md docs/architecture/approved/*/README.md; do
   if [ -f "$readme" ]; then
     EXPIRES=$(grep "^expires:" "$readme" | cut -d' ' -f2 | cut -dT -f1)
     if [[ "$EXPIRES" < "$TODAY" ]]; then

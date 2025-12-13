@@ -256,11 +256,13 @@ IF $ARGUMENTS is empty:
 ### Step 0.2: Search for Project
 
 ```bash
+# Search both docs/spec/ (new) and docs/architecture/ (legacy) for backward compatibility
+
 # If explicit project-id provided
-grep -r "project_id: ${PROJECT_ID}" docs/spec/active/*/README.md 2>/dev/null
+grep -r "project_id: ${PROJECT_ID}" docs/spec/active/*/README.md docs/architecture/active/*/README.md 2>/dev/null
 
 # If slug provided or inferred from branch
-find docs/spec/active -type d -name "*${SLUG}*" 2>/dev/null
+find docs/spec/active docs/architecture/active -type d -name "*${SLUG}*" 2>/dev/null
 
 # Get current branch for inference
 git branch --show-current 2>/dev/null
@@ -286,7 +288,9 @@ IF exactly one match:
 ### Step 1.1: Check for Existing PROGRESS.md
 
 ```bash
-PROJECT_DIR="docs/spec/active/${PROJECT_FOLDER}"
+# PROJECT_DIR comes from Step 0.2 search results
+# Could be docs/spec/active/ or docs/architecture/active/ (legacy)
+PROJECT_DIR="${PROJECT_PATH}"  # Path found in Step 0.2
 PROGRESS_FILE="${PROJECT_DIR}/PROGRESS.md"
 
 if [ -f "${PROGRESS_FILE}" ]; then

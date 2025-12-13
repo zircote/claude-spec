@@ -1,7 +1,7 @@
 ---
 document_type: progress
 format_version: "1.0.0"
-project_id: ARCH-2025-12-12-002
+project_id: SPEC-2025-12-12-002
 project_name: "Claude Spec Plugin"
 project_status: draft
 current_phase: 1
@@ -80,5 +80,5 @@ This document tracks implementation progress against the architecture plan.
 ### 2025-12-12 - Initial Session
 - PROGRESS.md initialized from IMPLEMENTATION_PLAN.md
 - 13 tasks identified across 6 phases
-- Project supersedes ARCH-2025-12-12-001 (Parallel Agent Directives)
+- Project supersedes SPEC-2025-12-12-001 (Parallel Agent Directives)
 - Ready to begin implementation with Phase 1 (Scaffold)
