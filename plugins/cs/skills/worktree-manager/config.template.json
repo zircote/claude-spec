@@ -11,5 +11,39 @@
   "registryPath": "~/.claude/worktree-registry.json",
   "defaultCopyDirs": [".agents", ".env.example", ".env"],
   "healthCheckTimeout": 30,
-  "healthCheckRetries": 6
+  "healthCheckRetries": 6,
+  "lifecycle": {
+    "sessionStart": {
+      "enabled": true,
+      "loadContext": {
+        "claudeMd": true,
+        "gitState": true,
+        "projectStructure": true
+      }
+    },
+    "commands": {
+      "cs:p": {
+        "preSteps": [],
+        "postSteps": []
+      },
+      "cs:c": {
+        "preSteps": [
+          { "name": "security-review", "enabled": true, "timeout": 120 }
+        ],
+        "postSteps": [
+          { "name": "generate-retrospective", "enabled": true },
+          { "name": "archive-logs", "enabled": true },
+          { "name": "cleanup-markers", "enabled": true }
+        ]
+      },
+      "cs:i": {
+        "preSteps": [],
+        "postSteps": []
+      },
+      "cs:s": {
+        "preSteps": [],
+        "postSteps": []
+      }
+    }
+  }
 }

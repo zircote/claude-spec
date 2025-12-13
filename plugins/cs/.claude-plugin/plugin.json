@@ -1,7 +1,8 @@
 {
   "name": "cs",
-  "version": "1.0.0",
-  "description": "Project specification and implementation lifecycle management with worktree automation and prompt capture",
+  "version": "1.1.0",
+  "description": "Project specification and implementation lifecycle management with pre/post steps",
+  "hooks": "../hooks/hooks.json",
   "author": {
     "name": "Claude Spec Contributors"
   },
