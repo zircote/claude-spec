@@ -12,32 +12,25 @@ This command creates or updates `~/.claude/worktree-manager.config.json` with yo
 
 ## Execution Steps
 
-### Step 1: Check Current Config
+### Step 1: Check Current Config and Detect Shell
 
-First, check if a config already exists and display current values:
+Run these two commands in parallel:
 
+**Check existing config:**
 ```bash
-CONFIG_FILE="${HOME}/.claude/worktree-manager.config.json"
-
-if [ -f "$CONFIG_FILE" ]; then
-    echo "Current configuration:"
-    echo "======================"
-    cat "$CONFIG_FILE" | jq '.'
-    echo ""
-    echo "This setup will overwrite the above configuration."
-fi
+test -f ~/.claude/worktree-manager.config.json && echo "Current configuration:" && jq '.' ~/.claude/worktree-manager.config.json && echo "This setup will overwrite the above." || echo "No existing configuration found."
 ```
 
-### Step 2: Detect Shell
-
+**Detect shell:**
 ```bash
-DETECTED_SHELL=$(basename "$SHELL")
-echo "Detected shell: $DETECTED_SHELL"
+echo "Detected shell: $(basename $SHELL)"
 ```
 
-### Step 3: Ask Configuration Questions
+### Step 2: Ask Configuration Questions
 
-Use the `AskUserQuestion` tool with these 4 questions in a single call:
+Use the `AskUserQuestion` tool with these 4 questions in a single call.
+
+**IMPORTANT**: Labels are the EXACT config values. Use the selected label directly in the config file without any transformation.
 
 ```json
 {
@@ -48,11 +41,11 @@ Use the `AskUserQuestion` tool with these 4 questions in a single call:
       "multiSelect": false,
       "options": [
         {
-          "label": "iTerm2 (Recommended)",
-          "description": "macOS terminal with excellent tab support"
+          "label": "iterm2-tab",
+          "description": "(Recommended) macOS terminal with excellent tab support"
         },
         {
-          "label": "Ghostty",
+          "label": "ghostty",
           "description": "Fast, GPU-accelerated terminal"
         },
         {
@@ -67,8 +60,8 @@ Use the `AskUserQuestion` tool with these 4 questions in a single call:
       "multiSelect": false,
       "options": [
         {
-          "label": "zsh (Recommended)",
-          "description": "Z Shell - macOS default since Catalina"
+          "label": "zsh",
+          "description": "(Recommended) Z Shell - macOS default since Catalina"
         },
         {
           "label": "bash",
@@ -86,8 +79,8 @@ Use the `AskUserQuestion` tool with these 4 questions in a single call:
       "multiSelect": false,
       "options": [
         {
-          "label": "claude --dangerously-skip-permissions (Recommended)",
-          "description": "Auto-approves tool use for autonomous worktree agents"
+          "label": "claude --dangerously-skip-permissions",
+          "description": "(Recommended) Auto-approves tool use for autonomous worktree agents"
         },
         {
           "label": "cc",
@@ -105,8 +98,8 @@ Use the `AskUserQuestion` tool with these 4 questions in a single call:
       "multiSelect": false,
       "options": [
         {
-          "label": "~/Projects/worktrees (Recommended)",
-          "description": "Keeps worktrees organized and separate from source repos"
+          "label": "~/Projects/worktrees",
+          "description": "(Recommended) Keeps worktrees organized and separate from source repos"
         },
         {
           "label": "~/worktrees",
@@ -118,66 +111,33 @@ Use the `AskUserQuestion` tool with these 4 questions in a single call:
 }
 ```
 
-### Step 4: Map Answers to Config Values
+### Step 3: Use Answers Directly
 
-| Question | User Selection | Config Value |
-|----------|---------------|--------------|
-| Terminal | iTerm2 (Recommended) | `iterm2-tab` |
-| Terminal | Ghostty | `ghostty` |
-| Terminal | tmux | `tmux` |
-| Terminal | Other (specify wezterm) | `wezterm` |
-| Terminal | Other (specify kitty) | `kitty` |
-| Terminal | Other (specify alacritty) | `alacritty` |
-| Shell | zsh (Recommended) | `zsh` |
-| Shell | bash | `bash` |
-| Shell | fish | `fish` |
-| Claude | claude --dangerously-skip-permissions | `claude --dangerously-skip-permissions` |
-| Claude | cc | `cc` |
-| Claude | claude | `claude` |
-| Location | ~/Projects/worktrees | `~/Projects/worktrees` |
-| Location | ~/worktrees | `~/worktrees` |
+**No mapping required.** The selected labels ARE the config values. Use them directly:
 
-### Step 5: Write Config File
+- Terminal answer → `terminal` field
+- Shell answer → `shell` field
+- Claude answer → `claudeCommand` field
+- Location answer → `worktreeBase` field
 
-After mapping answers, write the configuration using jq for proper JSON escaping:
+For "Other" responses, use the user's custom input as the config value.
+
+### Step 4: Write Config File
+
+Write the configuration using the selected labels directly. Run as a single chained command:
 
 ```bash
-mkdir -p ~/.claude
-
-jq -n \
-  --arg terminal "${TERMINAL_VALUE}" \
-  --arg shell "${SHELL_VALUE}" \
-  --arg claudeCommand "${CLAUDE_CMD_VALUE}" \
-  --arg worktreeBase "${WORKTREE_BASE_VALUE}" \
-  '{
-    terminal: $terminal,
-    shell: $shell,
-    claudeCommand: $claudeCommand,
-    worktreeBase: $worktreeBase,
-    portPool: { start: 8100, end: 8199 },
-    portsPerWorktree: 2,
-    registryPath: "~/.claude/worktree-registry.json",
-    defaultCopyDirs: [".agents", ".env.example", ".env"],
-    healthCheckTimeout: 30,
-    healthCheckRetries: 6
-  }' > ~/.claude/worktree-manager.config.json
+mkdir -p ~/.claude && jq -n --arg terminal "TERMINAL_ANSWER" --arg shell "SHELL_ANSWER" --arg claudeCommand "CLAUDE_ANSWER" --arg worktreeBase "LOCATION_ANSWER" '{terminal: $terminal, shell: $shell, claudeCommand: $claudeCommand, worktreeBase: $worktreeBase, portPool: {start: 8100, end: 8199}, portsPerWorktree: 2, registryPath: "~/.claude/worktree-registry.json", defaultCopyDirs: [".agents", ".env.example", ".env"], healthCheckTimeout: 30, healthCheckRetries: 6}' > ~/.claude/worktree-manager.config.json
 ```
 
-### Step 6: Confirm Success
+Replace the `*_ANSWER` placeholders with the actual user selections before running.
+
+### Step 5: Confirm Success
+
+Display the saved config:
 
 ```bash
-echo ""
-echo "Configuration saved!"
-echo "===================="
-echo "Location: ~/.claude/worktree-manager.config.json"
-echo ""
-echo "Settings:"
-echo "  Terminal:      ${TERMINAL_VALUE}"
-echo "  Shell:         ${SHELL_VALUE}"
-echo "  Claude cmd:    ${CLAUDE_CMD_VALUE}"
-echo "  Worktree base: ${WORKTREE_BASE_VALUE}"
-echo ""
-echo "These settings will be used for all future worktree operations."
+cat ~/.claude/worktree-manager.config.json
 ```
 
 ## Notes

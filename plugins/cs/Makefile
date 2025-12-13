@@ -15,9 +15,9 @@ help:
 	@echo "  ci           - Run all CI checks (mirrors GitHub Actions)"
 	@echo "  clean        - Clean generated files"
 
-# Install dependencies
+# Install dependencies (including dev tools: ruff, mypy, pytest, etc.)
 install:
-	uv sync
+	uv sync --extra dev
 
 # Format code
 format:
