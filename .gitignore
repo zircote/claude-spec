@@ -96,6 +96,9 @@ PROMPT_LOG.json
 # Worktree registry (user-specific)
 worktree-registry.json
 
+# Claude Code local settings (user-specific)
+.claude/
+
 # Temporary files created during operations
 *.tmp
 *.temp
