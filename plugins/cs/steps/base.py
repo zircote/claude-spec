@@ -1,5 +1,117 @@
 """
-Base classes for step execution.
+Base classes for the step execution system.
+
+This module provides the foundational classes for the claude-spec plugin's
+step-based execution system. Steps are modular, composable units of work
+that can be configured to run before (pre-steps) or after (post-steps)
+specific slash commands.
+
+Architecture Overview
+---------------------
+
+The step system follows a simple pattern:
+
+1. **Configuration**: Steps are configured in ``~/.claude/worktree-manager.config.json``
+   under the ``lifecycle.commands`` section.
+
+2. **Discovery**: The hook system (command_detector.py, post_command.py) reads
+   step configurations using ``config_loader.get_enabled_steps()``.
+
+3. **Execution**: Each step is instantiated with the current working directory
+   and optional configuration, then executed via the ``run()`` method.
+
+4. **Results**: Steps return ``StepResult`` objects indicating success/failure,
+   with optional data and warnings.
+
+Creating a New Step
+-------------------
+
+To create a new step, extend ``BaseStep`` and implement the ``execute()`` method:
+
+.. code-block:: python
+
+    from steps.base import BaseStep, StepResult
+
+    class MyCustomStep(BaseStep):
+        \"\"\"Description of what this step does.\"\"\"
+
+        name = "my-custom-step"  # Must match the name in config
+
+        def validate(self) -> bool:
+            \"\"\"Optional: Check preconditions before execution.\"\"\"
+            # Return False to skip execution with a validation failure
+            return True
+
+        def execute(self) -> StepResult:
+            \"\"\"Perform the step's work.\"\"\"
+            try:
+                # Do work here...
+                result_data = {"key": "value"}
+                return StepResult.ok("Success message", **result_data)
+            except SomeError as e:
+                return StepResult.fail(f"Failed: {e}")
+
+
+    # Required: Module-level run function for hook integration
+    def run(cwd: str, config: dict | None = None) -> StepResult:
+        \"\"\"Hook integration entry point.\"\"\"
+        step = MyCustomStep(cwd, config)
+        return step.run()
+
+Step Configuration
+------------------
+
+Steps receive configuration from the lifecycle config:
+
+.. code-block:: json
+
+    {
+        "name": "my-custom-step",
+        "enabled": true,
+        "timeout": 120,
+        "custom_option": "value"
+    }
+
+Access configuration in your step via ``self.config``:
+
+.. code-block:: python
+
+    def execute(self) -> StepResult:
+        timeout = self.config.get("timeout", 60)
+        custom = self.config.get("custom_option", "default")
+        # ...
+
+Error Handling
+--------------
+
+The step system follows a "fail-open" philosophy:
+
+- Steps should not block the main command workflow on failure
+- Errors are captured and converted to ``StepResult.fail()`` with warnings
+- Only ``StepError`` exceptions propagate up (for critical failures)
+- Use ``result.add_warning()`` for non-fatal issues
+
+Hook Integration
+----------------
+
+Steps are integrated via hooks:
+
+- **Pre-steps**: Run by ``command_detector.py`` when a /cs:* command is detected
+- **Post-steps**: Run by ``post_command.py`` when a session ends
+
+The hooks look for a module-level ``run(cwd, config)`` function in each step module.
+
+Available Steps
+---------------
+
+Pre-steps (run before command):
+    - ``security_reviewer.py``: Run bandit security scanner
+
+Post-steps (run after command):
+    - ``retrospective_gen.py``: Generate RETROSPECTIVE.md
+    - ``log_archiver.py``: Archive prompt logs to completed directory
+    - ``marker_cleaner.py``: Clean up temporary marker files
+    - ``context_loader.py``: Load project context for session start
 """
 
 from abc import ABC, abstractmethod
@@ -9,7 +121,29 @@ from typing import Any
 
 @dataclass
 class StepResult:
-    """Result of a step execution."""
+    """Result of a step execution.
+
+    Attributes:
+        success: Whether the step completed successfully.
+        message: Human-readable description of the result.
+        data: Optional dictionary of result data (findings, paths, counts, etc.).
+        warnings: List of non-fatal warning messages.
+
+    Examples:
+        Creating a successful result::
+
+            result = StepResult.ok("Processed 5 files", file_count=5)
+
+        Creating a failed result::
+
+            result = StepResult.fail("File not found: config.json")
+
+        Adding warnings::
+
+            result = StepResult.ok("Done with issues")
+            result.add_warning("Deprecated API used")
+            result.add_warning("Missing optional config")
+    """
 
     success: bool
     message: str
@@ -18,22 +152,59 @@ class StepResult:
 
     @classmethod
     def ok(cls, message: str = "Success", **data: Any) -> "StepResult":
-        """Create a successful result."""
+        """Create a successful result.
+
+        Args:
+            message: Description of what succeeded.
+            **data: Arbitrary key-value pairs to include in result data.
+
+        Returns:
+            A StepResult with success=True.
+        """
         return cls(success=True, message=message, data=data)
 
     @classmethod
     def fail(cls, message: str, **data: Any) -> "StepResult":
-        """Create a failed result."""
+        """Create a failed result.
+
+        Args:
+            message: Description of what failed.
+            **data: Arbitrary key-value pairs to include in result data.
+
+        Returns:
+            A StepResult with success=False.
+        """
         return cls(success=False, message=message, data=data)
 
     def add_warning(self, warning: str) -> "StepResult":
-        """Add a warning to the result."""
+        """Add a warning to the result.
+
+        Warnings are non-fatal issues that should be reported but don't
+        constitute failure.
+
+        Args:
+            warning: Warning message to add.
+
+        Returns:
+            Self, for method chaining.
+        """
         self.warnings.append(warning)
         return self
 
 
 class StepError(Exception):
-    """Exception raised when a step fails critically."""
+    """Exception raised when a step fails critically.
+
+    Unlike normal failures (returned via StepResult.fail()), StepError
+    indicates a critical failure that should propagate up and potentially
+    halt the workflow.
+
+    Use sparingly - most failures should be handled gracefully via
+    StepResult.fail() to maintain the fail-open philosophy.
+
+    Attributes:
+        step_name: Name of the step that raised the error.
+    """
 
     def __init__(self, message: str, step_name: str = "unknown"):
         self.step_name = step_name
@@ -41,7 +212,21 @@ class StepError(Exception):
 
 
 class BaseStep(ABC):
-    """Base class for all steps."""
+    """Base class for all steps.
+
+    Provides the template for step implementation with validation,
+    execution, and error handling.
+
+    Attributes:
+        name: Step identifier (must match config name). Override in subclass.
+        cwd: Current working directory for the step.
+        config: Configuration dictionary from lifecycle config.
+
+    Subclasses must:
+        - Set a unique ``name`` class attribute
+        - Implement the ``execute()`` method
+        - Optionally override ``validate()`` for precondition checks
+    """
 
     name: str = "base"
 
@@ -57,15 +242,52 @@ class BaseStep(ABC):
 
     @abstractmethod
     def execute(self) -> StepResult:
-        """Execute the step. Must be implemented by subclasses."""
+        """Execute the step. Must be implemented by subclasses.
+
+        This method contains the main logic of the step. It should:
+        - Perform the step's work
+        - Return StepResult.ok() on success with relevant data
+        - Return StepResult.fail() on recoverable failures
+        - Raise StepError only for critical, unrecoverable failures
+
+        Returns:
+            StepResult indicating success or failure.
+        """
         pass
 
     def validate(self) -> bool:
-        """Validate preconditions. Override in subclasses if needed."""
+        """Validate preconditions. Override in subclasses if needed.
+
+        Called before execute(). If validation fails, the step returns
+        a failure result without executing.
+
+        Common validations:
+        - Check required files exist
+        - Verify dependencies are available
+        - Validate configuration values
+
+        Returns:
+            True if preconditions are met, False otherwise.
+        """
         return True
 
     def run(self) -> StepResult:
-        """Run the step with validation and error handling."""
+        """Run the step with validation and error handling.
+
+        This is the main entry point for step execution. It:
+        1. Calls validate() to check preconditions
+        2. Calls execute() if validation passes
+        3. Catches exceptions and converts to StepResult
+
+        The fail-open philosophy means most errors are caught and
+        converted to failed results rather than raising exceptions.
+
+        Returns:
+            StepResult from validation failure, execution, or error handling.
+
+        Raises:
+            StepError: Only if the step raises StepError explicitly.
+        """
         try:
             if not self.validate():
                 return StepResult.fail(f"Validation failed for {self.name}")

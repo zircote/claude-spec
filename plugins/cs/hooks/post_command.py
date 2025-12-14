@@ -49,29 +49,43 @@ except ImportError as e:
     CONFIG_AVAILABLE = False
     sys.stderr.write(f"claude-spec post_command: Config import error: {e}\n")
 
+# Import shared I/O and step runner
+try:
+    from hook_io import read_input, stop_response, write_output
+    from step_runner import run_step
+
+    IO_AVAILABLE = True
+except ImportError as e:
+    IO_AVAILABLE = False
+    sys.stderr.write(f"claude-spec post_command: Lib import error: {e}\n")
+
+LOG_PREFIX = "post_command"
+
 # Session state file created by command_detector
 SESSION_STATE_FILE = ".cs-session-state.json"
 
 
-def read_input() -> dict[str, Any] | None:
-    """Read and parse JSON input from stdin."""
+# Fallback I/O functions if shared module not available
+def _fallback_read_input() -> dict[str, Any] | None:
+    """Fallback read_input if hook_io not available."""
     try:
         return json.load(sys.stdin)
-    except json.JSONDecodeError as e:
-        sys.stderr.write(f"claude-spec post_command: JSON decode error: {e}\n")
-        return None
     except Exception as e:
-        sys.stderr.write(f"claude-spec post_command: Error reading input: {e}\n")
+        sys.stderr.write(f"claude-spec {LOG_PREFIX}: Error reading input: {e}\n")
         return None
 
 
-def write_output(response: dict[str, Any]) -> None:
-    """Write JSON response to stdout."""
+def _fallback_write_output(response: dict[str, Any]) -> None:
+    """Fallback write_output if hook_io not available."""
     try:
         print(json.dumps(response), file=sys.stdout)
-    except Exception as e:
-        sys.stderr.write(f"claude-spec post_command: Error writing output: {e}\n")
+    except Exception:
         print('{"continue": false}', file=sys.stdout)
+
+
+def _fallback_stop_response() -> dict[str, Any]:
+    """Fallback stop_response if hook_io not available."""
+    return {"continue": False}
 
 
 def load_session_state(cwd: str) -> dict[str, Any] | None:
@@ -91,7 +105,7 @@ def load_session_state(cwd: str) -> dict[str, Any] | None:
         with open(state_file, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        sys.stderr.write(f"claude-spec post_command: Error loading state: {e}\n")
+        sys.stderr.write(f"claude-spec {LOG_PREFIX}: Error loading state: {e}\n")
         return None
 
 
@@ -106,7 +120,7 @@ def cleanup_session_state(cwd: str) -> None:
         if state_file.is_file():
             state_file.unlink()
     except Exception as e:
-        sys.stderr.write(f"claude-spec post_command: Error cleaning state: {e}\n")
+        sys.stderr.write(f"claude-spec {LOG_PREFIX}: Error cleaning state: {e}\n")
 
 
 def run_post_steps(cwd: str, command: str) -> None:
@@ -124,68 +138,41 @@ def run_post_steps(cwd: str, command: str) -> None:
     for step_config in steps:
         step_name = step_config.get("name", "unknown")
         try:
-            run_step(cwd, step_name, step_config)
+            if IO_AVAILABLE:
+                run_step(
+                    cwd, step_name, step_config, log_prefix="claude-spec post-step"
+                )
+            else:
+                # Fallback: skip step execution if libs not available
+                sys.stderr.write(
+                    f"claude-spec post-step {step_name}: skipped (libs not available)\n"
+                )
         except Exception as e:
             # Fail-open: log error but continue
             sys.stderr.write(f"claude-spec post-step {step_name} error: {e}\n")
 
 
-def run_step(cwd: str, step_name: str, config: dict[str, Any]) -> None:
-    """Run a single step module.
-
-    Args:
-        cwd: Current working directory
-        step_name: Name of the step to run
-        config: Step configuration
-    """
-    steps_dir = PLUGIN_ROOT / "steps"
-
-    # Map step names to module names
-    step_modules = {
-        "security-review": "security_reviewer",
-        "context-loader": "context_loader",
-        "generate-retrospective": "retrospective_gen",
-        "archive-logs": "log_archiver",
-        "cleanup-markers": "marker_cleaner",
-    }
-
-    module_name = step_modules.get(step_name)
-    if not module_name:
-        sys.stderr.write(f"claude-spec: Unknown step: {step_name}\n")
-        return
-
-    if str(steps_dir) not in sys.path:
-        sys.path.insert(0, str(steps_dir))
-
-    try:
-        module = __import__(module_name)
-        if hasattr(module, "run"):
-            result = module.run(cwd, config)
-            if result and hasattr(result, "success") and not result.success:
-                sys.stderr.write(
-                    f"claude-spec post-step {step_name}: {result.message}\n"
-                )
-    except ImportError as e:
-        sys.stderr.write(f"claude-spec: Could not import step {step_name}: {e}\n")
-    except Exception as e:
-        # Catch-all for step execution errors (fail-open)
-        sys.stderr.write(f"claude-spec: Step {step_name} execution error: {e}\n")
-
-
 def main() -> None:
     """Main entry point for the post-command hook."""
-    # Read input
-    input_data = read_input()
+    # Read input using shared I/O or fallback
+    if IO_AVAILABLE:
+        input_data = read_input(LOG_PREFIX)
+        _write_output = write_output
+        _stop_response = stop_response
+    else:
+        input_data = _fallback_read_input()
+        _write_output = _fallback_write_output
+        _stop_response = _fallback_stop_response
 
     if input_data is None:
         # Malformed input - exit cleanly
-        write_output({"continue": False})
+        _write_output(_stop_response())
         return
 
     cwd = input_data.get("cwd", "")
 
     if not cwd:
-        write_output({"continue": False})
+        _write_output(_stop_response())
         return
 
     # Load session state
@@ -202,7 +189,7 @@ def main() -> None:
         cleanup_session_state(cwd)
 
     # Signal completion
-    write_output({"continue": False})
+    _write_output(_stop_response())
 
 
 if __name__ == "__main__":

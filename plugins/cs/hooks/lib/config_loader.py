@@ -1,6 +1,104 @@
 """
 Configuration loader for lifecycle hooks.
 
+This module manages the configuration for the claude-spec plugin's lifecycle
+system, including pre/post steps for commands and session start behavior.
+
+Configuration Schema
+--------------------
+
+The configuration file is JSON with the following top-level structure:
+
+.. code-block:: json
+
+    {
+        "lifecycle": {
+            "sessionStart": { ... },
+            "commands": { ... }
+        }
+    }
+
+**lifecycle.sessionStart** - Controls session initialization:
+
+    - ``enabled`` (bool): Whether session start hook runs. Default: ``true``
+    - ``loadContext`` (object): Which context types to load:
+        - ``claudeMd`` (bool): Load CLAUDE.md files. Default: ``true``
+        - ``gitState`` (bool): Load git status/branch info. Default: ``true``
+        - ``projectStructure`` (bool): Load project file tree. Default: ``true``
+
+**lifecycle.commands** - Per-command step configuration:
+
+    Each command (e.g., "cs:c", "cs:p") can have:
+
+    - ``preSteps`` (array): Steps to run before command execution
+    - ``postSteps`` (array): Steps to run after command completes
+
+    Each step object has:
+
+    - ``name`` (str): Step identifier (e.g., "security-review")
+    - ``enabled`` (bool): Whether step runs. Default: ``true``
+    - ``timeout`` (int): Execution timeout in seconds (step-specific)
+
+Example Configuration
+---------------------
+
+.. code-block:: json
+
+    {
+        "lifecycle": {
+            "sessionStart": {
+                "enabled": true,
+                "loadContext": {
+                    "claudeMd": true,
+                    "gitState": true,
+                    "projectStructure": true
+                }
+            },
+            "commands": {
+                "cs:c": {
+                    "preSteps": [
+                        { "name": "security-review", "enabled": true, "timeout": 120 }
+                    ],
+                    "postSteps": [
+                        { "name": "generate-retrospective", "enabled": true },
+                        { "name": "archive-logs", "enabled": true },
+                        { "name": "cleanup-markers", "enabled": true }
+                    ]
+                },
+                "cs:p": {
+                    "preSteps": [],
+                    "postSteps": []
+                }
+            }
+        }
+    }
+
+Configuration Precedence
+------------------------
+
+Configuration is loaded with the following precedence (highest to lowest):
+
+1. User config: ``~/.claude/worktree-manager.config.json``
+2. Template config: ``skills/worktree-manager/config.template.json``
+3. Empty dict (if neither exists)
+
+User configuration values are deep-merged over template values, allowing
+partial overrides while inheriting defaults.
+
+Available Step Names
+--------------------
+
+Pre-steps:
+    - ``security-review``: Run bandit security scanner on Python code
+
+Post-steps:
+    - ``generate-retrospective``: Create RETROSPECTIVE.md from project artifacts
+    - ``archive-logs``: Move .prompt-log.json to completed project directory
+    - ``cleanup-markers``: Remove .prompt-log-enabled and .cs-session-state.json
+
+Functions
+---------
+
 Reads from ~/.claude/worktree-manager.config.json with fallback to template.
 Provides utilities for accessing lifecycle configuration for pre/post steps.
 """
