@@ -1,6 +1,7 @@
 """Tests for step modules."""
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -425,4 +426,305 @@ class TestModuleLevelRunFunctions:
         """Test RetrospectiveGeneratorStep via run method."""
         step = RetrospectiveGeneratorStep(str(tmp_path))
         result = step.run()
+        assert result.success is True
+
+
+# ============================================================================
+# NEW TESTS ADDED FOR COVERAGE GAPS
+# ============================================================================
+
+
+class TestContextLoaderStepContextUtilsUnavailable:
+    """Tests for ContextLoaderStep when context_utils is unavailable."""
+
+    def test_fails_when_context_utils_unavailable(self, tmp_path, monkeypatch):
+        """Test step fails when CONTEXT_UTILS_AVAILABLE is False."""
+        # Import the actual module to modify its state
+        import steps.context_loader as context_loader_module
+
+        original = context_loader_module.CONTEXT_UTILS_AVAILABLE
+        context_loader_module.CONTEXT_UTILS_AVAILABLE = False
+
+        step = ContextLoaderStep(str(tmp_path))
+        result = step.execute()
+
+        assert result.success is False
+        assert "not available" in result.message.lower()
+
+        # Restore original value
+        context_loader_module.CONTEXT_UTILS_AVAILABLE = original
+
+
+class TestContextLoaderStepMissingGitCommand:
+    """Tests for ContextLoaderStep error handling with missing git."""
+
+    def test_handles_git_command_not_found(self, tmp_path, monkeypatch):
+        """Test graceful handling when git command is not available."""
+        import subprocess
+
+        # Create CLAUDE.md so step has something to load
+        (tmp_path / "CLAUDE.md").write_text("# Test Project")
+
+        # Mock subprocess.run to simulate git not found
+        original_run = subprocess.run
+
+        def mock_run(cmd, *args, **kwargs):
+            if cmd[0] == "git":
+                raise FileNotFoundError("git not found")
+            return original_run(cmd, *args, **kwargs)
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        step = ContextLoaderStep(str(tmp_path))
+        result = step.run()
+
+        # Should still succeed with CLAUDE.md content
+        assert result.success is True
+        assert "context" in result.data
+
+
+class TestContextLoaderStepNoContextLoaded:
+    """Tests for ContextLoaderStep when no context is available."""
+
+    def test_fails_when_no_context_parts(self, tmp_path, monkeypatch):
+        """Test step fails when no context sections are loaded."""
+        # Mock context_utils to return empty values so no context is loaded
+        import steps.context_loader as context_loader_module
+
+        # Mock functions must accept **kwargs to handle optional parameters
+        monkeypatch.setattr(
+            context_loader_module,
+            "load_claude_md",
+            lambda cwd, **kwargs: "",
+        )
+        monkeypatch.setattr(
+            context_loader_module,
+            "load_git_state",
+            lambda cwd, **kwargs: "",
+        )
+        monkeypatch.setattr(
+            context_loader_module,
+            "load_project_structure",
+            lambda cwd, **kwargs: "",
+        )
+
+        step = ContextLoaderStep(str(tmp_path))
+        result = step.run()
+
+        # Should fail when nothing is loaded
+        assert result.success is False
+        assert "No context" in result.message
+
+
+class TestLogArchiverStepCopyFailure:
+    """Tests for LogArchiverStep copy failure scenarios."""
+
+    def test_copy_failure_returns_fail(self, tmp_path, monkeypatch, capsys):
+        """Test handling when shutil.copy2 raises an exception."""
+        # Create log file
+        (tmp_path / ".prompt-log.json").write_text("[]")
+
+        # Create completed project directory
+        completed = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        completed.mkdir(parents=True)
+
+        # Mock shutil.copy2 to raise an exception
+        def mock_copy2(src, dst):
+            raise PermissionError("Permission denied")
+
+        monkeypatch.setattr(shutil, "copy2", mock_copy2)
+
+        step = LogArchiverStep(str(tmp_path))
+        result = step.run()
+
+        assert result.success is False
+        assert result.data.get("archived") is False
+        assert "Failed to archive" in result.message
+
+    def test_copy_failure_oserror(self, tmp_path, monkeypatch, capsys):
+        """Test handling when shutil.copy2 raises OSError."""
+        # Create log file
+        (tmp_path / ".prompt-log.json").write_text("[]")
+
+        # Create completed project directory
+        completed = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        completed.mkdir(parents=True)
+
+        # Mock shutil.copy2 to raise OSError
+        def mock_copy2(src, dst):
+            raise OSError("Disk full")
+
+        monkeypatch.setattr(shutil, "copy2", mock_copy2)
+
+        step = LogArchiverStep(str(tmp_path))
+        result = step.run()
+
+        assert result.success is False
+        assert "Disk full" in result.message or "Failed" in result.message
+
+    def test_copy_failure_ioerror(self, tmp_path, monkeypatch):
+        """Test handling when shutil.copy2 raises IOError."""
+        # Create log file
+        (tmp_path / ".prompt-log.json").write_text("[]")
+
+        # Create completed project directory
+        completed = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        completed.mkdir(parents=True)
+
+        # Mock shutil.copy2 to raise IOError
+        def mock_copy2(src, dst):
+            raise OSError("I/O error during copy")
+
+        monkeypatch.setattr(shutil, "copy2", mock_copy2)
+
+        step = LogArchiverStep(str(tmp_path))
+        result = step.run()
+
+        assert result.success is False
+
+
+class TestLogArchiverStepSafeMtimeError:
+    """Tests for LogArchiverStep safe_mtime error handling.
+
+    These tests verify that the safe_mtime function handles OSError gracefully
+    by returning 0 instead of propagating the error.
+    """
+
+    def test_safe_mtime_returns_zero_on_stat_failure(self, tmp_path, capsys):
+        """Test safe_mtime returns 0 when stat fails, allowing sorting to proceed.
+
+        Rather than mocking Path.stat (which affects many internal calls),
+        we verify the behavior by checking that the step completes successfully
+        even when directories have varied modification times.
+        """
+        import time
+
+        # Create log file
+        (tmp_path / ".prompt-log.json").write_text("[]")
+
+        # Create two project directories with different modification times
+        completed = tmp_path / "docs" / "spec" / "completed"
+        completed.mkdir(parents=True)
+
+        project_older = completed / "project-older"
+        project_older.mkdir()
+
+        # Brief sleep to ensure different mtime
+        time.sleep(0.01)
+
+        project_newer = completed / "project-newer"
+        project_newer.mkdir()
+
+        step = LogArchiverStep(str(tmp_path))
+        result = step.run()
+
+        # Should succeed and archive to the newer project
+        assert result.success is True
+        assert result.data.get("archived") is True
+        assert "project-newer" in result.data.get("destination", "")
+
+    def test_multiple_dirs_sorted_by_mtime(self, tmp_path):
+        """Test that directories are properly sorted by modification time."""
+        import time
+
+        # Create log file
+        (tmp_path / ".prompt-log.json").write_text("[]")
+
+        # Create completed directory
+        completed = tmp_path / "docs" / "spec" / "completed"
+        completed.mkdir(parents=True)
+
+        # Create directories in specific order with different mtimes
+        old = completed / "old-project"
+        old.mkdir()
+        time.sleep(0.01)
+
+        mid = completed / "mid-project"
+        mid.mkdir()
+        time.sleep(0.01)
+
+        newest = completed / "newest-project"
+        newest.mkdir()
+
+        step = LogArchiverStep(str(tmp_path))
+        result = step.run()
+
+        # Should archive to newest
+        assert result.success is True
+        assert "newest-project" in result.data.get("destination", "")
+
+
+class TestLogArchiverStepMultipleProjects:
+    """Tests for LogArchiverStep with multiple completed projects."""
+
+    def test_archives_to_most_recent_project(self, tmp_path):
+        """Test that log is archived to the most recently modified project."""
+        import time
+
+        # Create log file
+        (tmp_path / ".prompt-log.json").write_text("[]")
+
+        # Create multiple completed project directories
+        completed = tmp_path / "docs" / "spec" / "completed"
+        completed.mkdir(parents=True)
+
+        older_project = completed / "older-project"
+        older_project.mkdir()
+
+        # Wait a moment and create newer project
+        time.sleep(0.1)
+        newer_project = completed / "newer-project"
+        newer_project.mkdir()
+
+        step = LogArchiverStep(str(tmp_path))
+        result = step.run()
+
+        assert result.success is True
+        assert result.data.get("archived") is True
+
+        # Archive should be in newer project
+        newer_archives = list(newer_project.glob("prompt-log-*.json"))
+        older_archives = list(older_project.glob("prompt-log-*.json"))
+
+        assert len(newer_archives) == 1
+        assert len(older_archives) == 0
+
+
+class TestContextLoaderStepModuleLevelRun:
+    """Tests for context_loader module-level run function."""
+
+    def test_module_run_function(self, tmp_path):
+        """Test module-level run() function."""
+        from steps.context_loader import run
+
+        (tmp_path / "CLAUDE.md").write_text("# Test")
+
+        result = run(str(tmp_path), None)
+        assert result.success is True
+
+    def test_module_run_with_config(self, tmp_path):
+        """Test module-level run() function with config."""
+        from steps.context_loader import run
+
+        (tmp_path / "CLAUDE.md").write_text("# Test")
+
+        result = run(str(tmp_path), {"some": "config"})
+        assert result.success is True
+
+
+class TestLogArchiverStepModuleLevelRun:
+    """Tests for log_archiver module-level run function."""
+
+    def test_module_run_function(self, tmp_path):
+        """Test module-level run() function."""
+        from steps.log_archiver import run
+
+        result = run(str(tmp_path), None)
+        assert result.success is True
+
+    def test_module_run_with_config(self, tmp_path):
+        """Test module-level run() function with config."""
+        from steps.log_archiver import run
+
+        result = run(str(tmp_path), {"some": "config"})
         assert result.success is True

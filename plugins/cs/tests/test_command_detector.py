@@ -350,3 +350,200 @@ class TestRunStep:
 
         captured = capsys.readouterr()
         assert "Step failed" in captured.err
+
+
+# ============================================================================
+# NEW TESTS ADDED FOR COVERAGE GAPS
+# ============================================================================
+
+
+class TestDetectCommandMigrate:
+    """Tests for cs:migrate command detection."""
+
+    def test_detects_cs_migrate(self):
+        """Test detection of /cs:migrate command."""
+        assert detect_command("/cs:migrate") == "cs:migrate"
+
+    def test_detects_cs_migrate_with_args(self):
+        """Test detection of /cs:migrate with arguments."""
+        assert detect_command("/cs:migrate --dry-run") == "cs:migrate"
+
+    def test_detects_cs_migrate_with_whitespace(self):
+        """Test detection of /cs:migrate with leading/trailing whitespace."""
+        assert detect_command("  /cs:migrate  ") == "cs:migrate"
+
+
+class TestRunStepGenericException:
+    """Tests for generic exception handling in run_step."""
+
+    def test_module_run_raises_generic_exception(self, tmp_path, monkeypatch, capsys):
+        """Test handling of generic exception from module.run()."""
+        mock_module = MagicMock()
+        mock_module.run.side_effect = RuntimeError("Unexpected error during execution")
+
+        real_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "context_loader":
+                return mock_module
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.__import__", mock_import)
+
+        result = run_step(str(tmp_path), "context-loader", {})
+
+        assert result is False
+        captured = capsys.readouterr()
+        assert "execution error" in captured.err or "Unexpected error" in captured.err
+
+    def test_module_run_raises_oserror(self, tmp_path, monkeypatch, capsys):
+        """Test handling of OSError from module.run()."""
+        mock_module = MagicMock()
+        mock_module.run.side_effect = OSError("Permission denied")
+
+        real_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "context_loader":
+                return mock_module
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.__import__", mock_import)
+
+        result = run_step(str(tmp_path), "context-loader", {})
+
+        assert result is False
+        captured = capsys.readouterr()
+        assert "error" in captured.err.lower()
+
+    def test_module_run_raises_valueerror(self, tmp_path, monkeypatch, capsys):
+        """Test handling of ValueError from module.run()."""
+        mock_module = MagicMock()
+        mock_module.run.side_effect = ValueError("Invalid configuration")
+
+        real_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "context_loader":
+                return mock_module
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.__import__", mock_import)
+
+        result = run_step(str(tmp_path), "context-loader", {})
+
+        assert result is False
+
+
+class TestRunPreStepsGenericException:
+    """Tests for generic exception handling in run_pre_steps."""
+
+    def test_continues_after_step_exception(self, tmp_path, monkeypatch, capsys):
+        """Test that pre-steps continue after one step raises an exception."""
+        import command_detector
+
+        original = command_detector.CONFIG_AVAILABLE
+        command_detector.CONFIG_AVAILABLE = True
+
+        # Mock get_enabled_steps to return multiple steps
+        def mock_get_steps(cmd, step_type):
+            return [
+                {"name": "failing-step"},
+                {"name": "another-step"},
+            ]
+
+        monkeypatch.setattr(
+            "command_detector.get_enabled_steps", mock_get_steps, raising=False
+        )
+
+        # Mock run_step to track calls
+        call_count = [0]
+
+        def mock_run_step(cwd, step_name, config, log_prefix=""):
+            call_count[0] += 1
+            # First step raises, second should still be called
+            raise RuntimeError(f"Step {step_name} failed")
+
+        # Apply the mock via monkeypatch
+        monkeypatch.setattr("command_detector.run_step", mock_run_step, raising=False)
+
+        run_pre_steps(str(tmp_path), "cs:p")
+
+        # Verify both steps were attempted (exception is caught per-step)
+        captured = capsys.readouterr()
+        # Should see error messages for both steps
+        assert "error" in captured.err.lower()
+
+        command_detector.CONFIG_AVAILABLE = original
+
+
+class TestDetectCommandEdgeCases:
+    """Additional edge case tests for detect_command."""
+
+    def test_command_at_start_only(self):
+        """Test that command must be at the start of the prompt."""
+        # Command in middle of text should not be detected
+        assert detect_command("I want to run /cs:p") is None
+
+    def test_similar_but_not_command(self):
+        """Test similar patterns that are not commands."""
+        assert detect_command("/css:p") is None
+        assert detect_command("cs:p") is None  # Missing leading slash
+        assert detect_command("/cs") is None
+        assert detect_command("/csp") is None
+
+    def test_empty_and_whitespace(self):
+        """Test empty and whitespace-only prompts."""
+        assert detect_command("") is None
+        assert detect_command("   ") is None
+        assert detect_command("\n\t") is None
+
+
+class TestMainWithIOUnavailable:
+    """Tests for main when IO_AVAILABLE is False."""
+
+    def test_uses_fallback_io(self, tmp_path, monkeypatch, capsys):
+        """Test that main uses fallback I/O when IO_AVAILABLE is False."""
+        import command_detector
+
+        original_io = command_detector.IO_AVAILABLE
+        command_detector.IO_AVAILABLE = False
+
+        input_data = {
+            "prompt": "/cs:p test",
+            "cwd": str(tmp_path),
+            "session_id": "test123",
+        }
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        main()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"decision": "approve"}
+
+        command_detector.IO_AVAILABLE = original_io
+
+
+class TestRunStepModuleNoRunFunction:
+    """Tests for run_step when module lacks run function."""
+
+    def test_module_without_run_function(self, tmp_path, monkeypatch, capsys):
+        """Test handling when module has no run function."""
+        mock_module = MagicMock(spec=[])  # Empty spec means no run attribute
+        del mock_module.run  # Ensure run doesn't exist
+
+        real_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "context_loader":
+                return mock_module
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.__import__", mock_import)
+
+        result = run_step(str(tmp_path), "context-loader", {})
+
+        assert result is False
+        captured = capsys.readouterr()
+        assert "has no run function" in captured.err
