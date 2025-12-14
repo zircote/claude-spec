@@ -5,7 +5,7 @@ import io
 import json
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 # Import the module
 sys.path.insert(0, str(Path(__file__).parent.parent / "hooks"))
@@ -177,14 +177,20 @@ class TestReadInputErrors:
         assert result is None
 
         captured = capsys.readouterr()
-        assert "Error reading input" in captured.err
+        assert "I/O error reading input" in captured.err
 
 
 class TestWriteOutputErrors:
     """Tests for error handling in write_output."""
 
     def test_json_encode_error(self, monkeypatch, capsys):
-        """Test handling of JSON encode error."""
+        """Test handling of JSON encode error.
+
+        When write_output encounters a serialization error, it falls back
+        to a hardcoded JSON response. The shared hook_io module uses
+        {"decision": "approve"} as the default fallback since it's agnostic
+        to hook type.
+        """
 
         class Unserializable:
             pass
@@ -192,7 +198,8 @@ class TestWriteOutputErrors:
         write_output({"bad": Unserializable()})
 
         captured = capsys.readouterr()
-        assert '{"continue": false}' in captured.out
+        # The shared write_output from hook_io uses a generic fallback
+        assert '{"decision": "approve"}' in captured.out
 
 
 class TestCleanupSessionStateErrors:
@@ -328,3 +335,240 @@ class TestRunStepPost:
 
         captured = capsys.readouterr()
         assert "Archive failed" in captured.err
+
+
+# ============================================================================
+# NEW TESTS ADDED FOR COVERAGE GAPS
+# ============================================================================
+
+
+class TestLoadSessionStateOSError:
+    """Tests for load_session_state OSError handling."""
+
+    def test_load_state_oserror(self, tmp_path, monkeypatch, capsys):
+        """Test handling of OSError when loading session state."""
+        # Create state file
+        state_file = tmp_path / SESSION_STATE_FILE
+        state_file.write_text('{"command": "cs:c"}')
+
+        # Mock open to raise OSError
+        original_open = open
+
+        def mock_open(path, *args, **kwargs):
+            if SESSION_STATE_FILE in str(path):
+                raise OSError("Permission denied")
+            return original_open(path, *args, **kwargs)
+
+        with patch("builtins.open", mock_open):
+            result = load_session_state(str(tmp_path))
+
+        assert result is None
+        captured = capsys.readouterr()
+        assert "Error loading state" in captured.err
+
+    def test_load_state_generic_exception(self, tmp_path, monkeypatch, capsys):
+        """Test handling of generic exception when loading session state."""
+        # Create state file
+        state_file = tmp_path / SESSION_STATE_FILE
+        state_file.write_text('{"command": "cs:c"}')
+
+        # Mock open to raise a generic exception
+        original_open = open
+
+        def mock_open(path, *args, **kwargs):
+            if SESSION_STATE_FILE in str(path):
+                raise RuntimeError("Unexpected error")
+            return original_open(path, *args, **kwargs)
+
+        with patch("builtins.open", mock_open):
+            result = load_session_state(str(tmp_path))
+
+        assert result is None
+        captured = capsys.readouterr()
+        assert "Error loading state" in captured.err
+
+
+class TestRunPostStepsGenericException:
+    """Tests for generic exception handling in run_post_steps."""
+
+    def test_continues_after_step_exception(self, tmp_path, monkeypatch, capsys):
+        """Test that post-steps continue after one step raises an exception."""
+        import post_command
+
+        original = post_command.CONFIG_AVAILABLE
+        post_command.CONFIG_AVAILABLE = True
+
+        # Mock get_enabled_steps to return multiple steps
+        def mock_get_steps(cmd, step_type):
+            return [
+                {"name": "failing-step"},
+                {"name": "another-step"},
+            ]
+
+        monkeypatch.setattr(
+            "post_command.get_enabled_steps", mock_get_steps, raising=False
+        )
+
+        run_post_steps(str(tmp_path), "cs:c")
+
+        # Both steps should be attempted (exception is caught per-step)
+        captured = capsys.readouterr()
+        # Should see error messages for unknown steps
+        assert "Unknown step" in captured.err
+
+        post_command.CONFIG_AVAILABLE = original
+
+
+class TestRunStepGenericException:
+    """Tests for generic exception handling in run_step."""
+
+    def test_module_run_raises_generic_exception(self, tmp_path, monkeypatch, capsys):
+        """Test handling of generic exception from module.run()."""
+        mock_module = MagicMock()
+        mock_module.run.side_effect = RuntimeError("Unexpected error during execution")
+
+        real_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "log_archiver":
+                return mock_module
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.__import__", mock_import)
+
+        result = run_step(str(tmp_path), "archive-logs", {})
+
+        assert result is False
+        captured = capsys.readouterr()
+        assert "execution error" in captured.err or "Unexpected error" in captured.err
+
+    def test_module_run_raises_oserror(self, tmp_path, monkeypatch, capsys):
+        """Test handling of OSError from module.run()."""
+        mock_module = MagicMock()
+        mock_module.run.side_effect = OSError("Disk full")
+
+        real_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "log_archiver":
+                return mock_module
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.__import__", mock_import)
+
+        result = run_step(str(tmp_path), "archive-logs", {})
+
+        assert result is False
+        captured = capsys.readouterr()
+        assert "error" in captured.err.lower()
+
+
+class TestMainWithIOUnavailable:
+    """Tests for main when IO_AVAILABLE is False."""
+
+    def test_uses_fallback_io(self, tmp_path, monkeypatch, capsys):
+        """Test that main uses fallback I/O when IO_AVAILABLE is False."""
+        import post_command
+
+        original_io = post_command.IO_AVAILABLE
+        post_command.IO_AVAILABLE = False
+
+        input_data = {
+            "hook_event_name": "Stop",
+            "cwd": str(tmp_path),
+        }
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        main()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"continue": False}
+
+        post_command.IO_AVAILABLE = original_io
+
+
+class TestMainWithStateButNoCommand:
+    """Tests for main when state file exists but has no command."""
+
+    def test_no_command_in_state(self, tmp_path, monkeypatch, capsys):
+        """Test handling when state file exists but command is missing."""
+        # Create state file without command
+        state_file = tmp_path / SESSION_STATE_FILE
+        state_file.write_text(json.dumps({"session_id": "test123"}))
+
+        input_data = {"hook_event_name": "Stop", "cwd": str(tmp_path)}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        main()
+
+        # Should complete without error
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"continue": False}
+
+        # State file should still be cleaned up
+        assert not state_file.exists()
+
+    def test_empty_command_in_state(self, tmp_path, monkeypatch, capsys):
+        """Test handling when state file has empty command."""
+        # Create state file with empty command
+        state_file = tmp_path / SESSION_STATE_FILE
+        state_file.write_text(json.dumps({"command": "", "session_id": "test123"}))
+
+        input_data = {"hook_event_name": "Stop", "cwd": str(tmp_path)}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        main()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"continue": False}
+
+
+class TestRunStepModuleNoRunFunction:
+    """Tests for run_step when module lacks run function."""
+
+    def test_module_without_run_function(self, tmp_path, monkeypatch, capsys):
+        """Test handling when module has no run function."""
+        mock_module = MagicMock(spec=[])  # Empty spec means no run attribute
+        del mock_module.run  # Ensure run doesn't exist
+
+        real_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "log_archiver":
+                return mock_module
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.__import__", mock_import)
+
+        result = run_step(str(tmp_path), "archive-logs", {})
+
+        assert result is False
+        captured = capsys.readouterr()
+        assert "has no run function" in captured.err
+
+
+class TestCleanupSessionStateEdgeCases:
+    """Edge case tests for cleanup_session_state."""
+
+    def test_cleanup_directory_not_writable(self, tmp_path, capsys):
+        """Test cleanup when directory permissions are restrictive."""
+        # Create state file in a subdirectory
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()
+        state_file = subdir / SESSION_STATE_FILE
+        state_file.write_text('{"command": "cs:c"}')
+
+        # Make directory read-only (file can't be deleted)
+        subdir.chmod(0o444)
+
+        try:
+            cleanup_session_state(str(subdir))
+            captured = capsys.readouterr()
+            # Should log an error but not crash
+            assert "Error cleaning state" in captured.err
+        finally:
+            # Restore permissions for cleanup
+            subdir.chmod(0o755)
