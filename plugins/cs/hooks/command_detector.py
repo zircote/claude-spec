@@ -52,6 +52,18 @@ except ImportError as e:
     CONFIG_AVAILABLE = False
     sys.stderr.write(f"claude-spec command_detector: Config import error: {e}\n")
 
+# Import shared I/O and step runner
+try:
+    from hook_io import pass_through, read_input, write_output
+    from step_runner import run_step
+
+    IO_AVAILABLE = True
+except ImportError as e:
+    IO_AVAILABLE = False
+    sys.stderr.write(f"claude-spec command_detector: Lib import error: {e}\n")
+
+LOG_PREFIX = "command_detector"
+
 # Session state file for passing command info to post-command hook
 SESSION_STATE_FILE = ".cs-session-state.json"
 
@@ -67,29 +79,26 @@ COMMAND_PATTERNS = {
 }
 
 
-def read_input() -> dict[str, Any] | None:
-    """Read and parse JSON input from stdin."""
+# Fallback I/O functions if shared module not available
+def _fallback_read_input() -> dict[str, Any] | None:
+    """Fallback read_input if hook_io not available."""
     try:
         return json.load(sys.stdin)
-    except json.JSONDecodeError as e:
-        sys.stderr.write(f"claude-spec command_detector: JSON decode error: {e}\n")
-        return None
     except Exception as e:
-        sys.stderr.write(f"claude-spec command_detector: Error reading input: {e}\n")
+        sys.stderr.write(f"claude-spec {LOG_PREFIX}: Error reading input: {e}\n")
         return None
 
 
-def write_output(response: dict[str, Any]) -> None:
-    """Write JSON response to stdout."""
+def _fallback_write_output(response: dict[str, Any]) -> None:
+    """Fallback write_output if hook_io not available."""
     try:
         print(json.dumps(response), file=sys.stdout)
-    except Exception as e:
-        sys.stderr.write(f"claude-spec command_detector: Error writing output: {e}\n")
+    except Exception:
         print('{"decision": "approve"}', file=sys.stdout)
 
 
-def pass_through() -> dict[str, Any]:
-    """Return a pass-through response that allows the prompt to proceed."""
+def _fallback_pass_through() -> dict[str, Any]:
+    """Fallback pass_through if hook_io not available."""
     return {"decision": "approve"}
 
 
@@ -123,7 +132,7 @@ def save_session_state(cwd: str, state: dict[str, Any]) -> None:
         with open(state_file, "w", encoding="utf-8") as f:
             json.dump(state, f, indent=2)
     except Exception as e:
-        sys.stderr.write(f"claude-spec command_detector: Error saving state: {e}\n")
+        sys.stderr.write(f"claude-spec {LOG_PREFIX}: Error saving state: {e}\n")
 
 
 def run_pre_steps(cwd: str, command: str) -> None:
@@ -141,63 +150,33 @@ def run_pre_steps(cwd: str, command: str) -> None:
     for step_config in steps:
         step_name = step_config.get("name", "unknown")
         try:
-            run_step(cwd, step_name, step_config)
+            if IO_AVAILABLE:
+                run_step(cwd, step_name, step_config, log_prefix="claude-spec pre-step")
+            else:
+                # Fallback: skip step execution if libs not available
+                sys.stderr.write(
+                    f"claude-spec pre-step {step_name}: skipped (libs not available)\n"
+                )
         except Exception as e:
             # Fail-open: log error but don't block
             sys.stderr.write(f"claude-spec pre-step {step_name} error: {e}\n")
 
 
-def run_step(cwd: str, step_name: str, config: dict[str, Any]) -> None:
-    """Run a single step module.
-
-    Args:
-        cwd: Current working directory
-        step_name: Name of the step to run
-        config: Step configuration
-    """
-    # Import step module dynamically
-    steps_dir = PLUGIN_ROOT / "steps"
-
-    # Map step names to module names
-    step_modules = {
-        "security-review": "security_reviewer",
-        "context-loader": "context_loader",
-        "generate-retrospective": "retrospective_gen",
-        "archive-logs": "log_archiver",
-        "cleanup-markers": "marker_cleaner",
-    }
-
-    module_name = step_modules.get(step_name)
-    if not module_name:
-        sys.stderr.write(f"claude-spec: Unknown step: {step_name}\n")
-        return
-
-    if str(steps_dir) not in sys.path:
-        sys.path.insert(0, str(steps_dir))
-
-    try:
-        module = __import__(module_name)
-        if hasattr(module, "run"):
-            result = module.run(cwd, config)
-            if result and hasattr(result, "success") and not result.success:
-                sys.stderr.write(
-                    f"claude-spec pre-step {step_name}: {result.message}\n"
-                )
-    except ImportError as e:
-        sys.stderr.write(f"claude-spec: Could not import step {step_name}: {e}\n")
-    except Exception as e:
-        # Catch-all for step execution errors (fail-open)
-        sys.stderr.write(f"claude-spec: Step {step_name} execution error: {e}\n")
-
-
 def main() -> None:
     """Main entry point for the command detector hook."""
-    # Read input
-    input_data = read_input()
+    # Read input using shared I/O or fallback
+    if IO_AVAILABLE:
+        input_data = read_input(LOG_PREFIX)
+        _write_output = write_output
+        _pass_through = pass_through
+    else:
+        input_data = _fallback_read_input()
+        _write_output = _fallback_write_output
+        _pass_through = _fallback_pass_through
 
     if input_data is None:
         # Malformed input - fail open
-        write_output(pass_through())
+        _write_output(_pass_through())
         return
 
     # Extract fields
@@ -223,7 +202,7 @@ def main() -> None:
         run_pre_steps(cwd, command)
 
     # Always approve
-    write_output(pass_through())
+    _write_output(_pass_through())
 
 
 if __name__ == "__main__":

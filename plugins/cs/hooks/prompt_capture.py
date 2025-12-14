@@ -40,6 +40,7 @@ import json
 import os
 import sys
 import uuid
+from pathlib import Path
 from typing import Any
 
 # Edge case limits
@@ -47,15 +48,17 @@ MAX_PROMPT_LENGTH = 100000  # 100KB max per prompt to prevent memory issues
 MAX_LOG_ENTRY_SIZE = 50000  # Truncate content if over 50KB
 
 # Add hooks directory to path for sibling imports
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
+SCRIPT_DIR = Path(__file__).parent
+PLUGIN_ROOT = SCRIPT_DIR.parent
 
 # Add filters directory to path
-FILTERS_DIR = os.path.join(PLUGIN_ROOT, "filters")
-if FILTERS_DIR not in sys.path:
-    sys.path.insert(0, FILTERS_DIR)
-if PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, PLUGIN_ROOT)
+FILTERS_DIR = PLUGIN_ROOT / "filters"
+if str(FILTERS_DIR) not in sys.path:
+    sys.path.insert(0, str(FILTERS_DIR))
+if str(PLUGIN_ROOT) not in sys.path:
+    sys.path.insert(0, str(PLUGIN_ROOT))
+if str(SCRIPT_DIR / "lib") not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR / "lib"))
 
 try:
     from filters.log_entry import LogEntry
@@ -68,30 +71,38 @@ except ImportError as e:
     FILTERS_AVAILABLE = False
     sys.stderr.write(f"claude-spec prompt_capture: Filter import error: {e}\n")
 
+# Import shared I/O
+try:
+    from hook_io import pass_through, read_input, write_output
 
-def pass_through() -> dict[str, Any]:
-    """Return a pass-through response that allows the prompt to proceed."""
+    IO_AVAILABLE = True
+except ImportError as e:
+    IO_AVAILABLE = False
+    sys.stderr.write(f"claude-spec prompt_capture: Lib import error: {e}\n")
+
+LOG_PREFIX = "prompt_capture"
+
+
+# Fallback I/O functions if shared module not available
+def _fallback_pass_through() -> dict[str, Any]:
+    """Fallback pass_through if hook_io not available."""
     return {"decision": "approve"}
 
 
-def read_input() -> dict[str, Any] | None:
-    """Read and parse JSON input from stdin."""
+def _fallback_read_input() -> dict[str, Any] | None:
+    """Fallback read_input if hook_io not available."""
     try:
         return json.load(sys.stdin)
-    except json.JSONDecodeError as e:
-        sys.stderr.write(f"claude-spec prompt_capture: JSON decode error: {e}\n")
-        return None
     except Exception as e:
-        sys.stderr.write(f"claude-spec prompt_capture: Error reading input: {e}\n")
+        sys.stderr.write(f"claude-spec {LOG_PREFIX}: Error reading input: {e}\n")
         return None
 
 
-def write_output(response: dict[str, Any]) -> None:
-    """Write JSON response to stdout."""
+def _fallback_write_output(response: dict[str, Any]) -> None:
+    """Fallback write_output if hook_io not available."""
     try:
         print(json.dumps(response), file=sys.stdout)
-    except Exception as e:
-        sys.stderr.write(f"claude-spec prompt_capture: Error writing output: {e}\n")
+    except Exception:
         print('{"decision": "approve"}', file=sys.stdout)
 
 
@@ -170,12 +181,19 @@ def detect_command(prompt: str) -> str | None:
 
 def main() -> None:
     """Main entry point for the prompt capture hook."""
-    # Read input
-    input_data = read_input()
+    # Read input using shared I/O or fallback
+    if IO_AVAILABLE:
+        input_data = read_input(LOG_PREFIX)
+        _write_output = write_output
+        _pass_through = pass_through
+    else:
+        input_data = _fallback_read_input()
+        _write_output = _fallback_write_output
+        _pass_through = _fallback_pass_through
 
     if input_data is None:
         # Malformed input - fail open
-        write_output(pass_through())
+        _write_output(_pass_through())
         return
 
     # Extract fields with defaults
@@ -186,7 +204,7 @@ def main() -> None:
 
     # Edge case: empty prompt
     if not user_prompt or not user_prompt.strip():
-        write_output(pass_through())
+        _write_output(_pass_through())
         return
 
     # Edge case: extremely long prompt
@@ -195,18 +213,18 @@ def main() -> None:
 
     # Check if logging is enabled
     if not is_logging_enabled(cwd):
-        write_output(pass_through())
+        _write_output(_pass_through())
         return
 
     # Get project directory for logging
     project_dir = find_enabled_project_dir(cwd)
     if not project_dir:
-        write_output(pass_through())
+        _write_output(_pass_through())
         return
 
     # Check if filters are available
     if not FILTERS_AVAILABLE:
-        write_output(pass_through())
+        _write_output(_pass_through())
         return
 
     # Detect /spec: command if present
@@ -232,7 +250,7 @@ def main() -> None:
     append_to_log(project_dir, entry)
 
     # Always approve
-    write_output(pass_through())
+    _write_output(_pass_through())
 
 
 if __name__ == "__main__":

@@ -90,15 +90,41 @@ class RetrospectiveGeneratorStep(BaseStep):
 
         Args:
             log_path: Path to the prompt log file
+                      Supports both NDJSON format (one JSON object per line)
+                      and JSON array format for backwards compatibility
 
         Returns:
             Analysis dict or None if analysis failed
         """
         try:
             content = log_path.read_text(encoding="utf-8")
-            entries = json.loads(content)
+            content_stripped = content.strip()
 
-            if not isinstance(entries, list):
+            entries: list[dict[str, Any]] = []
+
+            # Try JSON array format first (backwards compatibility / test format)
+            if content_stripped.startswith("["):
+                try:
+                    parsed = json.loads(content_stripped)
+                    if isinstance(parsed, list):
+                        entries = parsed
+                except json.JSONDecodeError:
+                    # If parsing as a JSON array fails, fall back to NDJSON format below.
+                    pass
+
+            # Fall back to NDJSON format (production format from log_writer)
+            if not entries:
+                for line in content.splitlines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        entries.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        # Skip malformed lines but continue processing
+                        continue
+
+            if not entries:
                 return None
 
             # Basic statistics
