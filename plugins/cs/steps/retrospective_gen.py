@@ -109,6 +109,7 @@ class RetrospectiveGeneratorStep(BaseStep):
                     if isinstance(parsed, list):
                         entries = parsed
                 except json.JSONDecodeError:
+                    # If parsing as a JSON array fails, fall back to NDJSON format below.
                     pass
 
             # Fall back to NDJSON format (production format from log_writer)

@@ -79,6 +79,9 @@ def run_step(
     except ImportError as e:
         sys.stderr.write(f"{log_prefix}: Could not import step {step_name}: {e}\n")
         return False
+    except (SystemExit, KeyboardInterrupt):
+        # Re-raise system exceptions - don't mask user cancellation
+        raise
     except Exception as e:
         # Catch-all for step execution errors (fail-open)
         sys.stderr.write(f"{log_prefix}: Step {step_name} execution error: {e}\n")

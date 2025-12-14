@@ -439,8 +439,10 @@ class TestContextLoaderStepContextUtilsUnavailable:
 
     def test_fails_when_context_utils_unavailable(self, tmp_path, monkeypatch):
         """Test step fails when CONTEXT_UTILS_AVAILABLE is False."""
-        # Import the actual module to modify its state
-        import steps.context_loader as context_loader_module
+        # Get the already-imported module to modify its state
+        import sys
+
+        context_loader_module = sys.modules["steps.context_loader"]
 
         original = context_loader_module.CONTEXT_UTILS_AVAILABLE
         context_loader_module.CONTEXT_UTILS_AVAILABLE = False
@@ -488,8 +490,10 @@ class TestContextLoaderStepNoContextLoaded:
 
     def test_fails_when_no_context_parts(self, tmp_path, monkeypatch):
         """Test step fails when no context sections are loaded."""
-        # Mock context_utils to return empty values so no context is loaded
-        import steps.context_loader as context_loader_module
+        # Get the already-imported module to mock its functions
+        import sys
+
+        context_loader_module = sys.modules["steps.context_loader"]
 
         # Mock functions must accept **kwargs to handle optional parameters
         monkeypatch.setattr(

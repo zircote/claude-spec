@@ -177,7 +177,7 @@ class TestReadInputErrors:
         assert result is None
 
         captured = capsys.readouterr()
-        assert "Error reading input" in captured.err
+        assert "I/O error reading input" in captured.err
 
 
 class TestWriteOutputErrors:

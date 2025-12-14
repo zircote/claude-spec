@@ -206,7 +206,7 @@ class TestReadInput(unittest.TestCase):
 
     def test_read_error(self):
         """Should return None on read error."""
-        with patch("sys.stdin.read", side_effect=Exception("Read error")):
+        with patch("sys.stdin.read", side_effect=OSError("Read error")):
             with patch("sys.stderr", new_callable=StringIO):
                 result = read_input()
         self.assertIsNone(result)

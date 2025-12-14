@@ -153,7 +153,7 @@ class LogEntry:
     timestamp: str
     session_id: str
     entry_type: str  # user_input, expanded_prompt, response_summary
-    command: str | None  # /spec:p, /spec:i, etc. or None
+    command: str | None  # /cs:p, /cs:i, etc. or None
     content: str
     filter_applied: FilterInfo = field(default_factory=FilterInfo)
     metadata: EntryMetadata = field(default_factory=EntryMetadata)
@@ -215,7 +215,7 @@ class LogEntry:
             session_id: Unique session identifier
             entry_type: Type of entry (user_input, expanded_prompt, response_summary)
             content: The actual content (already filtered)
-            command: Optional /spec:* command if applicable
+            command: Optional /cs:* command if applicable
             cwd: Current working directory
             filter_info: Information about filtering applied
 
