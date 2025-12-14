@@ -62,8 +62,8 @@ def read_input(
     except json.JSONDecodeError as e:
         sys.stderr.write(f"claude-spec {log_prefix}: JSON decode error: {e}\n")
         return None
-    except Exception as e:
-        sys.stderr.write(f"claude-spec {log_prefix}: Error reading input: {e}\n")
+    except OSError as e:
+        sys.stderr.write(f"claude-spec {log_prefix}: I/O error reading input: {e}\n")
         return None
 
 

@@ -363,13 +363,12 @@ def filter_secrets(text: str) -> tuple[str, list[str]]:
 
     if not original_matches:
         # Secrets only in decoded content - still report them but don't modify text
-        # Add a note that encoded secrets were detected
-        if matches:
-            return (
-                text + "\n[WARNING: Base64-encoded secrets detected and filtered]",
-                all_secret_types,
-            )
-        return text, []
+        # Add a note that encoded secrets were detected (matches is always truthy here
+        # since we returned early above if not matches)
+        return (
+            text + "\n[WARNING: Base64-encoded secrets detected and filtered]",
+            all_secret_types,
+        )
 
     # Replace from end to start to preserve positions
     result = text
