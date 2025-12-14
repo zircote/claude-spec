@@ -22,3 +22,6 @@ Thumbs.db
 # Prompt logs (should stay local, not in plugin)
 .prompt-log.json
 .prompt-log-enabled
+
+# Snyk Security Extension - AI Rules (auto-generated)
+.windsurf/rules/snyk_rules.md
