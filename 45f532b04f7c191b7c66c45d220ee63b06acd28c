@@ -721,3 +721,28 @@ permissions:
 - Default permissions
 - Job-level permissions
 - No explicit permissions
+
+---
+type: decisions
+spec: quality-release-ci-github-act
+timestamp: '2025-12-15T06:46:55.413248Z'
+summary: Python 3.11+ Minimum Version
+phase: architecture
+tags:
+- quality-release-ci-github-act
+- adr
+- architecture
+- python
+- testing
+---
+
+## Context
+Need to choose minimum Python version for compatibility testing.
+
+## Decision
+Support **Python 3.11, 3.12, 3.13** (3.11+ minimum).
+
+## Alternatives Considered
+- 3.12+ only
+- 3.10+
+- 3.14 only
