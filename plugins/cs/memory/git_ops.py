@@ -333,9 +333,7 @@ class GitOps:
             status["fetch"] = True
 
         # Check rewriteRef
-        result = self._run_git(
-            ["config", "--get-all", "notes.rewriteRef"], check=False
-        )
+        result = self._run_git(["config", "--get-all", "notes.rewriteRef"], check=False)
         if result.returncode == 0 and "refs/notes/cs" in result.stdout:
             status["rewrite"] = True
 

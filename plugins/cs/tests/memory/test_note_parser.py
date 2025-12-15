@@ -245,7 +245,9 @@ class TestMemoryIdFunctions:
 
     def test_parse_memory_id_new_format(self):
         """Test parsing new format memory ID."""
-        namespace, commit_sha, ts_ms = parse_memory_id("decisions:abc123d:1702551000000")
+        namespace, commit_sha, ts_ms = parse_memory_id(
+            "decisions:abc123d:1702551000000"
+        )
         assert namespace == "decisions"
         assert commit_sha == "abc123d"
         assert ts_ms == 1702551000000

@@ -220,7 +220,8 @@ def extract_memory_id(
     Returns:
         Memory ID string (e.g., "decisions:abc123d:1702560000000")
     """
-    from datetime import UTC, datetime as dt
+    from datetime import UTC
+    from datetime import datetime as dt
 
     # Use first 7 chars of SHA (standard git short SHA)
     short_sha = commit_sha[:7]

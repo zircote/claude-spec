@@ -199,7 +199,9 @@ class TestAutoConfiguration:
         # Should only be called once despite two captures
         mock_git_ops.configure_sync.assert_called_once()
 
-    def test_reset_sync_configured(self, mock_git_ops, mock_embedding_service, mock_index_service, tmp_path):
+    def test_reset_sync_configured(
+        self, mock_git_ops, mock_embedding_service, mock_index_service, tmp_path
+    ):
         """Test that reset_sync_configured allows reconfiguration."""
         service = CaptureService(
             git_ops=mock_git_ops,
@@ -215,7 +217,9 @@ class TestAutoConfiguration:
 
             # Reset and capture again
             CaptureService.reset_sync_configured()
-            service.capture(namespace="decisions", summary="Test 2", content="Content 2")
+            service.capture(
+                namespace="decisions", summary="Test 2", content="Content 2"
+            )
             assert mock_git_ops.configure_sync.call_count == 2
 
 
