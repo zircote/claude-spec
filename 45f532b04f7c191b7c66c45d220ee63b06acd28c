@@ -515,3 +515,27 @@ Use **uv** (by Astral) for package management in CI and local development.
 - pip + pip-tools
 - poetry
 - pipenv
+
+---
+type: decisions
+spec: quality-release-ci-github-act
+timestamp: '2025-12-15T06:46:55.056429Z'
+summary: Use ruff for Linting and Formatting
+phase: architecture
+tags:
+- quality-release-ci-github-act
+- adr
+- architecture
+- python
+---
+
+## Context
+Python code needs formatting and linting. Traditional tools include Black, isort, flake8, pylint.
+
+## Decision
+Use **ruff** for both formatting and linting.
+
+## Alternatives Considered
+- Black + isort + flake8
+- Black + pylint
+- autopep8
