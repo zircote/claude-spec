@@ -210,3 +210,21 @@ Claude Code may maintain internal session transcripts. The question was whether 
 
 ## Decision
 Maintain **custom prompt capture system** within the plugin.
+
+---
+type: decisions
+spec: claude-spec-plugin
+timestamp: '2025-12-15T06:50:31.918913Z'
+summary: Command Prefix Rename (/arch:* → /cs:*)
+phase: architecture
+tags:
+- claude-spec-plugin
+- adr
+- architecture
+---
+
+## Context
+The plugin needs a command prefix. Options were `/arch:*`, `/spec:*`, `/cs:*`, or `/cspec:*`.
+
+## Decision
+Use **`/cs:*`** prefix (short for claude-spec).
