@@ -916,3 +916,30 @@ Use temporary state file `.cs-session-state.json` in project directory.
 ## Alternatives Considered
 - CLAUDE_ENV_FILE
 - Transcript file
+
+---
+type: decisions
+spec: pre-post-steps-commands
+timestamp: '2025-12-15T06:50:33.242228Z'
+summary: Strict Phase Separation - /cs:p NEVER Implements
+phase: architecture
+tags:
+- pre-post-steps-commands
+- adr
+- architecture
+- ci-cd
+---
+
+## Context
+During specification work, Claude incorrectly proceeded to implementation after the user said "approve work", interpreting approval of the spec as authorization to implement. This highlighted a critical gap: no explicit boundary between planning and implementation phases.
+
+Options:
+1. Trust Claude to interpret user intent correctly (status quo)
+2. Add explicit guards in command files to enforce phase boundaries
+3. Require separate confirmation before implementation
+
+## Decision
+Enforce strict phase separation through command file modifications:
+- `/cs:p` includes `<post_approval_halt>` section that HALTS after spec approval
+- `/cs:i` is the ONLY authorized entry point for implementation
+- Plan approval explicitly does NOT authorize implementation
