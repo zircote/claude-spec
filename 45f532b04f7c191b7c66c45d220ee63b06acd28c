@@ -1021,3 +1021,27 @@ Use Claude's `AskUserQuestion` tool to interactively gather configuration prefer
 - CLI prompts (readline/fzf)
 - Web UI
 - Just use defaults
+
+---
+type: decisions
+spec: worktree-config-install
+timestamp: '2025-12-15T06:50:33.439157Z'
+summary: Template File Naming
+phase: architecture
+tags:
+- worktree-config-install
+- adr
+- architecture
+- configuration
+---
+
+## Context
+The bundled configuration file serves as a template/default, not the active user config. The name should reflect this.
+
+## Decision
+Rename `config.json` to `config.template.json`.
+
+## Alternatives Considered
+- `config.default.json`
+- `config.example.json`
+- Keep `config.json`
