@@ -1,0 +1,27 @@
+---
+type: decisions
+spec: arch-lifecycle-automation
+timestamp: '2025-12-15T06:46:29.990956Z'
+summary: Use PROGRESS.md as Single Source of Truth
+phase: architecture
+tags:
+- arch-lifecycle-automation
+- adr
+- architecture
+- ci-cd
+---
+
+## Context
+Implementation state needs to be tracked across multiple documents (README.md, IMPLEMENTATION_PLAN.md, REQUIREMENTS.md, CHANGELOG.md). We need to decide where the authoritative state lives.
+
+Options considered:
+1. Distributed state: Each document owns its own state
+2. Central state: One file is authoritative, others are derived
+3. External state: JSON/database file separate from markdown
+
+## Decision
+Use a new `PROGRESS.md` file as the single source of truth for all implementation state. Other documents are synchronized from PROGRESS.md.
+
+## Alternatives Considered
+- Distributed state
+- JSON/database file
