@@ -10,6 +10,248 @@ The cs-memory system captures project context as Git notes, enabling:
 - **Pattern detection** to surface recurring themes
 - **Memory lifecycle** to age and archive old context
 
+## The Problem This Solves
+
+**Without cs-memory**: After 2-3 context compactions, Claude loses track of earlier decisions, repeats mistakes, and asks questions that were already answered.
+
+**With cs-memory**: Decisions, learnings, and blockers persist across sessions and are automatically surfaced when relevant.
+
+```
+Session 1: "Let's use PostgreSQL for ACID compliance"
+           → Memory captured automatically
+
+Session 5: *Claude starts suggesting MySQL*
+           → cs-memory proactively surfaces: "Previously decided PostgreSQL for ACID"
+           → Claude remembers and stays consistent
+```
+
+---
+
+## Quick Start Tutorial
+
+### Step 1: Verify Memory System is Active
+
+```bash
+/cs:memory status
+```
+
+**Expected output:**
+```
+Memory System Status
+────────────────────
+Total memories: 0
+Index size: 24 KB
+Last sync: never
+
+Breakdown by namespace:
+  (none yet)
+```
+
+### Step 2: Capture Your First Memory
+
+Let's capture a decision about your project:
+
+```bash
+/cs:remember decision "Using TypeScript over JavaScript for type safety"
+```
+
+Claude will prompt for additional context:
+```
+Capturing decision...
+
+What alternatives were considered?
+> JavaScript, Flow
+
+What's the rationale for this choice?
+> TypeScript catches bugs at compile time, better IDE support, team already familiar
+
+Any relevant tags?
+> typescript, tooling, frontend
+
+✓ Decision captured as decisions:abc123
+```
+
+### Step 3: Search Your Memories
+
+```bash
+/cs:recall "type safety"
+```
+
+**Output:**
+```
+Found 1 relevant memory:
+
+[1] decisions:abc123 (0.89 relevance)
+    "Using TypeScript over JavaScript for type safety"
+    Tags: typescript, tooling, frontend
+    Captured: 2 minutes ago
+```
+
+### Step 4: Load Full Context
+
+```bash
+/cs:recall --level full "type safety"
+```
+
+**Output:**
+```
+[1] decisions:abc123 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Using TypeScript over JavaScript for type safety
+
+## Alternatives Considered
+- JavaScript
+- Flow
+
+## Rationale
+TypeScript catches bugs at compile time, better IDE support,
+team already familiar
+
+Tags: typescript, tooling, frontend
+Captured: 2 minutes ago
+```
+
+---
+
+## Real-World Workflows
+
+### Workflow 1: Starting a New Feature
+
+When beginning work on a new feature, recall relevant past decisions:
+
+```bash
+# Search for related decisions
+/cs:recall --namespace decisions "authentication"
+
+# Load all context for current spec
+/cs:context
+
+# If starting a new spec, memories are auto-recalled
+/cs:p "Add OAuth2 login support"
+# → Claude automatically searches for: "OAuth authentication login security"
+# → Surfaces past decisions about auth, security, user management
+```
+
+**Why this helps**: Claude immediately knows about past authentication decisions without you having to re-explain them.
+
+### Workflow 2: Hitting a Blocker
+
+When you encounter an obstacle:
+
+```bash
+/cs:remember blocker "Rate limit on GitHub API causing CI failures"
+```
+
+Claude prompts:
+```
+What type of blocker is this?
+> external_api
+
+What's the current impact?
+> CI pipeline fails on PRs with many commits
+
+Any workarounds being considered?
+> Caching API responses, reducing API calls per build
+
+✓ Blocker captured as blockers:def456
+```
+
+Later, when facing similar issues:
+```bash
+/cs:recall "API rate limit"
+# → Surfaces the blocker and any learnings from resolving it
+```
+
+### Workflow 3: Capturing a Learning
+
+After solving a tricky problem:
+
+```bash
+/cs:remember learning "Connection pooling with PgBouncer reduces latency by 40%"
+```
+
+Claude prompts:
+```
+What was the context for this learning?
+> Database connections were being exhausted under load
+
+How was this discovered?
+> Load testing revealed connection limit, PgBouncer solved it
+
+Any code or config involved?
+> Added pgbouncer.ini with pool_mode=transaction
+
+Tags?
+> database, performance, postgres
+
+✓ Learning captured as learnings:ghi789
+```
+
+### Workflow 4: Code Review Integration
+
+After a code review session:
+
+```bash
+/cs:review --recall
+```
+
+**Output:**
+```
+Past Review Patterns
+────────────────────
+Pattern: Missing error handling (appeared 5 times)
+  Most recent: 3 days ago in auth-feature
+  Suggestion: Add try/catch for async operations
+
+Pattern: Inconsistent naming (appeared 3 times)
+  Most recent: 1 week ago in api-refactor
+  Suggestion: Follow camelCase for functions
+
+Recent Review Findings
+──────────────────────
+[1] reviews:jkl012 - "Add input validation for user endpoints"
+[2] reviews:mno345 - "Missing unit tests for error paths"
+```
+
+### Workflow 5: Project Close-out
+
+When completing a project:
+
+```bash
+/cs:c my-feature
+```
+
+Claude automatically:
+1. Recalls all memories for the spec
+2. Extracts learnings and patterns
+3. Captures retrospective notes
+4. Archives memories with summaries
+
+```
+Project Close-out: my-feature
+─────────────────────────────
+
+Memories captured: 23
+  - decisions: 8
+  - learnings: 7
+  - progress: 5
+  - blockers: 3
+
+Key Learnings Extracted:
+1. "Connection pooling critical for >100 concurrent users"
+2. "GitHub API requires exponential backoff for rate limits"
+3. "TypeScript strict mode catches 30% more bugs"
+
+Patterns Detected:
+- SUCCESS: "Early performance testing" (3 occurrences)
+- ANTI_PATTERN: "Skipping input validation" (2 occurrences)
+
+✓ Retrospective captured as retrospective:pqr678
+✓ Memories archived with summaries
+```
+
+---
+
 ## Quick Start
 
 ### Capturing Context
@@ -239,18 +481,184 @@ Results are re-ranked using:
 
 ### "No memories found"
 
-1. Check namespace filter: `--namespace all`
-2. Verify spec exists: `/cs:s --list`
-3. Check index: `/cs:memory verify`
+**Symptoms**: `/cs:recall` returns empty results
+
+**Diagnosis**:
+```bash
+# Check if any memories exist
+/cs:memory status
+
+# Verify index is synced with git notes
+/cs:memory verify
+```
+
+**Common causes and fixes**:
+
+| Cause | Fix |
+|-------|-----|
+| Namespace filter too strict | Use `--namespace all` or omit filter |
+| Spec filter doesn't match | Check exact spec name: `/cs:s --list` |
+| Index out of sync | Run `/cs:memory reindex` |
+| Query too specific | Try broader terms (semantic search expands automatically) |
+
+**Example fix**:
+```bash
+# Instead of this (too specific):
+/cs:recall --namespace decisions --spec auth-v2 "JWT token expiration handling for refresh tokens"
+
+# Try this (broader):
+/cs:recall "JWT tokens"
+```
 
 ### Slow searches
 
-1. Check cache: `/cs:memory status`
-2. Run GC: `/cs:memory gc`
-3. Consider archiving old specs
+**Symptoms**: Searches take >1 second
 
-### Missing context
+**Diagnosis**:
+```bash
+/cs:memory status
+# Look at: Index size, Cache stats
+```
 
-1. Verify hydration level: `--level full`
-2. Check if memory was captured: `/cs:memory status`
-3. Re-index: `/cs:memory reindex`
+**Common causes and fixes**:
+
+| Cause | Fix |
+|-------|-----|
+| Large index (>10k memories) | Run `/cs:memory gc` to clean old entries |
+| Many orphaned embeddings | Run `/cs:memory reindex --full` |
+| First search (cold cache) | Subsequent searches will be faster |
+| Embedding model loading | First search loads model (~2s), then cached |
+
+**Example fix**:
+```bash
+# Clean up and rebuild
+/cs:memory gc
+/cs:memory reindex --full
+```
+
+### Missing context after recall
+
+**Symptoms**: Recall returns memory but content is truncated
+
+**Diagnosis**:
+```bash
+# Check hydration level
+/cs:recall --level full "your query"
+```
+
+**Hydration level guide**:
+```bash
+# Level 1 (SUMMARY) - Just metadata, fastest
+/cs:recall "query"
+
+# Level 2 (FULL) - Complete note content
+/cs:recall --level full "query"
+
+# Level 3 (FILES) - Content + file snapshots (slowest)
+/cs:recall --level files "query"
+```
+
+### Memories not auto-captured during /cs:p or /cs:i
+
+**Symptoms**: Decisions made during planning don't appear in memory
+
+**Diagnosis**:
+```bash
+# Check if auto-capture is enabled in command
+# Look for <memory_integration> section in command output
+```
+
+**Common causes**:
+- Spec not initialized (no PROGRESS.md yet)
+- Claude didn't recognize the decision format
+- Memory capture failed silently (check `--verbose`)
+
+**Fix**: Manually capture important decisions:
+```bash
+/cs:remember decision "Your decision summary" --spec your-spec
+```
+
+### Git notes not syncing
+
+**Symptoms**: `/cs:memory verify` shows inconsistencies
+
+**Diagnosis**:
+```bash
+/cs:memory verify
+
+# Expected output for healthy state:
+# ✓ Index consistent with git notes
+# Total: 42 memories
+
+# Problematic output:
+# ✗ Index inconsistent
+# Missing in index: 3
+# Orphaned in index: 1
+```
+
+**Fix**:
+```bash
+# Full rebuild from git notes (source of truth)
+/cs:memory reindex --full
+```
+
+### "Model not found" or embedding errors
+
+**Symptoms**: Capture or recall fails with embedding error
+
+**Diagnosis**:
+```bash
+# Check if model can be loaded
+python3 -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+```
+
+**Common causes and fixes**:
+
+| Cause | Fix |
+|-------|-----|
+| Model not downloaded | First run auto-downloads; ensure internet access |
+| Disk space full | Free up space; model needs ~100MB |
+| PyTorch not installed | Run `uv sync` to install dependencies |
+
+### Performance tuning
+
+**For repositories with many memories (500+)**:
+
+```bash
+# 1. Archive completed specs (reduces active index size)
+/cs:c old-feature  # Close out completed projects
+
+# 2. Run garbage collection
+/cs:memory gc
+
+# 3. Check index health
+/cs:memory status
+# Ideal: <500 active memories, >80% cache hit rate
+```
+
+**For faster searches**:
+- Use specific namespaces: `--namespace decisions` is faster than searching all
+- Use spec filters: `--spec auth-feature` narrows search scope
+- Recent queries are cached (5 minute TTL)
+
+---
+
+## Frequently Asked Questions
+
+**Q: Where are memories stored?**
+A: In Git notes attached to commits. Run `git notes --ref=refs/notes/cs/decisions list` to see raw notes.
+
+**Q: Can I share memories with my team?**
+A: Yes! Git notes are distributed with `git push` / `git pull`. Team members get all memories.
+
+**Q: What happens during git rebase?**
+A: Notes attached to rebased commits may become orphaned. Run `/cs:memory verify` after rebase.
+
+**Q: How do I backup my memories?**
+A: Export to JSON: `/cs:memory export --output backup.json`
+
+**Q: Can I edit a captured memory?**
+A: Not directly. Capture a new memory with corrected information; old memories age out naturally.
+
+**Q: How much disk space do memories use?**
+A: ~1KB per memory in the index, plus ~100 bytes per note in git. 1000 memories ≈ 1MB total.
