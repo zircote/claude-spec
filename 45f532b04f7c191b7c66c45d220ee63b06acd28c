@@ -770,3 +770,33 @@ Use **shellcheck** (pre-installed on ubuntu-latest) for shell script validation.
 - shfmt only
 - bash -n
 - No validation
+
+---
+type: decisions
+spec: pre-post-steps-commands
+timestamp: '2025-12-15T06:50:32.957895Z'
+summary: Use Claude Code Native Hook System
+phase: architecture
+tags:
+- pre-post-steps-commands
+- adr
+- architecture
+- hooks
+- embeddings
+---
+
+## Context
+We need a mechanism to execute pre and post steps around `/cs:*` commands. Options include:
+1. Claude Code's native hook system (SessionStart, Stop, UserPromptSubmit)
+2. Command wrapper scripts
+3. Embedded logic in command .md files
+
+## Decision
+Use Claude Code's native hook system with three hooks:
+- SessionStart for context loading
+- UserPromptSubmit for command detection and pre-steps
+- Stop for post-steps
+
+## Alternatives Considered
+- Command wrapper scripts
+- Embedded logic
