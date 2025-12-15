@@ -867,3 +867,26 @@ Configuration for pre/post steps could be stored in:
 
 ## Decision
 Extend worktree-manager.config.json with a `lifecycle` section.
+
+---
+type: decisions
+spec: pre-post-steps-commands
+timestamp: '2025-12-15T06:46:55.714301Z'
+summary: Fail-Open Design for All Hooks
+phase: architecture
+tags:
+- pre-post-steps-commands
+- adr
+- architecture
+- hooks
+- ci-cd
+---
+
+## Context
+When hooks encounter errors, they could:
+1. Fail-open (log error, continue with command)
+2. Fail-closed (block command execution)
+3. Prompt user to decide
+
+## Decision
+All hooks follow fail-open design - errors are logged to stderr but never block command execution.
