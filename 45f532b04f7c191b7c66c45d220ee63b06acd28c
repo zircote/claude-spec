@@ -337,3 +337,30 @@ Plugin needs to reference specialist agents. Options:
 
 ## Decision
 **Dynamically read from host's `~/.claude/agents/`** and CLAUDE.md.
+
+---
+type: decisions
+spec: prompt-capture-log
+timestamp: '2025-12-15T06:50:32.211179Z'
+summary: Use NDJSON for Log Format
+phase: architecture
+tags:
+- prompt-capture-log
+- adr
+- architecture
+---
+
+## Context
+The log file needs to store multiple entries over time, potentially across many sessions. We need a format that supports:
+- Atomic appends without reading/rewriting the entire file
+- Resistance to corruption (one bad entry shouldn't invalidate all data)
+- Easy parsing for analysis
+- Human readability for debugging
+
+## Decision
+Use NDJSON (Newline-Delimited JSON) format where each line is a self-contained JSON object.
+
+## Alternatives Considered
+- JSON Array
+- SQLite
+- Plain text
