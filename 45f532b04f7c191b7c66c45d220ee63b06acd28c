@@ -967,3 +967,33 @@ Store user configuration at `~/.claude/worktree-manager.config.json`.
 - `~/.config/worktree-manager/config.json`
 - `~/.worktree-manager.json`
 - Environment variables
+
+---
+type: decisions
+spec: worktree-config-install
+timestamp: '2025-12-15T06:50:33.342964Z'
+summary: Config Lookup Precedence
+phase: architecture
+tags:
+- worktree-config-install
+- adr
+- architecture
+- configuration
+---
+
+## Context
+Scripts need to find configuration, but user config may not exist (first run) or may be incomplete.
+
+## Decision
+Use a fallback chain: User config → Template → Hardcoded defaults
+
+```
+1. Check ~/.claude/worktree-manager.config.json (user preferences)
+2. Fall back to plugins/.../config.template.json (bundled defaults)
+3. Fall back to hardcoded defaults (last resort)
+```
+
+## Alternatives Considered
+- Fail if no user config
+- Copy template to user location automatically
+- Merge at runtime
