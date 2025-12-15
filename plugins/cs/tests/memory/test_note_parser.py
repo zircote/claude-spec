@@ -224,16 +224,38 @@ Full context here.
 class TestMemoryIdFunctions:
     """Tests for memory ID functions."""
 
-    def test_extract_memory_id(self):
-        """Test memory ID generation."""
-        memory_id = extract_memory_id("decisions", "abc123def")
-        assert memory_id == "decisions:abc123def"
+    def test_extract_memory_id_with_timestamp(self):
+        """Test memory ID generation with timestamp."""
+        timestamp = datetime(2025, 12, 14, 10, 30, 0, tzinfo=UTC)
+        memory_id = extract_memory_id("decisions", "abc123def456", timestamp)
+        # Format: namespace:short_sha:timestamp_ms
+        assert memory_id.startswith("decisions:abc123d:")
+        # Timestamp should be milliseconds since epoch
+        ts_ms = int(memory_id.split(":")[2])
+        assert ts_ms == int(timestamp.timestamp() * 1000)
 
-    def test_parse_memory_id(self):
-        """Test memory ID parsing."""
-        namespace, commit_sha = parse_memory_id("decisions:abc123def")
+    def test_extract_memory_id_auto_timestamp(self):
+        """Test memory ID generation with auto timestamp."""
+        memory_id = extract_memory_id("decisions", "abc123def456")
+        parts = memory_id.split(":")
+        assert len(parts) == 3
+        assert parts[0] == "decisions"
+        assert parts[1] == "abc123d"  # First 7 chars
+        assert int(parts[2]) > 0  # Valid timestamp
+
+    def test_parse_memory_id_new_format(self):
+        """Test parsing new format memory ID."""
+        namespace, commit_sha, ts_ms = parse_memory_id("decisions:abc123d:1702551000000")
+        assert namespace == "decisions"
+        assert commit_sha == "abc123d"
+        assert ts_ms == 1702551000000
+
+    def test_parse_memory_id_legacy_format(self):
+        """Test parsing legacy format memory ID (backward compatibility)."""
+        namespace, commit_sha, ts_ms = parse_memory_id("decisions:abc123def")
         assert namespace == "decisions"
         assert commit_sha == "abc123def"
+        assert ts_ms is None
 
     def test_parse_invalid_memory_id_raises_error(self):
         """Test that invalid memory ID raises error."""
@@ -243,10 +265,12 @@ class TestMemoryIdFunctions:
     def test_memory_id_round_trip(self):
         """Test extract -> parse round trip."""
         original_ns = "learnings"
-        original_sha = "deadbeef1234"
+        original_sha = "deadbeef1234567890"
+        original_ts = datetime(2025, 12, 14, 10, 30, 0, tzinfo=UTC)
 
-        memory_id = extract_memory_id(original_ns, original_sha)
-        parsed_ns, parsed_sha = parse_memory_id(memory_id)
+        memory_id = extract_memory_id(original_ns, original_sha, original_ts)
+        parsed_ns, parsed_sha, parsed_ts = parse_memory_id(memory_id)
 
         assert parsed_ns == original_ns
-        assert parsed_sha == original_sha
+        assert parsed_sha == original_sha[:7]  # Short SHA
+        assert parsed_ts == int(original_ts.timestamp() * 1000)
