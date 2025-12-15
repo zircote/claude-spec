@@ -25,3 +25,35 @@ Use a new `PROGRESS.md` file as the single source of truth for all implementatio
 ## Alternatives Considered
 - Distributed state
 - JSON/database file
+
+---
+type: decisions
+spec: arch-lifecycle-automation
+timestamp: '2025-12-15T06:46:53.672258Z'
+summary: Hybrid Checkpoint System for Context Loading
+phase: architecture
+tags:
+- arch-lifecycle-automation
+- adr
+- architecture
+- ci-cd
+---
+
+## Context
+When `/arch:i` starts, it needs to provide Claude with implementation context. We need to decide how much to load and how.
+
+Options considered:
+1. Full document load (all planning docs into context)
+2. Condensed brief (summary only)
+3. Progressive loading (current phase detail + overview)
+4. Reference mode (lazy loading on demand)
+5. Hybrid checkpoint (brief + persistent PROGRESS.md)
+
+## Decision
+Use Hybrid Checkpoint System: Load a condensed implementation brief at startup, maintain state in PROGRESS.md that persists across sessions.
+
+## Alternatives Considered
+- Full document load
+- Condensed brief only
+- Progressive loading
+- Reference mode
