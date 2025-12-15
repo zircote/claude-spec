@@ -305,39 +305,114 @@ class GitOps:
         )
         return result.returncode == 0
 
-    def configure_sync(self) -> None:
+    def is_sync_configured(self) -> dict[str, bool]:
         """
-        Configure Git to sync notes with remote.
+        Check if Git notes sync is already configured.
 
-        Sets up push and fetch refspecs for all cs/* namespaces.
-        This should be called once per repository setup.
+        Returns:
+            Dict with configuration status for each component:
+            - push: True if push refspec is configured
+            - fetch: True if fetch refspec is configured
+            - rewrite: True if rewriteRef is configured
+            - merge: True if merge strategy is configured
         """
-        # Configure push for all cs/* refs
-        self._run_git(
-            [
-                "config",
-                "--add",
-                "remote.origin.push",
-                "refs/notes/cs/*:refs/notes/cs/*",
-            ],
-            check=False,
+        status = {"push": False, "fetch": False, "rewrite": False, "merge": False}
+
+        # Check push refspec
+        result = self._run_git(
+            ["config", "--get-all", "remote.origin.push"], check=False
         )
+        if result.returncode == 0 and "refs/notes/cs" in result.stdout:
+            status["push"] = True
+
+        # Check fetch refspec
+        result = self._run_git(
+            ["config", "--get-all", "remote.origin.fetch"], check=False
+        )
+        if result.returncode == 0 and "refs/notes/cs" in result.stdout:
+            status["fetch"] = True
+
+        # Check rewriteRef
+        result = self._run_git(
+            ["config", "--get-all", "notes.rewriteRef"], check=False
+        )
+        if result.returncode == 0 and "refs/notes/cs" in result.stdout:
+            status["rewrite"] = True
+
+        # Check merge strategy
+        result = self._run_git(
+            ["config", "--get", "notes.cs.mergeStrategy"], check=False
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            status["merge"] = True
+
+        return status
+
+    def configure_sync(self, force: bool = False) -> dict[str, bool]:
+        """
+        Configure Git to sync notes with remote (idempotent).
+
+        Sets up push/fetch refspecs, rewriteRef for rebases, and merge strategy.
+        Safe to call multiple times - only adds missing configuration.
+
+        Args:
+            force: If True, reconfigure even if already set
+
+        Returns:
+            Dict indicating which components were configured (True = newly configured)
+        """
+        configured = {"push": False, "fetch": False, "rewrite": False, "merge": False}
+
+        # Check existing configuration
+        current = self.is_sync_configured()
+
+        # Configure push for all cs/* refs
+        if force or not current["push"]:
+            result = self._run_git(
+                [
+                    "config",
+                    "--add",
+                    "remote.origin.push",
+                    "refs/notes/cs/*:refs/notes/cs/*",
+                ],
+                check=False,
+            )
+            configured["push"] = result.returncode == 0
 
         # Configure fetch for all cs/* refs
-        self._run_git(
-            [
-                "config",
-                "--add",
-                "remote.origin.fetch",
-                "refs/notes/cs/*:refs/notes/cs/*",
-            ],
-            check=False,
-        )
+        if force or not current["fetch"]:
+            result = self._run_git(
+                [
+                    "config",
+                    "--add",
+                    "remote.origin.fetch",
+                    "refs/notes/cs/*:refs/notes/cs/*",
+                ],
+                check=False,
+            )
+            configured["fetch"] = result.returncode == 0
+
+        # Configure rewriteRef for rebase support (preserves notes during rebase)
+        if force or not current["rewrite"]:
+            result = self._run_git(
+                [
+                    "config",
+                    "--add",
+                    "notes.rewriteRef",
+                    "refs/notes/cs/*",
+                ],
+                check=False,
+            )
+            configured["rewrite"] = result.returncode == 0
 
         # Set merge strategy for notes
-        self._run_git(
-            ["config", "notes.cs.mergeStrategy", "cat_sort_uniq"], check=False
-        )
+        if force or not current["merge"]:
+            result = self._run_git(
+                ["config", "notes.cs.mergeStrategy", "cat_sort_uniq"], check=False
+            )
+            configured["merge"] = result.returncode == 0
+
+        return configured
 
     def get_commit_sha(self, ref: str = "HEAD") -> str:
         """

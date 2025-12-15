@@ -42,11 +42,16 @@ def mock_index_service():
 @pytest.fixture
 def capture_service(mock_git_ops, mock_embedding_service, mock_index_service):
     """Create CaptureService with mocked dependencies."""
-    return CaptureService(
+    # Reset sync flag for test isolation
+    CaptureService.reset_sync_configured()
+    service = CaptureService(
         git_ops=mock_git_ops,
         embedding_service=mock_embedding_service,
         index_service=mock_index_service,
     )
+    yield service
+    # Cleanup after test
+    CaptureService.reset_sync_configured()
 
 
 class TestCaptureLock:
@@ -132,6 +137,86 @@ class TestCaptureServiceInit:
                     assert mock_git.called
                     assert mock_embed.called
                     assert mock_index.called
+
+
+class TestAutoConfiguration:
+    """Tests for auto-configuration of git notes sync."""
+
+    def setup_method(self):
+        """Reset sync configured flag before each test."""
+        CaptureService.reset_sync_configured()
+
+    def teardown_method(self):
+        """Reset sync configured flag after each test."""
+        CaptureService.reset_sync_configured()
+
+    def test_configure_sync_called_on_first_capture(
+        self, mock_git_ops, mock_embedding_service, mock_index_service, tmp_path
+    ):
+        """Test that configure_sync is called on first capture."""
+        service = CaptureService(
+            git_ops=mock_git_ops,
+            embedding_service=mock_embedding_service,
+            index_service=mock_index_service,
+        )
+
+        lock_file = tmp_path / "test.lock"
+        with patch("memory.capture.LOCK_FILE", lock_file):
+            service.capture(
+                namespace="decisions",
+                summary="Test",
+                content="Content",
+            )
+
+        mock_git_ops.configure_sync.assert_called_once()
+
+    def test_configure_sync_not_called_on_subsequent_captures(
+        self, mock_git_ops, mock_embedding_service, mock_index_service, tmp_path
+    ):
+        """Test that configure_sync is only called once across captures."""
+        service = CaptureService(
+            git_ops=mock_git_ops,
+            embedding_service=mock_embedding_service,
+            index_service=mock_index_service,
+        )
+
+        lock_file = tmp_path / "test.lock"
+        with patch("memory.capture.LOCK_FILE", lock_file):
+            # First capture - should configure
+            service.capture(
+                namespace="decisions",
+                summary="Test 1",
+                content="Content 1",
+            )
+
+            # Second capture - should not configure again
+            service.capture(
+                namespace="learnings",
+                summary="Test 2",
+                content="Content 2",
+            )
+
+        # Should only be called once despite two captures
+        mock_git_ops.configure_sync.assert_called_once()
+
+    def test_reset_sync_configured(self, mock_git_ops, mock_embedding_service, mock_index_service, tmp_path):
+        """Test that reset_sync_configured allows reconfiguration."""
+        service = CaptureService(
+            git_ops=mock_git_ops,
+            embedding_service=mock_embedding_service,
+            index_service=mock_index_service,
+        )
+
+        lock_file = tmp_path / "test.lock"
+        with patch("memory.capture.LOCK_FILE", lock_file):
+            # First capture
+            service.capture(namespace="decisions", summary="Test", content="Content")
+            assert mock_git_ops.configure_sync.call_count == 1
+
+            # Reset and capture again
+            CaptureService.reset_sync_configured()
+            service.capture(namespace="decisions", summary="Test 2", content="Content 2")
+            assert mock_git_ops.configure_sync.call_count == 2
 
 
 class TestCapture:

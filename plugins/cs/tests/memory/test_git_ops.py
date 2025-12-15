@@ -445,19 +445,101 @@ class TestRemoveNote:
         assert "cannot start with dash" in str(exc_info.value)
 
 
-class TestConfigureSync:
-    """Tests for configure_sync method."""
+class TestIsSyncConfigured:
+    """Tests for is_sync_configured method."""
 
-    def test_configure_sync(self):
-        """Test that configure_sync sets up remote config."""
+    def test_is_sync_configured_all_configured(self):
+        """Test detection when all sync options are configured."""
         git_ops = GitOps(repo_path="/tmp")
 
         with patch.object(git_ops, "_run_git") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0)
-            git_ops.configure_sync()
+            # All checks return configured values
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="refs/notes/cs/*:refs/notes/cs/*\ncat_sort_uniq"
+            )
+            result = git_ops.is_sync_configured()
 
-            # Should be called 3 times: push, fetch, merge strategy
-            assert mock_run.call_count == 3
+            assert result["push"] is True
+            assert result["fetch"] is True
+            assert result["rewrite"] is True
+            assert result["merge"] is True
+
+    def test_is_sync_configured_none_configured(self):
+        """Test detection when no sync options are configured."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with patch.object(git_ops, "_run_git") as mock_run:
+            # All checks return nothing
+            mock_run.return_value = MagicMock(returncode=1, stdout="")
+            result = git_ops.is_sync_configured()
+
+            assert result["push"] is False
+            assert result["fetch"] is False
+            assert result["rewrite"] is False
+            assert result["merge"] is False
+
+
+class TestConfigureSync:
+    """Tests for configure_sync method."""
+
+    def test_configure_sync_when_not_configured(self):
+        """Test that configure_sync sets up all remote config."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with patch.object(git_ops, "_run_git") as mock_run:
+            # First 4 calls: is_sync_configured checks (not configured)
+            # Next 4 calls: configure operations
+            mock_run.return_value = MagicMock(returncode=0, stdout="")
+            result = git_ops.configure_sync()
+
+            # Should be called 8 times: 4 checks + 4 configs
+            assert mock_run.call_count == 8
+
+            # All should be configured
+            assert result["push"] is True
+            assert result["fetch"] is True
+            assert result["rewrite"] is True
+            assert result["merge"] is True
+
+    def test_configure_sync_idempotent(self):
+        """Test that configure_sync skips already-configured options."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with patch.object(git_ops, "_run_git") as mock_run:
+            # All checks return already configured
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="refs/notes/cs/*:refs/notes/cs/*\ncat_sort_uniq"
+            )
+            result = git_ops.configure_sync()
+
+            # Should only be called 4 times for checks, no config calls
+            assert mock_run.call_count == 4
+
+            # None newly configured (already existed)
+            assert result["push"] is False
+            assert result["fetch"] is False
+            assert result["rewrite"] is False
+            assert result["merge"] is False
+
+    def test_configure_sync_force(self):
+        """Test that configure_sync with force=True reconfigures."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with patch.object(git_ops, "_run_git") as mock_run:
+            # All checks return already configured
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="refs/notes/cs/*:refs/notes/cs/*\ncat_sort_uniq"
+            )
+            result = git_ops.configure_sync(force=True)
+
+            # Should be called 8 times: 4 checks + 4 forced configs
+            assert mock_run.call_count == 8
+
+            # All should be (re)configured
+            assert result["push"] is True
+            assert result["fetch"] is True
+            assert result["rewrite"] is True
+            assert result["merge"] is True
 
 
 class TestGetCommitSha:

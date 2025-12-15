@@ -649,10 +649,18 @@ python3 -c "from sentence_transformers import SentenceTransformer; SentenceTrans
 A: In Git notes attached to commits. Run `git notes --ref=refs/notes/cs/decisions list` to see raw notes.
 
 **Q: Can I share memories with my team?**
-A: Yes! Git notes are distributed with `git push` / `git pull`. Team members get all memories.
+A: Yes! Git notes are distributed with `git push` / `git pull`. Team members get all memories. The system auto-configures push/fetch refspecs on first capture.
 
 **Q: What happens during git rebase?**
-A: Notes attached to rebased commits may become orphaned. Run `/cs:memory verify` after rebase.
+A: Notes are automatically preserved during rebase. The system configures `notes.rewriteRef` on first use, which tells git to copy notes to the rebased commits. Run `/cs:memory verify` after rebase to confirm consistency.
+
+**Q: Do I need to configure git manually?**
+A: No! The memory system auto-configures git on first capture:
+- Push/fetch refspecs for `refs/notes/cs/*`
+- `notes.rewriteRef` for rebase support
+- Merge strategy for conflict resolution
+
+This is idempotent - safe to run multiple times without creating duplicates.
 
 **Q: How do I backup my memories?**
 A: Export to JSON: `/cs:memory export --output backup.json`

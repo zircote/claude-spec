@@ -57,13 +57,17 @@ class CaptureService:
     Orchestrates memory capture operations.
 
     Handles the full capture flow with concurrency safety:
-    1. Acquire capture lock
-    2. Format note with YAML front matter
-    3. Attach note to commit via git notes append
-    4. Generate embedding
-    5. Index in SQLite
-    6. Release lock
+    1. Auto-configure git notes sync (first use only)
+    2. Acquire capture lock
+    3. Format note with YAML front matter
+    4. Attach note to commit via git notes append
+    5. Generate embedding
+    6. Index in SQLite
+    7. Release lock
     """
+
+    # Class-level flag to track if git sync has been configured this session
+    _sync_configured: bool = False
 
     def __init__(
         self,
@@ -82,6 +86,26 @@ class CaptureService:
         self.git_ops = git_ops or GitOps()
         self.embedding_service = embedding_service or EmbeddingService()
         self.index_service = index_service or IndexService()
+
+    def _ensure_sync_configured(self) -> None:
+        """
+        Ensure git notes sync is configured (auto-configure on first use).
+
+        This is idempotent - safe to call multiple times. Only actually
+        configures git on first capture, then skips on subsequent calls.
+        """
+        if CaptureService._sync_configured:
+            return
+
+        # Auto-configure git notes sync (push, fetch, rewriteRef, merge)
+        # This is idempotent - won't duplicate if already configured
+        self.git_ops.configure_sync()
+        CaptureService._sync_configured = True
+
+    @classmethod
+    def reset_sync_configured(cls) -> None:
+        """Reset the sync configuration flag (for testing)."""
+        cls._sync_configured = False
 
     def capture(
         self,
@@ -114,6 +138,9 @@ class CaptureService:
             CaptureError: If capture fails
             StorageError: If git operations fail
         """
+        # Auto-configure git notes sync on first capture
+        self._ensure_sync_configured()
+
         if namespace not in NAMESPACES:
             raise CaptureError(
                 f"Invalid namespace: {namespace}",
