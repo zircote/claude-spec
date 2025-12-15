@@ -127,3 +127,37 @@ Rollup rules:
 - Per-task only
 - Per-phase only
 - Per-deliverable
+
+---
+type: decisions
+spec: arch-lifecycle-automation
+timestamp: '2025-12-15T06:46:53.969419Z'
+summary: Divergence Tracking with User Notification
+phase: architecture
+tags:
+- arch-lifecycle-automation
+- adr
+- architecture
+- ci-cd
+---
+
+## Context
+Implementation often diverges from plans: tasks get added, skipped, or modified. How should we handle this?
+
+Options:
+1. Silently update the plan
+2. Block divergence (force adherence to plan)
+3. Track and flag for user review
+4. Track and auto-approve
+5. Track, flag, and allow user to approve/reject
+
+## Decision
+Track divergences in PROGRESS.md Divergence Log, notify user, and allow them to approve or flag for review. Divergences don't block progress but are explicitly recorded.
+
+Divergence types: `added`, `skipped`, `modified`, `reordered`
+Resolution states: `approved`, `flagged`, `pending-review`
+
+## Alternatives Considered
+- Silent updates
+- Block divergence
+- Track and auto-approve
