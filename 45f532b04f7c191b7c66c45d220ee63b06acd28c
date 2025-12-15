@@ -417,3 +417,25 @@ Use a marker file (`.prompt-log-enabled`) in the project directory. Presence = e
 - Environment variable
 - Global settings.json
 - Database
+
+---
+type: decisions
+spec: prompt-capture-log
+timestamp: '2025-12-15T06:50:32.352788Z'
+summary: Filter Pipeline Order (Secrets → Profanity)
+phase: architecture
+tags:
+- prompt-capture-log
+- adr
+- architecture
+---
+
+## Context
+Both profanity and secrets need to be filtered. The order of filtering could affect results.
+
+## Decision
+Filter secrets first, then profanity.
+
+## Alternatives Considered
+- Profanity → Secrets
+- Single pass
