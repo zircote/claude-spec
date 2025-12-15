@@ -686,3 +686,38 @@ Release notes can be auto-generated from commits or extracted from a maintained 
 - generate_release_notes: true
 - Conventional commits + changelog generator
 - No release notes
+
+---
+type: decisions
+spec: quality-release-ci-github-act
+timestamp: '2025-12-15T06:50:32.812916Z'
+summary: Minimal Workflow Permissions
+phase: architecture
+tags:
+- quality-release-ci-github-act
+- adr
+- architecture
+- git
+- ci-cd
+---
+
+## Context
+GitHub Actions workflows can request various permission levels. Default can be quite permissive.
+
+## Decision
+Explicitly set **minimal permissions** per workflow.
+
+```yaml
+# CI workflow
+permissions:
+  contents: read
+
+# Release workflow
+permissions:
+  contents: write
+```
+
+## Alternatives Considered
+- Default permissions
+- Job-level permissions
+- No explicit permissions
