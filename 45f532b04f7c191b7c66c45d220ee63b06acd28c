@@ -439,3 +439,28 @@ Filter secrets first, then profanity.
 ## Alternatives Considered
 - Profanity → Secrets
 - Single pass
+
+---
+type: decisions
+spec: prompt-capture-log
+timestamp: '2025-12-15T06:50:32.400094Z'
+summary: Response Summaries via Heuristics
+phase: architecture
+tags:
+- prompt-capture-log
+- adr
+- architecture
+---
+
+## Context
+Need to capture Claude's responses for complete interaction logging, but full responses are too verbose (often 1000+ words). Options for summarization:
+- Use LLM to summarize (adds latency, cost)
+- Use heuristics (fast, free, less accurate)
+
+## Decision
+Use heuristic-based summarization: extract first paragraph, key bullet points, truncate to 500 characters.
+
+## Alternatives Considered
+- LLM summarization
+- Full response logging
+- No response capture
