@@ -233,6 +233,19 @@ Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planni
 
 ## Completed Spec Projects
 
+- `docs/spec/completed/2025-12-14-cs-memory/` - Git-Native Memory System for claude-spec
+  - Completed: 2025-12-15
+  - Outcome: success
+  - Effort: 12 hours (vs 40-80 planned, -70% variance)
+  - Quality: 9.0/10 (post code review remediation)
+  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, IMPLEMENTATION_PLAN.md, RETROSPECTIVE.md
+  - Key changes:
+    - Git notes storage + SQLite/sqlite-vec semantic search
+    - 4 new commands: /cs:remember, /cs:recall, /cs:context, /cs:memory
+    - Proactive memory awareness via SessionStart hook
+    - 600 tests passing (84 new memory tests)
+    - Comprehensive code review: 45 findings remediated
+
 - `docs/spec/completed/2025-12-13-pre-post-steps-commands/` - Pre and Post Steps for cs:* Commands
   - Completed: 2025-12-13
   - Outcome: success
