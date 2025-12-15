@@ -1422,3 +1422,49 @@ Use **commit SHA as the unique identifier** for decisions, with the existing `ti
 - **Simpler implementation**: No counter table, no rebuild logic
 - **Temporal ordering preserved**: `timestamp` field already required (FR-001)
 - **Human references**: Use summary text or short SHA ("decision on JWT signing" or "decisions:abc123")
+
+---
+type: decisions
+spec: cs-memory
+timestamp: '2025-12-15T06:50:34.110650Z'
+summary: cs-memory Supplements (Not Replaces) Prompt Capture
+phase: architecture
+tags:
+- cs-memory
+- adr
+- architecture
+- git
+- hooks
+- ci-cd
+- memory-system
+---
+
+## Context
+The claude-spec plugin has two mechanisms for preserving session context:
+1. **Prompt capture** (`/cs:log`): Raw logging of all user prompts to `.prompt-log.json`
+2. **cs-memory**: Structured capture of decisions, learnings, blockers, review findings as Git notes
+
+These serve different purposes and the question arose: should cs-memory replace prompt capture?
+
+## Decision
+**cs-memory supplements prompt capture but does not fully replace it.** The two systems coexist with different scopes:
+
+| System | Purpose | When to Use |
+|--------|---------|-------------|
+| cs-memory | Structured knowledge artifacts | Default, always enabled |
+| Prompt capture | Debug/troubleshooting, interaction pattern analysis | Optional, enable when needed |
+
+**cs-memory captures signal:**
+- Decisions with context, rationale, alternatives
+- Learnings with insight and applicability
+- Review findings with severity, remediation, resolution tracking
+- Blockers with problem description and resolution
+- Patterns identified across projects
+
+**Prompt capture captures noise + signal:**
+- Complete transcript (including false starts, corrections)
+- Chronological session narrative
+- Interaction patterns between user and Claude
+- Useful for debugging hooks, validating behavior
+
+**Key insight:** The valuable artifacts (decisions, learnings, review findings) are now captured structurally in cs-memory. Prompt capture's raw logs become useful primarily for debugging and retrospective analysis of interaction patterns, not knowledge retrieval.
