@@ -2,7 +2,7 @@
 argument-hint: <project-path|project-id>
 description: Close out a completed spec project. Moves artifacts to completed/, generates retrospective, updates CLAUDE.md. Part of the /cs suite - use /cs/p to plan, /cs/s for status.
 model: claude-sonnet-4-5-20250929
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion, TodoWrite
 ---
 
 # /cs/c - Project Close-Out
