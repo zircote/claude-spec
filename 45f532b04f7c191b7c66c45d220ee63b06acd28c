@@ -845,3 +845,25 @@ Security review could be:
 
 ## Decision
 Security review is a pre-step for `/cs:c` only.
+
+---
+type: decisions
+spec: pre-post-steps-commands
+timestamp: '2025-12-15T06:46:55.659839Z'
+summary: Configuration via worktree-manager.config.json
+phase: architecture
+tags:
+- pre-post-steps-commands
+- adr
+- architecture
+- configuration
+---
+
+## Context
+Configuration for pre/post steps could be stored in:
+1. Existing worktree-manager.config.json
+2. New dedicated lifecycle.json file
+3. Per-project .cs-config.json files
+
+## Decision
+Extend worktree-manager.config.json with a `lifecycle` section.
