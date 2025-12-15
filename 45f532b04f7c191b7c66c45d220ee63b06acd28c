@@ -464,3 +464,29 @@ Use heuristic-based summarization: extract first paragraph, key bullet points, t
 - LLM summarization
 - Full response logging
 - No response capture
+
+---
+type: decisions
+spec: prompt-capture-log
+timestamp: '2025-12-15T06:50:32.449375Z'
+summary: Hook Integration Point
+phase: architecture
+tags:
+- prompt-capture-log
+- adr
+- architecture
+- hooks
+---
+
+## Context
+Need to choose how to integrate with Claude Code's hook system. Options:
+- Standalone hook in `~/.claude/hooks/`
+- Extension to hookify plugin
+- New dedicated plugin
+
+## Decision
+Implement as a standalone hook in `~/.claude/hooks/` with its own registration, separate from but compatible with hookify.
+
+## Alternatives Considered
+- Extend hookify
+- New plugin
