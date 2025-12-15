@@ -663,3 +663,26 @@ Use **softprops/action-gh-release@v2** for release creation.
 - gh CLI directly
 - GitHub API via curl
 - actions/create-release
+
+---
+type: decisions
+spec: quality-release-ci-github-act
+timestamp: '2025-12-15T06:50:32.779322Z'
+summary: Extract Changelog vs Generate Release Notes
+phase: architecture
+tags:
+- quality-release-ci-github-act
+- adr
+- architecture
+---
+
+## Context
+Release notes can be auto-generated from commits or extracted from a maintained CHANGELOG.md.
+
+## Decision
+**Extract changelog section** from plugins/cs/CHANGELOG.md rather than auto-generate.
+
+## Alternatives Considered
+- generate_release_notes: true
+- Conventional commits + changelog generator
+- No release notes
