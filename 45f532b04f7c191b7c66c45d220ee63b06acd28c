@@ -364,3 +364,28 @@ Use NDJSON (Newline-Delimited JSON) format where each line is a self-contained J
 - JSON Array
 - SQLite
 - Plain text
+
+---
+type: decisions
+spec: prompt-capture-log
+timestamp: '2025-12-15T06:50:32.257829Z'
+summary: Python for Hook Implementation
+phase: architecture
+tags:
+- prompt-capture-log
+- adr
+- architecture
+- python
+- hooks
+---
+
+## Context
+The hook needs to integrate with Claude Code's hook system, which supports command execution. The existing hookify plugin is written in Python.
+
+## Decision
+Implement the prompt capture hook in Python to match the existing hookify plugin infrastructure.
+
+## Alternatives Considered
+- Node.js/TypeScript
+- Bash script
+- Go binary
