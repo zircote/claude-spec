@@ -30,7 +30,7 @@ Security Features
     4. Limit total decoded content to prevent memory exhaustion
 
 **Comprehensive Secret Patterns**:
-    Pre-compiled regex patterns detect 15+ secret types across major
+    Pre-compiled regex patterns detect 20+ secret types across major
     cloud providers, SaaS services, and common credential formats.
 
 SECRET_PATTERNS Reference
@@ -43,6 +43,7 @@ The following secret types are detected. Pattern names are used in
     - ``aws_access_key``: AWS Access Key IDs (AKIA, ASIA, etc.)
     - ``aws_secret_key``: AWS Secret Access Keys
     - ``google_api_key``: Google API keys (AIza...)
+    - ``azure_storage_key``: Azure Storage account keys
 
 **Version Control & CI/CD**:
     - ``github_pat``: GitHub Personal Access Tokens (ghp_...)
@@ -59,6 +60,11 @@ The following secret types are detected. Pattern names are used in
 
 **Communication**:
     - ``slack_token``: Slack API tokens (xoxb-, xoxp-, etc.)
+    - ``twilio_key``: Twilio API keys (SK...)
+    - ``sendgrid_key``: SendGrid API keys (SG...)
+
+**Monitoring & Analytics**:
+    - ``datadog_api_key``: Datadog API keys
 
 **Authentication**:
     - ``bearer_token``: Bearer tokens in Authorization headers
@@ -88,7 +94,7 @@ To add a new secret pattern:
         # ... existing patterns ...
 
         # New pattern - use descriptive name
-        "datadog_api_key": re.compile(r"dd[a-zA-Z0-9]{32}"),
+        "newservice_api_key": re.compile(r"ns_[a-zA-Z0-9]{32}"),
     }
 
 2. Pattern guidelines:
@@ -105,10 +111,10 @@ To add a new secret pattern:
 4. Add tests in ``tests/test_pipeline.py``::
 
     def test_detects_new_pattern():
-        text = "api_key = dd1234567890abcdef1234567890abcdef"
+        text = "api_key = ns_1234567890abcdef1234567890abcdef"
         result = filter_pipeline(text)
         assert result.secret_count == 1
-        assert "datadog_api_key" in result.secret_types
+        assert "newservice_api_key" in result.secret_types
 
 Base64 Bypass Prevention
 ------------------------
@@ -155,6 +161,7 @@ MAX_CONTENT_LENGTH = 50000
 B64_PATTERN = re.compile(r"[A-Za-z0-9+/]{20,}={0,2}")
 
 # Pre-compiled regex patterns for secret detection
+# SEC-004: Comprehensive secret detection patterns for major cloud providers and services
 SECRET_PATTERNS: dict[str, Pattern[str]] = {
     # AWS
     "aws_access_key": re.compile(
@@ -177,6 +184,17 @@ SECRET_PATTERNS: dict[str, Pattern[str]] = {
     "stripe_publishable": re.compile(r"pk_live_[0-9a-zA-Z]{24,}"),
     # Slack
     "slack_token": re.compile(r"xox[baprs]-[0-9]{10,13}-[0-9]{10,13}[a-zA-Z0-9-]*"),
+    # SEC-004: Additional secret patterns for commonly used services
+    # Datadog - API keys are 32 hex characters
+    "datadog_api_key": re.compile(r"\b[a-f0-9]{32}\b(?=.*datadog)", re.IGNORECASE),
+    # Twilio - Account SIDs start with AC, API keys start with SK
+    "twilio_key": re.compile(r"\bSK[a-f0-9]{32}\b"),
+    # SendGrid - API keys start with SG
+    "sendgrid_key": re.compile(r"\bSG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}\b"),
+    # Azure Storage - base64-encoded 88-char keys
+    "azure_storage_key": re.compile(
+        r'(?i)(?:accountkey|storage.{0,20}key)\s*[:=]\s*[\'"]?[A-Za-z0-9+/]{86}==[\'""]?'
+    ),
     # Generic patterns
     "bearer_token": re.compile(r"Bearer\s+[a-zA-Z0-9\-_.~+\/]+=*"),
     "jwt": re.compile(

@@ -50,7 +50,7 @@ try:
     CONFIG_AVAILABLE = True
 except ImportError as e:
     CONFIG_AVAILABLE = False
-    sys.stderr.write(f"claude-spec command_detector: Config import error: {e}\n")
+    sys.stderr.write(f"cs-command_detector: Config import error: {e}\n")
 
 # Import shared I/O and step runner
 try:
@@ -60,7 +60,19 @@ try:
     IO_AVAILABLE = True
 except ImportError as e:
     IO_AVAILABLE = False
-    sys.stderr.write(f"claude-spec command_detector: Lib import error: {e}\n")
+    sys.stderr.write(f"cs-command_detector: Lib import error: {e}\n")
+
+# Import fallback functions (ARCH-004)
+try:
+    from fallback import (
+        fallback_pass_through,
+        fallback_read_input,
+        fallback_write_output,
+    )
+
+    FALLBACK_AVAILABLE = True
+except ImportError:
+    FALLBACK_AVAILABLE = False
 
 LOG_PREFIX = "command_detector"
 
@@ -77,29 +89,6 @@ COMMAND_PATTERNS = {
     r"^/cs:migrate\b": "cs:migrate",
     r"^/cs:wt:": "cs:wt",
 }
-
-
-# Fallback I/O functions if shared module not available
-def _fallback_read_input() -> dict[str, Any] | None:
-    """Fallback read_input if hook_io not available."""
-    try:
-        return json.load(sys.stdin)
-    except Exception as e:
-        sys.stderr.write(f"claude-spec {LOG_PREFIX}: Error reading input: {e}\n")
-        return None
-
-
-def _fallback_write_output(response: dict[str, Any]) -> None:
-    """Fallback write_output if hook_io not available."""
-    try:
-        print(json.dumps(response), file=sys.stdout)
-    except Exception:
-        print('{"decision": "approve"}', file=sys.stdout)
-
-
-def _fallback_pass_through() -> dict[str, Any]:
-    """Fallback pass_through if hook_io not available."""
-    return {"decision": "approve"}
 
 
 def detect_command(prompt: str) -> str | None:
@@ -132,7 +121,7 @@ def save_session_state(cwd: str, state: dict[str, Any]) -> None:
         with open(state_file, "w", encoding="utf-8") as f:
             json.dump(state, f, indent=2)
     except Exception as e:
-        sys.stderr.write(f"claude-spec {LOG_PREFIX}: Error saving state: {e}\n")
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Error saving state: {e}\n")
 
 
 def run_pre_steps(cwd: str, command: str) -> None:
@@ -151,28 +140,63 @@ def run_pre_steps(cwd: str, command: str) -> None:
         step_name = step_config.get("name", "unknown")
         try:
             if IO_AVAILABLE:
-                run_step(cwd, step_name, step_config, log_prefix="claude-spec pre-step")
+                run_step(cwd, step_name, step_config, log_prefix="cs-pre-step")
             else:
                 # Fallback: skip step execution if libs not available
                 sys.stderr.write(
-                    f"claude-spec pre-step {step_name}: skipped (libs not available)\n"
+                    f"cs-pre-step {step_name}: skipped (libs not available)\n"
                 )
         except Exception as e:
             # Fail-open: log error but don't block
-            sys.stderr.write(f"claude-spec pre-step {step_name} error: {e}\n")
+            sys.stderr.write(f"cs-pre-step {step_name} error: {e}\n")
+
+
+# I/O wrapper functions to avoid lambda expressions (E731)
+def _io_read_input() -> dict[str, Any] | None:
+    """Read input using hook_io module."""
+    return read_input(LOG_PREFIX)
+
+
+def _fallback_io_read_input() -> dict[str, Any] | None:
+    """Read input using fallback module."""
+    return fallback_read_input(LOG_PREFIX)
+
+
+def _fallback_io_write_output(response: dict[str, Any]) -> None:
+    """Write output using fallback module."""
+    fallback_write_output(response, LOG_PREFIX)
 
 
 def main() -> None:
     """Main entry point for the command detector hook."""
-    # Read input using shared I/O or fallback
+    # Select I/O functions - prefer shared module, fall back to fallback module
     if IO_AVAILABLE:
-        input_data = read_input(LOG_PREFIX)
+        _read_input = _io_read_input
         _write_output = write_output
         _pass_through = pass_through
+    elif FALLBACK_AVAILABLE:
+        _read_input = _fallback_io_read_input
+        _write_output = _fallback_io_write_output
+        _pass_through = fallback_pass_through
     else:
-        input_data = _fallback_read_input()
-        _write_output = _fallback_write_output
-        _pass_through = _fallback_pass_through
+        # Last resort inline fallbacks
+        def _read_input() -> dict[str, Any] | None:
+            try:
+                return json.load(sys.stdin)
+            except Exception as e:
+                sys.stderr.write(f"cs-{LOG_PREFIX}: Error reading input: {e}\n")
+                return None
+
+        def _write_output(response: dict[str, Any]) -> None:
+            try:
+                print(json.dumps(response), file=sys.stdout)
+            except Exception:
+                print('{"decision": "approve"}', file=sys.stdout)
+
+        def _pass_through() -> dict[str, Any]:
+            return {"decision": "approve"}
+
+    input_data = _read_input()
 
     if input_data is None:
         # Malformed input - fail open

@@ -65,8 +65,16 @@ TERMINAL=$(get_config "terminal" "ghostty")
 SHELL_CMD=$(get_config "shell" "bash")
 CLAUDE_CMD=$(get_config "claudeCommand" "claude --dangerously-skip-permissions")
 
-# Note: CLAUDE_CMD defaults to "claude --dangerously-skip-permissions" for autonomous operation
-# Users can customize in ~/.claude/worktree-manager.config.json (e.g., use an alias like "cc")
+# SEC-001: Security warning for dangerous mode
+# The --dangerously-skip-permissions flag bypasses Claude's permission prompts,
+# which grants full autonomous access. This is intentional for worktree automation
+# but users should be aware of the security implications.
+if [[ "$CLAUDE_CMD" == *"--dangerously-skip-permissions"* ]]; then
+    echo "WARNING: Claude running in dangerous mode (--dangerously-skip-permissions)"
+    echo "         This bypasses permission prompts and grants full autonomous access."
+    echo "         To disable, set 'claudeCommand' in ~/.claude/worktree-manager.config.json"
+    echo ""
+fi
 
 # Expand ~ in path
 WORKTREE_PATH="${WORKTREE_PATH/#\~/$HOME}"

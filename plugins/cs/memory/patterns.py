@@ -647,3 +647,13 @@ def get_pattern_manager() -> PatternManager:
     if _pattern_manager is None:
         _pattern_manager = PatternManager()
     return _pattern_manager
+
+
+def reset_pattern_manager() -> None:
+    """Reset the pattern manager singleton for testing (ARCH-001).
+
+    This function allows tests to reset the module-level singleton
+    to ensure test isolation.
+    """
+    global _pattern_manager
+    _pattern_manager = None

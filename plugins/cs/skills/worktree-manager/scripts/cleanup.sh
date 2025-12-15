@@ -64,10 +64,29 @@ else
     PORTS=""
 fi
 
+# SEC-003: Helper function to validate port is numeric
+# Prevents command injection via malformed port values
+validate_port() {
+    local port="$1"
+    if [[ ! "$port" =~ ^[0-9]+$ ]]; then
+        echo "  Warning: Invalid port value '$port' (not numeric), skipping"
+        return 1
+    fi
+    if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+        echo "  Warning: Port $port out of valid range (1-65535), skipping"
+        return 1
+    fi
+    return 0
+}
+
 # Step 1: Kill processes on ports
 if [ -n "$PORTS" ]; then
     echo "Killing processes on allocated ports..."
     for PORT in $PORTS; do
+        # SEC-003: Validate port is numeric before using in command
+        if ! validate_port "$PORT"; then
+            continue
+        fi
         if lsof -ti:"$PORT" &>/dev/null; then
             lsof -ti:"$PORT" | xargs kill -9 2>/dev/null && echo "  Killed process on port $PORT" || echo "  Failed to kill on port $PORT"
         else
@@ -117,6 +136,10 @@ jq "del(.worktrees[] | select(.project == \"$PROJECT\" and .branch == \"$BRANCH\
 # Release ports from allocated pool
 if [ -n "$PORTS" ]; then
     for PORT in $PORTS; do
+        # SEC-003: Only process valid numeric ports
+        if ! validate_port "$PORT"; then
+            continue
+        fi
         jq ".portPool.allocated = (.portPool.allocated | map(select(. != $PORT)))" "$TMP" > "${TMP}.2" && mv "${TMP}.2" "$TMP"
     done
     echo "  Released ports: $PORTS"
