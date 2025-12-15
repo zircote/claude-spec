@@ -161,3 +161,34 @@ Resolution states: `approved`, `flagged`, `pending-review`
 - Silent updates
 - Block divergence
 - Track and auto-approve
+
+---
+type: decisions
+spec: arch-lifecycle-automation
+timestamp: '2025-12-15T06:50:31.816002Z'
+summary: Use Opus 4.5 Model for `/arch:i`
+phase: architecture
+tags:
+- arch-lifecycle-automation
+- adr
+- architecture
+---
+
+## Context
+The existing `/arch` commands use a model tiering strategy:
+- `/arch:p` (planning): Opus 4.5 (complex reasoning)
+- `/arch:s` (status): Sonnet (simpler operations)
+- `/arch:c` (close): Sonnet (simpler operations)
+
+What model should `/arch:i` use?
+
+## Decision
+Use Opus 4.5 for `/arch:i` because it requires:
+- Intelligent detection of task completion from implementation work
+- Context synthesis across multiple planning documents
+- Nuanced divergence detection and user communication
+- Complex state management and rollup calculations
+
+## Alternatives Considered
+- Sonnet
+- Hybrid (Sonnet + escalate to Opus)
