@@ -1305,3 +1305,28 @@ All memories are shared and sync with the repository via Git notes push/pull.
 - **Onboarding**: New members benefit from history
 - **Consistency**: Decisions don't get relitigated
 - **Collaboration**: Shared patterns emerge
+
+---
+type: decisions
+spec: cs-memory
+timestamp: '2025-12-15T06:50:33.906978Z'
+summary: Auto-Capture at 100%
+phase: architecture
+tags:
+- cs-memory
+- adr
+- architecture
+- ci-cd
+- memory-system
+---
+
+## Context
+Memory capture could be manual (explicit command), semi-automatic (prompted), or fully automatic.
+
+## Decision
+Implement fully automatic capture during `/cs:p`, `/cs:i`, `/cs:c` workflows with zero manual intervention required.
+
+- **Low friction**: Developers don't have to remember to capture
+- **Comprehensive**: Nothing falls through the cracks
+- **Consistent**: Standard capture points across projects
+- **High signal**: Captures at meaningful moments
