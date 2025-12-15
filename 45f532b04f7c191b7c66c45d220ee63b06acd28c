@@ -1390,3 +1390,35 @@ Implement a **two-tier proactive recall** strategy:
 - **Proactive search reduces friction**: No need to remember to run `/cs:recall`
 - **Non-blocking preserves flow**: Suggestions don't interrupt primary workflow
 - **Progressive revelation**: Summary → full content only when needed
+
+---
+type: decisions
+spec: cs-memory
+timestamp: '2025-12-15T06:50:34.055371Z'
+summary: SHA-Based Decision Identification (Revised)
+phase: architecture
+tags:
+- cs-memory
+- adr
+- architecture
+- git
+- ci-cd
+---
+
+## Context
+Architecture Decision Records (ADRs) need unique identifiers. Original options considered:
+1. **Timestamp-based**: `ADR-2025-12-14-001`
+2. **Sequential**: `ADR-001`, `ADR-002`, ...
+3. **Content hash**: Random unique ID
+4. **Commit SHA**: Use Git's native identifier
+
+The original decision (sequential numbering) introduced a distributed synchronization problem: if two developers create decisions before syncing, both get the same number.
+
+## Decision
+Use **commit SHA as the unique identifier** for decisions, with the existing `timestamp` field for temporal ordering.
+
+- **Zero coordination**: SHAs are globally unique by Git's design
+- **No counter to sync**: Eliminates distributed consistency problem
+- **Simpler implementation**: No counter table, no rebuild logic
+- **Temporal ordering preserved**: `timestamp` field already required (FR-001)
+- **Human references**: Use summary text or short SHA ("decision on JWT signing" or "decisions:abc123")
