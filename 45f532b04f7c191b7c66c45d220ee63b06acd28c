@@ -267,3 +267,30 @@ Projects were stored in `docs/architecture/active/`. With the rename, options we
 
 ## Decision
 Rename to **`docs/spec/active/`** with one-time migration via `/cs:migrate`.
+
+---
+type: decisions
+spec: claude-spec-plugin
+timestamp: '2025-12-15T06:50:32.056489Z'
+summary: Worktree Commands Structure
+phase: architecture
+tags:
+- claude-spec-plugin
+- adr
+- architecture
+- ci-cd
+---
+
+## Context
+Worktree manager functionality could be exposed as:
+- Skill triggers only ("spin up worktrees")
+- Explicit commands (`/cs:wt:*`)
+- Both
+
+## Decision
+**Both** - skill triggers AND explicit commands.
+
+Commands:
+- `/cs:wt:create` - Create worktrees with agents
+- `/cs:wt:status` - View worktree status
+- `/cs:wt:cleanup` - Clean up worktrees
