@@ -746,3 +746,27 @@ Support **Python 3.11, 3.12, 3.13** (3.11+ minimum).
 - 3.12+ only
 - 3.10+
 - 3.14 only
+
+---
+type: decisions
+spec: quality-release-ci-github-act
+timestamp: '2025-12-15T06:46:55.467869Z'
+summary: shellcheck for Shell Script Validation
+phase: architecture
+tags:
+- quality-release-ci-github-act
+- adr
+- architecture
+- testing
+---
+
+## Context
+The plugin includes shell scripts that should be validated for correctness and portability.
+
+## Decision
+Use **shellcheck** (pre-installed on ubuntu-latest) for shell script validation.
+
+## Alternatives Considered
+- shfmt only
+- bash -n
+- No validation
