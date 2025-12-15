@@ -1221,3 +1221,32 @@ Use separate Git notes namespaces for each memory type.
 - **Query efficiency**: Type filtering at storage level
 - **Clarity**: `refs/notes/cs/decisions` is self-documenting
 - **Git operations**: Can list/manage types independently
+
+---
+type: decisions
+spec: cs-memory
+timestamp: '2025-12-15T06:46:56.392766Z'
+summary: Progressive Hydration Strategy
+phase: architecture
+tags:
+- cs-memory
+- adr
+- architecture
+- performance
+- ci-cd
+- memory-system
+---
+
+## Context
+Context windows are limited. Loading all memory details is wasteful.
+
+## Decision
+Implement three-level progressive hydration:
+1. **Summary**: ID, type, one-line summary, distance
+2. **Full**: Complete note content
+3. **Files**: File snapshots from associated commit
+
+- **Efficiency**: Only load what's needed
+- **Flexibility**: User controls detail level
+- **Performance**: Summary search is fast
+- **Completeness**: Full detail available when needed
