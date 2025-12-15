@@ -315,3 +315,25 @@ Prompt log file naming options:
 
 ## Decision
 Use **`.prompt-log.json`** (hidden file).
+
+---
+type: decisions
+spec: claude-spec-plugin
+timestamp: '2025-12-15T06:50:32.168027Z'
+summary: Dynamic Agent Catalog Integration
+phase: architecture
+tags:
+- claude-spec-plugin
+- adr
+- architecture
+- ci-cd
+---
+
+## Context
+Plugin needs to reference specialist agents. Options:
+- Bundle agent definitions in plugin
+- Assume host has agents, document as prerequisite
+- Dynamically read from host's `~/.claude/agents/`
+
+## Decision
+**Dynamically read from host's `~/.claude/agents/`** and CLAUDE.md.
