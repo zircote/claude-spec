@@ -1100,3 +1100,38 @@ Use Git notes as the canonical storage layer for all memories.
 - SQLite database (committed)
 - External database (e.g., PostgreSQL)
 - Commit message metadata (trailers)
+
+---
+type: decisions
+spec: cs-memory
+timestamp: '2025-12-15T06:50:33.575897Z'
+summary: SQLite + sqlite-vec for Index Layer
+phase: architecture
+tags:
+- cs-memory
+- adr
+- architecture
+- database
+- ci-cd
+- embeddings
+---
+
+## Context
+Semantic search requires vector similarity operations. Options:
+- Cloud vector databases (Pinecone, Weaviate)
+- Self-hosted vector databases (Milvus, Qdrant)
+- Embedded solutions (FAISS, sqlite-vec)
+
+## Decision
+Use SQLite with the sqlite-vec extension for the vector index.
+
+- **Local-first**: No external dependencies or API calls
+- **Portable**: Single file, cross-platform
+- **Rebuildable**: Index is derived data, can regenerate from notes
+- **Sufficient scale**: Handles thousands of vectors efficiently
+- **SQL familiarity**: Standard query patterns for metadata filtering
+
+## Alternatives Considered
+- FAISS
+- ChromaDB
+- sqlite-vss
