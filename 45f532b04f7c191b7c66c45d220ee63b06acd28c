@@ -246,3 +246,24 @@ During migration, we could provide `/arch:*` aliases that redirect to `/cs:*` co
 
 ## Decision
 **No aliases** - clean break from old commands.
+
+---
+type: decisions
+spec: claude-spec-plugin
+timestamp: '2025-12-15T06:50:32.011407Z'
+summary: Project Directory Rename
+phase: architecture
+tags:
+- claude-spec-plugin
+- adr
+- architecture
+---
+
+## Context
+Projects were stored in `docs/architecture/active/`. With the rename, options were:
+- Keep old location (backward compatible)
+- Rename to `docs/spec/active/` (consistent branding)
+- Use hidden `.claude-spec/` directory
+
+## Decision
+Rename to **`docs/spec/active/`** with one-time migration via `/cs:migrate`.
