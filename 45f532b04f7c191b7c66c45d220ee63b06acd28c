@@ -997,3 +997,27 @@ Use a fallback chain: User config → Template → Hardcoded defaults
 - Fail if no user config
 - Copy template to user location automatically
 - Merge at runtime
+
+---
+type: decisions
+spec: worktree-config-install
+timestamp: '2025-12-15T06:50:33.391116Z'
+summary: Interactive Setup via AskUserQuestion
+phase: architecture
+tags:
+- worktree-config-install
+- adr
+- architecture
+- configuration
+---
+
+## Context
+First-time users need to configure worktree-manager, but editing JSON files manually is tedious and error-prone.
+
+## Decision
+Use Claude's `AskUserQuestion` tool to interactively gather configuration preferences during first-time setup or when `/cs:wt:setup` is run.
+
+## Alternatives Considered
+- CLI prompts (readline/fzf)
+- Web UI
+- Just use defaults
