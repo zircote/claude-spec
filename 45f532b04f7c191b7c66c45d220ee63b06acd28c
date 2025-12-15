@@ -228,3 +228,21 @@ The plugin needs a command prefix. Options were `/arch:*`, `/spec:*`, `/cs:*`, o
 
 ## Decision
 Use **`/cs:*`** prefix (short for claude-spec).
+
+---
+type: decisions
+spec: claude-spec-plugin
+timestamp: '2025-12-15T06:50:31.966126Z'
+summary: No Legacy Aliases
+phase: architecture
+tags:
+- claude-spec-plugin
+- adr
+- architecture
+---
+
+## Context
+During migration, we could provide `/arch:*` aliases that redirect to `/cs:*` commands.
+
+## Decision
+**No aliases** - clean break from old commands.
