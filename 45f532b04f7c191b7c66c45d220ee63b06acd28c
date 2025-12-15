@@ -943,3 +943,27 @@ Enforce strict phase separation through command file modifications:
 - `/cs:p` includes `<post_approval_halt>` section that HALTS after spec approval
 - `/cs:i` is the ONLY authorized entry point for implementation
 - Plan approval explicitly does NOT authorize implementation
+
+---
+type: decisions
+spec: worktree-config-install
+timestamp: '2025-12-15T06:50:33.292256Z'
+summary: User Config Location
+phase: architecture
+tags:
+- worktree-config-install
+- adr
+- architecture
+- configuration
+---
+
+## Context
+The worktree-manager skill needs a stable location for user configuration that survives plugin updates. The current location (`plugins/cs/skills/worktree-manager/config.json`) is overwritten when the plugin updates.
+
+## Decision
+Store user configuration at `~/.claude/worktree-manager.config.json`.
+
+## Alternatives Considered
+- `~/.config/worktree-manager/config.json`
+- `~/.worktree-manager.json`
+- Environment variables
