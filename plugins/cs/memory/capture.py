@@ -180,8 +180,8 @@ class CaptureService:
             # Append note to git (safe for concurrent operations)
             self.git_ops.append_note(namespace, note_content, commit_sha)
 
-            # Generate memory ID
-            memory_id = extract_memory_id(namespace, commit_sha)
+            # Generate memory ID (include timestamp for uniqueness)
+            memory_id = extract_memory_id(namespace, commit_sha, timestamp)
 
             # Create Memory object
             memory = Memory(

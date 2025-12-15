@@ -185,7 +185,8 @@ class TestSyncNoteToIndex:
         call_args = mock_index_service.insert.call_args
         memory = call_args[0][0]
 
-        assert memory.id == "decisions:def456"
+        # New ID format: namespace:short_sha:timestamp_ms
+        assert memory.id.startswith("decisions:def456:")
         assert memory.namespace == "decisions"
         assert memory.commit_sha == "def456"
         assert memory.summary == "Important decision"
@@ -332,7 +333,10 @@ class TestVerifyIndex:
         result = sync_service.verify_index()
 
         assert result.is_consistent is False
-        assert "decisions:commit1" in result.missing_in_index
+        # New ID format includes timestamp, check prefix
+        missing_ids = list(result.missing_in_index)
+        assert len(missing_ids) == 1
+        assert missing_ids[0].startswith("decisions:commit1:")
 
     def test_verify_orphaned_in_index(
         self, sync_service, mock_git_ops, mock_index_service

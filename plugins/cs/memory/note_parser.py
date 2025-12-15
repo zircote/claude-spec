@@ -199,31 +199,50 @@ def validate_note(content: str) -> list[str]:
     return warnings
 
 
-def extract_memory_id(namespace: str, commit_sha: str) -> str:
+def extract_memory_id(
+    namespace: str,
+    commit_sha: str,
+    timestamp: datetime | None = None,
+) -> str:
     """
-    Generate a memory ID from namespace and commit SHA.
+    Generate a unique memory ID from namespace, commit SHA, and timestamp.
 
-    Format: <namespace>:<commit_sha>
+    Format: <namespace>:<commit_sha_short>:<timestamp_ms>
+
+    The timestamp component ensures uniqueness when multiple memories
+    are attached to the same commit (e.g., batch ADR capture).
 
     Args:
         namespace: Memory namespace (e.g., "decisions")
-        commit_sha: Git commit SHA
+        commit_sha: Git commit SHA (full or short)
+        timestamp: Memory timestamp (uses current time if None)
 
     Returns:
-        Memory ID string
+        Memory ID string (e.g., "decisions:abc123d:1702560000000")
     """
-    return f"{namespace}:{commit_sha}"
+    from datetime import UTC, datetime as dt
+
+    # Use first 7 chars of SHA (standard git short SHA)
+    short_sha = commit_sha[:7]
+
+    # Generate timestamp component (milliseconds since epoch)
+    if timestamp is None:
+        timestamp = dt.now(UTC)
+    ts_ms = int(timestamp.timestamp() * 1000)
+
+    return f"{namespace}:{short_sha}:{ts_ms}"
 
 
-def parse_memory_id(memory_id: str) -> tuple[str, str]:
+def parse_memory_id(memory_id: str) -> tuple[str, str, int | None]:
     """
-    Parse a memory ID into namespace and commit SHA.
+    Parse a memory ID into namespace, commit SHA, and timestamp.
 
     Args:
-        memory_id: Memory ID in format <namespace>:<commit_sha>
+        memory_id: Memory ID in format <namespace>:<commit_sha>:<timestamp_ms>
+                   or legacy format <namespace>:<commit_sha>
 
     Returns:
-        Tuple of (namespace, commit_sha)
+        Tuple of (namespace, commit_sha, timestamp_ms or None for legacy)
 
     Raises:
         ParseError: If memory ID format is invalid
@@ -231,8 +250,23 @@ def parse_memory_id(memory_id: str) -> tuple[str, str]:
     if ":" not in memory_id:
         raise ParseError(
             f"Invalid memory ID format: {memory_id}",
-            "Memory ID must be in format namespace:commit_sha",
+            "Memory ID must be in format namespace:commit_sha[:timestamp_ms]",
         )
 
-    parts = memory_id.split(":", 1)
-    return parts[0], parts[1]
+    parts = memory_id.split(":")
+
+    if len(parts) == 2:
+        # Legacy format: namespace:commit_sha
+        return parts[0], parts[1], None
+    elif len(parts) == 3:
+        # New format: namespace:commit_sha:timestamp_ms
+        try:
+            ts_ms = int(parts[2])
+        except ValueError:
+            ts_ms = None
+        return parts[0], parts[1], ts_ms
+    else:
+        raise ParseError(
+            f"Invalid memory ID format: {memory_id}",
+            "Memory ID must be in format namespace:commit_sha[:timestamp_ms]",
+        )
