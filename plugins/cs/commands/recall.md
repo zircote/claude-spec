@@ -190,3 +190,100 @@ Results are displayed in a table format showing:
 Use --full for complete note content.
 Use --files to see what code was changed in the commit.
 </output_format>
+
+<api_reference>
+## RecallService API Reference
+
+**IMPORTANT**: Different methods return different types. Use the correct access pattern.
+
+### Method Return Types
+
+| Method | Returns | Has Score? | Use Case |
+|--------|---------|------------|----------|
+| `search(query)` | `list[MemoryResult]` | Yes | Semantic similarity search |
+| `recent()` | `list[Memory]` | No | Chronological listing |
+| `by_commit(sha)` | `list[Memory]` | No | Memories for a commit |
+| `similar(memory_id)` | `list[MemoryResult]` | Yes | Find related memories |
+
+### Accessing Fields
+
+**For `search()` results (MemoryResult):**
+```python
+results = recall.search("query")
+for r in results:
+    # Access via convenience properties (preferred)
+    print(r.namespace)      # MemoryResult proxies to Memory
+    print(r.summary)
+    print(r.content)        # Full note content
+    print(r.score)          # Similarity score (lower = better)
+
+    # Or access underlying Memory explicitly
+    print(r.memory.namespace)
+    print(r.memory.content)
+```
+
+**For `recent()` results (Memory directly):**
+```python
+memories = recall.recent(limit=10)
+for m in memories:
+    # Access fields directly - NO .memory wrapper
+    print(m.namespace)
+    print(m.summary)
+    print(m.content)
+    # m.score does NOT exist - recent() has no similarity score
+```
+
+### Common Pitfalls
+
+**WRONG - Accessing .memory on Memory object:**
+```python
+memories = recall.recent()
+for m in memories:
+    print(m.memory.content)  # ERROR: Memory has no .memory attribute
+```
+
+**CORRECT:**
+```python
+memories = recall.recent()
+for m in memories:
+    print(m.content)  # Direct access
+```
+
+**WRONG - Accessing .score on Memory object:**
+```python
+memories = recall.recent()
+for m in memories:
+    print(m.score)  # ERROR: Memory has no .score attribute
+```
+
+**CORRECT - Only MemoryResult has score:**
+```python
+results = recall.search("query")
+for r in results:
+    print(r.score)  # MemoryResult has score
+```
+
+### Memory Fields Reference
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `str` | Unique ID: `namespace:sha:timestamp_ms` |
+| `commit_sha` | `str` | Git commit this memory is attached to |
+| `namespace` | `str` | Type: decisions, learnings, blockers, etc. |
+| `spec` | `str \| None` | Specification slug (None for global) |
+| `phase` | `str \| None` | Lifecycle phase |
+| `summary` | `str` | One-line summary (max 100 chars) |
+| `content` | `str` | Full markdown content |
+| `tags` | `tuple[str, ...]` | Categorization tags |
+| `timestamp` | `datetime` | When captured |
+| `status` | `str \| None` | For blockers: unresolved/resolved |
+
+### MemoryResult Additional Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `memory` | `Memory` | The underlying Memory object |
+| `distance` | `float` | Euclidean distance (lower = more similar) |
+| `score` | `float` | Alias for distance |
+
+</api_reference>
