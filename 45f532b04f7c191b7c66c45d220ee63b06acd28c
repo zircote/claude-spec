@@ -294,3 +294,24 @@ Commands:
 - `/cs:wt:create` - Create worktrees with agents
 - `/cs:wt:status` - View worktree status
 - `/cs:wt:cleanup` - Clean up worktrees
+
+---
+type: decisions
+spec: claude-spec-plugin
+timestamp: '2025-12-15T06:50:32.119325Z'
+summary: Hidden Prompt Log File
+phase: architecture
+tags:
+- claude-spec-plugin
+- adr
+- architecture
+---
+
+## Context
+Prompt log file naming options:
+- `PROMPT_LOG.json` (visible, all caps)
+- `prompts.json` (visible, lowercase)
+- `.prompt-log.json` (hidden)
+
+## Decision
+Use **`.prompt-log.json`** (hidden file).
