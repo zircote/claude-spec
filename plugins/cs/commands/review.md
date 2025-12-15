@@ -2,7 +2,7 @@
 argument-hint: [file-or-pr] [--capture|--recall]
 description: Code review memory integration - capture review findings and recall past review patterns. Links review feedback to persistent memory for pattern detection.
 model: claude-opus-4-5-20251101
-allowed-tools: Read, Write, Bash, Grep, AskUserQuestion
+allowed-tools: Read, Write, Bash, Grep, AskUserQuestion, TodoWrite
 ---
 
 # /cs:review - Code Review Memory Integration

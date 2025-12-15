@@ -2,7 +2,7 @@
 argument-hint: <subcommand> [options]
 description: Memory management commands - status, reindex, export, gc. Use to view statistics, rebuild the search index, export memories, or clean up.
 model: claude-opus-4-5-20251101
-allowed-tools: Read, Write, Bash, Grep, AskUserQuestion
+allowed-tools: Read, Write, Bash, Grep, AskUserQuestion, TodoWrite
 ---
 
 # /cs:memory - Memory Management

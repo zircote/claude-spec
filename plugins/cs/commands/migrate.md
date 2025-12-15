@@ -2,7 +2,7 @@
 argument-hint: [--dry-run|--force|--backup]
 description: Migrate from docs/architecture/ to docs/spec/ structure and update all CLAUDE.md references. Use --dry-run to preview changes.
 model: claude-opus-4-5-20251101
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion, TodoWrite
 ---
 
 # /cs/migrate - Architecture to Spec Migration
