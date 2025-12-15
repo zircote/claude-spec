@@ -639,3 +639,27 @@ jobs:
 - Single job
 - Quality as required, tests optional
 - Test depends on quality
+
+---
+type: decisions
+spec: quality-release-ci-github-act
+timestamp: '2025-12-15T06:46:55.282382Z'
+summary: Use softprops/action-gh-release for Releases
+phase: architecture
+tags:
+- quality-release-ci-github-act
+- adr
+- architecture
+- git
+---
+
+## Context
+GitHub Releases can be created via API directly or using community actions.
+
+## Decision
+Use **softprops/action-gh-release@v2** for release creation.
+
+## Alternatives Considered
+- gh CLI directly
+- GitHub API via curl
+- actions/create-release
