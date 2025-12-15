@@ -389,3 +389,31 @@ Implement the prompt capture hook in Python to match the existing hookify plugin
 - Node.js/TypeScript
 - Bash script
 - Go binary
+
+---
+type: decisions
+spec: prompt-capture-log
+timestamp: '2025-12-15T06:50:32.303395Z'
+summary: File-Based Toggle Marker
+phase: architecture
+tags:
+- prompt-capture-log
+- adr
+- architecture
+- ci-cd
+---
+
+## Context
+Need a way to persist the "logging enabled" state across Claude Code sessions. The toggle must be:
+- Project-specific (different projects can have different states)
+- Visible and debuggable
+- Persistent without a database
+
+## Decision
+Use a marker file (`.prompt-log-enabled`) in the project directory. Presence = enabled, absence = disabled.
+
+## Alternatives Considered
+- JSON config file
+- Environment variable
+- Global settings.json
+- Database
