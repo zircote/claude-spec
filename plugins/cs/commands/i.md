@@ -867,3 +867,246 @@ Use AskUserQuestion with:
 2. **Use AskUserQuestion for project selection** (see Step 0.3)
 
 </first_run_behavior>
+
+<memory_integration>
+## Memory System Integration
+
+The `/cs:i` command integrates with the cs-memory system for context persistence across sessions.
+
+### On Invocation: Auto-Recall
+
+When `/cs:i` is invoked, automatically recall relevant context:
+
+```python
+# Pseudo-code for auto-recall
+from memory.recall import RecallService
+
+recall = RecallService()
+
+# Search for implementation patterns from similar specs
+similar_implementations = recall.search(
+    query=f"implementation {project_name}",
+    namespace="progress",
+    limit=5
+)
+
+# Find unresolved blockers from similar work
+past_blockers = recall.search(
+    query=f"blocker {technology_stack}",
+    namespace="blockers",
+    limit=5
+)
+
+# Get learnings relevant to this implementation
+relevant_learnings = recall.search(
+    query=f"learning {domain_keywords}",
+    namespace="learnings",
+    limit=5
+)
+
+# Get deviation patterns to avoid repeating
+deviation_patterns = recall.search(
+    query=f"deviation {project_type}",
+    namespace="patterns",
+    limit=3
+)
+```
+
+**Display Context Block:**
+```
+Memory Context Loaded
+══════════════════════════════════════════════════════════════════
+
+SIMILAR IMPLEMENTATIONS
+──────────────────────────────────────────────────────────────────
+${LIST_SIMILAR_IMPLEMENTATIONS}
+
+PAST BLOCKERS TO WATCH FOR
+──────────────────────────────────────────────────────────────────
+${LIST_RELEVANT_BLOCKERS}
+
+RELEVANT LEARNINGS
+──────────────────────────────────────────────────────────────────
+${LIST_RELEVANT_LEARNINGS}
+
+DEVIATION PATTERNS TO AVOID
+──────────────────────────────────────────────────────────────────
+${LIST_DEVIATION_PATTERNS}
+
+══════════════════════════════════════════════════════════════════
+```
+
+### During Execution: Auto-Capture
+
+Capture implementation context at key moments:
+
+#### 1. Progress Capture (On Task Completion)
+
+When a task is marked `done`:
+
+```python
+from memory.capture import CaptureService
+
+capture = CaptureService()
+
+capture.capture_progress(
+    spec=spec_slug,
+    task_id=task_id,
+    summary=f"Completed {task_description}",
+    details={
+        "phase": current_phase,
+        "approach": implementation_approach,
+        "files_changed": list_of_files,
+        "tests_added": test_count,
+    },
+    phase=f"phase-{current_phase}",
+    tags=["implementation", task_type],
+)
+```
+
+#### 2. Blocker Capture (On Obstacle)
+
+When implementation encounters an obstacle:
+
+```python
+capture.capture_blocker(
+    spec=spec_slug,
+    summary=blocker_title,
+    problem=problem_description,
+    impact=impact_analysis,
+    attempted_solutions=list_of_attempts,
+    status="unresolved",  # or "resolved"
+    phase=f"phase-{current_phase}",
+    tags=["blocker", category],
+)
+```
+
+#### 3. Learning Capture (On Discovery)
+
+When a significant insight is gained during implementation:
+
+```python
+capture.capture_learning(
+    spec=spec_slug,
+    summary=learning_title,
+    insight=insight_description,
+    evidence={
+        "task": task_id,
+        "observation": what_was_observed,
+        "conclusion": what_was_learned,
+    },
+    applicability="broad" | "narrow",  # How widely applicable
+    tags=["learning", domain],
+)
+```
+
+#### 4. Deviation Capture (On Divergence)
+
+When implementation diverges from the plan:
+
+```python
+capture.capture(
+    namespace="patterns",
+    spec=spec_slug,
+    summary=f"Deviation: {divergence_type}",
+    content=f"""
+## Deviation Type
+{divergence_type}
+
+## Original Plan
+{original_plan_excerpt}
+
+## Actual Implementation
+{actual_approach}
+
+## Reason for Divergence
+{reason}
+
+## Outcome
+{outcome_assessment}
+""",
+    tags=["deviation", divergence_type],
+)
+```
+
+### Capture Triggers
+
+| Event | Namespace | Auto-Capture |
+|-------|-----------|--------------|
+| Task marked `done` | progress | Yes - capture completion details |
+| Task marked `skipped` | patterns | Yes - capture skip rationale |
+| Divergence logged | patterns | Yes - capture deviation pattern |
+| User mentions "blocker" | blockers | Prompt - confirm and capture |
+| User mentions "learned" | learnings | Prompt - confirm and capture |
+| User mentions "realized" | learnings | Prompt - confirm and capture |
+| Phase completed | progress | Yes - capture phase summary |
+| Error encountered | blockers | Prompt - capture if significant |
+
+### On Session End: Memory Summary
+
+When implementation session ends, summarize captured memories:
+
+```
+Memory Capture Summary
+══════════════════════════════════════════════════════════════════
+
+SESSION: ${SESSION_DATE}
+SPEC: ${SPEC_SLUG}
+
+CAPTURED THIS SESSION:
+  ✅ Progress:   ${PROGRESS_COUNT} task completions
+  🚧 Blockers:   ${BLOCKER_COUNT} obstacles
+  💡 Learnings:  ${LEARNING_COUNT} insights
+  🔄 Deviations: ${DEVIATION_COUNT} plan changes
+
+NOTABLE CAPTURES:
+  - ${CAPTURE_1_SUMMARY}
+  - ${CAPTURE_2_SUMMARY}
+
+Memories are stored in Git notes (refs/notes/cs/*) and indexed for
+future recall. Use /cs:recall to search, /cs:context to load all.
+
+══════════════════════════════════════════════════════════════════
+```
+
+### Memory-Aware Guidance
+
+Use recalled context to provide implementation guidance:
+
+```
+Based on past implementations:
+
+⚠️ WATCH OUT FOR:
+   ${PAST_BLOCKER_1} - occurred in ${SIMILAR_PROJECT}
+   ${PAST_BLOCKER_2} - common with ${TECHNOLOGY}
+
+💡 APPLY THESE LEARNINGS:
+   ${LEARNING_1} - from ${RELATED_SPEC}
+   ${LEARNING_2} - discovered in ${DOMAIN} work
+
+📋 RECOMMENDED APPROACH:
+   Based on ${PATTERN_COUNT} similar implementations,
+   consider ${RECOMMENDED_APPROACH}
+```
+
+### Graceful Degradation
+
+Memory features degrade gracefully if services unavailable:
+
+```
+IF embedding service unavailable:
+  -> Skip similarity search
+  -> Use keyword-based fallback
+  -> Log warning, continue implementation
+
+IF index database unavailable:
+  -> Capture to Git notes only (no indexing)
+  -> Queue for index sync on next availability
+  -> Log warning, continue implementation
+
+IF Git notes unavailable:
+  -> Log error but don't block implementation
+  -> Warn user that memories won't persist
+```
+
+</memory_integration>

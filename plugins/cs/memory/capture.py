@@ -1,0 +1,405 @@
+"""
+Capture service for cs-memory.
+
+Orchestrates the memory capture flow: format → git notes → embed → index.
+Includes concurrency safety via file locking per FR-022.
+"""
+
+import fcntl
+from collections.abc import Generator
+from contextlib import contextmanager
+from datetime import UTC, datetime
+from pathlib import Path
+
+from .config import LOCK_FILE, NAMESPACES
+from .embedding import EmbeddingService
+from .exceptions import CaptureError
+from .git_ops import GitOps
+from .index import IndexService
+from .models import CaptureResult, Memory
+from .note_parser import extract_memory_id, format_note
+
+
+@contextmanager
+def capture_lock(lock_path: Path = LOCK_FILE) -> Generator[None, None, None]:
+    """
+    Acquire exclusive lock for capture operations (FR-022).
+
+    Args:
+        lock_path: Path to lock file
+
+    Yields:
+        Nothing - context manager for lock lifetime
+
+    Raises:
+        CaptureError: If lock cannot be acquired
+    """
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_fd = open(lock_path, "w")
+
+    try:
+        fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        yield
+    except BlockingIOError as err:
+        raise CaptureError(
+            "Another capture operation is in progress",
+            f"Wait and retry, or remove {lock_path} if stuck",
+        ) from err
+    finally:
+        fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
+        lock_fd.close()
+
+
+class CaptureService:
+    """
+    Orchestrates memory capture operations.
+
+    Handles the full capture flow with concurrency safety:
+    1. Acquire capture lock
+    2. Format note with YAML front matter
+    3. Attach note to commit via git notes append
+    4. Generate embedding
+    5. Index in SQLite
+    6. Release lock
+    """
+
+    def __init__(
+        self,
+        git_ops: GitOps | None = None,
+        embedding_service: EmbeddingService | None = None,
+        index_service: IndexService | None = None,
+    ):
+        """
+        Initialize the capture service.
+
+        Args:
+            git_ops: Git operations wrapper (created if None)
+            embedding_service: Embedding generator (created if None)
+            index_service: Index manager (created if None)
+        """
+        self.git_ops = git_ops or GitOps()
+        self.embedding_service = embedding_service or EmbeddingService()
+        self.index_service = index_service or IndexService()
+
+    def capture(
+        self,
+        namespace: str,
+        summary: str,
+        content: str,
+        spec: str | None = None,
+        commit: str = "HEAD",
+        tags: list[str] | None = None,
+        phase: str | None = None,
+        status: str | None = None,
+    ) -> CaptureResult:
+        """
+        Capture a memory as a Git note.
+
+        Args:
+            namespace: Memory type (decisions, learnings, blockers, etc.)
+            summary: One-line summary (max 100 chars)
+            content: Full markdown body
+            spec: Specification slug
+            commit: Commit to attach note to (default: HEAD)
+            tags: Categorization tags
+            phase: Lifecycle phase
+            status: For blockers/reviews - open/resolved
+
+        Returns:
+            CaptureResult with success status and captured memory
+
+        Raises:
+            CaptureError: If capture fails
+            StorageError: If git operations fail
+        """
+        if namespace not in NAMESPACES:
+            raise CaptureError(
+                f"Invalid namespace: {namespace}",
+                f"Use one of: {', '.join(sorted(NAMESPACES))}",
+            )
+
+        timestamp = datetime.now(UTC)
+
+        # Build metadata
+        metadata = {
+            "type": namespace,
+            "spec": spec,
+            "timestamp": timestamp,
+            "summary": summary,
+        }
+        if phase:
+            metadata["phase"] = phase
+        if tags:
+            metadata["tags"] = tags
+        if status:
+            metadata["status"] = status
+
+        # Format the note
+        note_content = format_note(metadata, content)
+
+        # Get the actual commit SHA
+        commit_sha = self.git_ops.get_commit_sha(commit)
+
+        with capture_lock():
+            # Append note to git (safe for concurrent operations)
+            self.git_ops.append_note(namespace, note_content, commit_sha)
+
+            # Generate memory ID
+            memory_id = extract_memory_id(namespace, commit_sha)
+
+            # Create Memory object
+            memory = Memory(
+                id=memory_id,
+                commit_sha=commit_sha,
+                namespace=namespace,
+                spec=spec,
+                phase=phase,
+                summary=summary,
+                content=content,
+                tags=tuple(tags) if tags else (),
+                timestamp=timestamp,
+                status=status,
+            )
+
+            # Try to index (graceful degradation on failure)
+            indexed = False
+            warning = None
+
+            try:
+                # Embed the summary + content for semantic search
+                embed_text = f"{summary}\n\n{content}"
+                embedding = self.embedding_service.embed(embed_text)
+
+                # Initialize index if needed and insert
+                self.index_service.initialize()
+                self.index_service.insert(memory, embedding)
+                indexed = True
+
+            except Exception as e:
+                # Graceful degradation - note is saved, just not indexed
+                warning = f"Embedding/indexing failed: {e}. Memory saved to git notes."
+
+        return CaptureResult(
+            success=True,
+            memory=memory,
+            indexed=indexed,
+            warning=warning,
+        )
+
+    def capture_decision(
+        self,
+        spec: str,
+        summary: str,
+        context: str,
+        rationale: str,
+        alternatives: list[str] | None = None,
+        commit: str = "HEAD",
+        tags: list[str] | None = None,
+    ) -> CaptureResult:
+        """
+        Capture an Architecture Decision Record.
+
+        Args:
+            spec: Specification slug
+            summary: One-line summary of the decision
+            context: Problem/background
+            rationale: Why this decision was made
+            alternatives: Other options considered
+            commit: Commit to attach to
+            tags: Additional tags
+
+        Returns:
+            CaptureResult
+        """
+        # Build ADR body
+        body_parts = ["## Context", context, "", "## Decision", rationale]
+
+        if alternatives:
+            body_parts.extend(["", "## Alternatives Considered"])
+            for alt in alternatives:
+                body_parts.append(f"- {alt}")
+
+        content = "\n".join(body_parts)
+
+        return self.capture(
+            namespace="decisions",
+            summary=summary,
+            content=content,
+            spec=spec,
+            commit=commit,
+            tags=tags,
+            phase="architecture",
+        )
+
+    def capture_blocker(
+        self,
+        spec: str,
+        summary: str,
+        problem: str,
+        commit: str = "HEAD",
+        tags: list[str] | None = None,
+    ) -> CaptureResult:
+        """
+        Capture an unresolved blocker.
+
+        Args:
+            spec: Specification slug
+            summary: One-line blocker description
+            problem: Full problem description
+            commit: Commit to attach to
+            tags: Additional tags
+
+        Returns:
+            CaptureResult
+        """
+        content = f"## Problem\n{problem}"
+
+        return self.capture(
+            namespace="blockers",
+            summary=summary,
+            content=content,
+            spec=spec,
+            commit=commit,
+            tags=tags,
+            phase="implementation",
+            status="unresolved",
+        )
+
+    def resolve_blocker(
+        self,
+        memory_id: str,
+        resolution: str,
+    ) -> CaptureResult:
+        """
+        Update a blocker with its resolution.
+
+        Appends resolution to the existing note and updates status.
+
+        Args:
+            memory_id: ID of the blocker memory
+            resolution: How the blocker was resolved
+
+        Returns:
+            CaptureResult with updated memory
+        """
+        # Get existing memory
+        existing = self.index_service.get(memory_id)
+        if not existing:
+            raise CaptureError(
+                f"Blocker not found: {memory_id}",
+                "Check memory ID or run /cs:memory reindex",
+            )
+
+        if existing.namespace != "blockers":
+            raise CaptureError(
+                f"Memory is not a blocker: {memory_id}",
+                "Can only resolve memories in blockers namespace",
+            )
+
+        # Append resolution to the note
+        resolution_content = f"\n\n## Resolution\n{resolution}"
+        self.git_ops.append_note(
+            "blockers",
+            resolution_content,
+            existing.commit_sha,
+        )
+
+        # Update in index
+        updated_memory = Memory(
+            id=existing.id,
+            commit_sha=existing.commit_sha,
+            namespace=existing.namespace,
+            spec=existing.spec,
+            phase=existing.phase,
+            summary=existing.summary,
+            content=existing.content + resolution_content,
+            tags=existing.tags,
+            timestamp=existing.timestamp,
+            status="resolved",
+            relates_to=existing.relates_to,
+        )
+
+        self.index_service.update(updated_memory)
+
+        return CaptureResult(
+            success=True,
+            memory=updated_memory,
+            indexed=True,
+        )
+
+    def capture_learning(
+        self,
+        spec: str | None,
+        summary: str,
+        insight: str,
+        applicability: str | None = None,
+        commit: str = "HEAD",
+        tags: list[str] | None = None,
+    ) -> CaptureResult:
+        """
+        Capture a technical learning/insight.
+
+        Args:
+            spec: Specification slug (None for global learnings)
+            summary: One-line summary
+            insight: The learning/insight
+            applicability: When/where this applies
+            commit: Commit to attach to
+            tags: Additional tags
+
+        Returns:
+            CaptureResult
+        """
+        body_parts = ["## Insight", insight]
+
+        if applicability:
+            body_parts.extend(["", "## Applicability", applicability])
+
+        content = "\n".join(body_parts)
+
+        return self.capture(
+            namespace="learnings",
+            summary=summary,
+            content=content,
+            spec=spec,
+            commit=commit,
+            tags=tags,
+        )
+
+    def capture_progress(
+        self,
+        spec: str,
+        summary: str,
+        task_id: str | None = None,
+        details: str | None = None,
+        commit: str = "HEAD",
+    ) -> CaptureResult:
+        """
+        Capture task completion progress.
+
+        Args:
+            spec: Specification slug
+            summary: One-line progress summary
+            task_id: Task identifier if applicable
+            details: Additional details
+            commit: Commit to attach to
+
+        Returns:
+            CaptureResult
+        """
+        body_parts = []
+        if task_id:
+            body_parts.append(f"**Task ID**: {task_id}")
+        if details:
+            body_parts.extend(["", details])
+
+        content = "\n".join(body_parts) if body_parts else summary
+
+        return self.capture(
+            namespace="progress",
+            summary=summary,
+            content=content,
+            spec=spec,
+            commit=commit,
+            phase="implementation",
+        )
