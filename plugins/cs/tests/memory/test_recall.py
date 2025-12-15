@@ -69,12 +69,10 @@ def mock_index_service():
     mock = MagicMock()
     mock.search_vector.return_value = []
     mock.get.return_value = None
-
-    # Mock connection for recent() and by_commit()
-    mock_conn = MagicMock()
-    mock_conn.execute.return_value = iter([])
-    mock._get_connection.return_value = mock_conn
-    mock._row_to_memory.side_effect = lambda row: make_memory(memory_id=row["id"])
+    mock.get_batch.return_value = {}  # Default empty batch
+    mock.get_by_spec.return_value = {}  # Default empty spec context
+    mock.list_recent.return_value = []  # Default empty recent
+    mock.get_by_commit.return_value = []  # Default empty by_commit
 
     return mock
 
@@ -116,7 +114,7 @@ class TestSearch:
         """Test search returns memory results."""
         memory = make_memory()
         mock_index_service.search_vector.return_value = [("test:abc123", 0.5)]
-        mock_index_service.get.return_value = memory
+        mock_index_service.get_batch.return_value = {"test:abc123": memory}
 
         results = recall_service.search("test query")
 
@@ -159,9 +157,9 @@ class TestSearch:
         assert call_args[1]["limit"] == MAX_RECALL_LIMIT
 
     def test_search_handles_missing_memories(self, recall_service, mock_index_service):
-        """Test search handles case where memory not found in index."""
+        """Test search handles case where memory not found in batch."""
         mock_index_service.search_vector.return_value = [("test:missing", 0.5)]
-        mock_index_service.get.return_value = None
+        mock_index_service.get_batch.return_value = {}  # Empty batch - memory not found
 
         results = recall_service.search("test")
 
@@ -214,39 +212,27 @@ class TestContext:
     def test_context_loads_all_namespaces(
         self, recall_service, mock_embedding_service, mock_index_service
     ):
-        """Test context loads memories from all namespaces."""
-        # Return memories for some namespaces
+        """Test context loads memories from all namespaces using get_by_spec."""
+        # Return memories for some namespaces (now using get_by_spec)
         memory1 = make_memory(memory_id="decisions:abc", namespace="decisions")
         memory2 = make_memory(memory_id="learnings:def", namespace="learnings")
 
-        def mock_search_vector(embedding, filters=None, limit=10):
-            ns = filters.get("namespace") if filters else None
-            if ns == "decisions":
-                return [("decisions:abc", 0.5)]
-            elif ns == "learnings":
-                return [("learnings:def", 0.6)]
-            return []
-
-        def mock_get(memory_id):
-            if memory_id == "decisions:abc":
-                return memory1
-            elif memory_id == "learnings:def":
-                return memory2
-            return None
-
-        mock_index_service.search_vector.side_effect = mock_search_vector
-        mock_index_service.get.side_effect = mock_get
+        mock_index_service.get_by_spec.return_value = {
+            "decisions": [memory1],
+            "learnings": [memory2],
+        }
 
         context = recall_service.context("test-spec")
 
         assert context.spec == "test-spec"
-        assert context.total_count >= 0  # May vary based on namespace iteration
+        assert context.total_count == 2
+        mock_index_service.get_by_spec.assert_called_once_with("test-spec")
 
     def test_context_returns_empty_for_no_memories(
         self, recall_service, mock_index_service
     ):
         """Test context returns empty context when no memories found."""
-        mock_index_service.search_vector.return_value = []
+        mock_index_service.get_by_spec.return_value = {}
 
         context = recall_service.context("nonexistent-spec")
 
@@ -259,29 +245,27 @@ class TestRecent:
     """Tests for recent method."""
 
     def test_recent_returns_memories(self, recall_service, mock_index_service):
-        """Test recent returns memories from index."""
-        mock_row = {"id": "test:recent1"}
-        mock_index_service._get_connection().execute.return_value = iter([mock_row])
+        """Test recent returns memories from index using public list_recent method."""
+        memory = make_memory(memory_id="test:recent1")
+        mock_index_service.list_recent.return_value = [memory]
 
-        _results = recall_service.recent(limit=5)
+        results = recall_service.recent(limit=5)
 
-        # Method was called
-        mock_index_service._get_connection().execute.assert_called()
+        assert len(results) == 1
+        assert results[0].id == "test:recent1"
+        mock_index_service.list_recent.assert_called_once_with(
+            spec=None, namespace=None, limit=5
+        )
 
     def test_recent_with_filters(self, recall_service, mock_index_service):
-        """Test recent applies filters."""
-        mock_index_service._get_connection().execute.return_value = iter([])
+        """Test recent applies filters via public list_recent method."""
+        mock_index_service.list_recent.return_value = []
 
         recall_service.recent(spec="test-spec", namespace="decisions", limit=5)
 
-        call_args = mock_index_service._get_connection().execute.call_args
-        query = call_args[0][0]
-        params = call_args[0][1]
-
-        assert "spec = ?" in query
-        assert "namespace = ?" in query
-        assert "test-spec" in params
-        assert "decisions" in params
+        mock_index_service.list_recent.assert_called_once_with(
+            spec="test-spec", namespace="decisions", limit=5
+        )
 
 
 class TestSimilar:
@@ -299,14 +283,11 @@ class TestSimilar:
             ("test:similar", 0.5),
         ]
 
-        def mock_get(memory_id):
-            if memory_id == "test:input":
-                return input_memory
-            elif memory_id == "test:similar":
-                return similar_memory
-            return None
-
-        mock_index_service.get.side_effect = mock_get
+        # Use get_batch instead of get (PERF-001 fix)
+        mock_index_service.get_batch.return_value = {
+            "test:input": input_memory,
+            "test:similar": similar_memory,
+        }
 
         results = recall_service.similar(input_memory, limit=5)
 
@@ -319,15 +300,12 @@ class TestByCommit:
     """Tests for by_commit method."""
 
     def test_by_commit_returns_memories(self, recall_service, mock_index_service):
-        """Test by_commit returns memories for commit."""
-        mock_row = {"id": "test:abc123"}
-        mock_index_service._get_connection().execute.return_value = iter([mock_row])
+        """Test by_commit returns memories using public get_by_commit method."""
+        memory = make_memory(memory_id="test:abc123")
+        mock_index_service.get_by_commit.return_value = [memory]
 
-        _results = recall_service.by_commit("abc123")
+        results = recall_service.by_commit("abc123")
 
-        call_args = mock_index_service._get_connection().execute.call_args
-        query = call_args[0][0]
-        params = call_args[0][1]
-
-        assert "commit_sha = ?" in query
-        assert "abc123" in params
+        assert len(results) == 1
+        assert results[0].id == "test:abc123"
+        mock_index_service.get_by_commit.assert_called_once_with("abc123")

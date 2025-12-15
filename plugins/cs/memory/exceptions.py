@@ -50,7 +50,7 @@ class StorageError(MemoryError):
         super().__init__(ErrorCategory.STORAGE, message, recovery_action)
 
 
-class IndexError(MemoryError):
+class MemoryIndexError(MemoryError):
     """
     SQLite or sqlite-vec operation failed.
 
@@ -59,6 +59,8 @@ class IndexError(MemoryError):
     - Corrupted index file
     - sqlite-vec extension not found
     - Schema migration needed
+
+    Note: Named MemoryIndexError to avoid shadowing Python's built-in IndexError.
     """
 
     def __init__(self, message: str, recovery_action: str) -> None:
@@ -120,12 +122,12 @@ PERMISSION_DENIED_ERROR = StorageError(
     "Check repository permissions and ensure you have write access",
 )
 
-INDEX_LOCKED_ERROR = IndexError(
+INDEX_LOCKED_ERROR = MemoryIndexError(
     "Index database is locked by another process",
     "Wait for the other process to complete, or check for stuck processes",
 )
 
-SQLITE_VEC_MISSING_ERROR = IndexError(
+SQLITE_VEC_MISSING_ERROR = MemoryIndexError(
     "sqlite-vec extension not found", "Install sqlite-vec: pip install sqlite-vec"
 )
 

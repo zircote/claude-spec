@@ -89,11 +89,8 @@ def mock_index_service():
         last_sync=None,
         index_size_bytes=0,
     )
-
-    # Mock connection for verify_index
-    mock_conn = MagicMock()
-    mock_conn.execute.return_value = iter([])
-    mock._get_connection.return_value = mock_conn
+    # Default empty set for get_all_ids (public method for ARCH-002 fix)
+    mock.get_all_ids.return_value = set()
 
     return mock
 
@@ -309,10 +306,7 @@ class TestVerifyIndex:
         """Test verification when index is consistent."""
         # Set up notes and index to match
         mock_git_ops.list_notes.return_value = []
-
-        mock_conn = MagicMock()
-        mock_conn.execute.return_value = iter([])
-        mock_index_service._get_connection.return_value = mock_conn
+        mock_index_service.get_all_ids.return_value = set()
 
         result = sync_service.verify_index()
 
@@ -332,10 +326,8 @@ class TestVerifyIndex:
 
         mock_git_ops.list_notes.side_effect = mock_list_notes
 
-        # Index is empty
-        mock_conn = MagicMock()
-        mock_conn.execute.return_value = iter([])
-        mock_index_service._get_connection.return_value = mock_conn
+        # Index is empty (using public get_all_ids method)
+        mock_index_service.get_all_ids.return_value = set()
 
         result = sync_service.verify_index()
 
@@ -349,10 +341,8 @@ class TestVerifyIndex:
         # No notes
         mock_git_ops.list_notes.return_value = []
 
-        # But index has entries
-        mock_conn = MagicMock()
-        mock_conn.execute.return_value = iter([{"id": "decisions:orphan1"}])
-        mock_index_service._get_connection.return_value = mock_conn
+        # But index has entries (using public get_all_ids method)
+        mock_index_service.get_all_ids.return_value = {"decisions:orphan1"}
 
         result = sync_service.verify_index()
 
@@ -373,10 +363,8 @@ class TestRepairIndex:
 
         mock_git_ops.list_notes.side_effect = mock_list_notes
 
-        # Index is empty (so missing1 is missing)
-        mock_conn = MagicMock()
-        mock_conn.execute.return_value = iter([])
-        mock_index_service._get_connection.return_value = mock_conn
+        # Index is empty (so missing1 is missing) - using public get_all_ids method
+        mock_index_service.get_all_ids.return_value = set()
 
         added, removed = sync_service.repair_index()
 
@@ -390,10 +378,8 @@ class TestRepairIndex:
         # No notes
         mock_git_ops.list_notes.return_value = []
 
-        # Index has orphaned entry
-        mock_conn = MagicMock()
-        mock_conn.execute.return_value = iter([{"id": "decisions:orphan1"}])
-        mock_index_service._get_connection.return_value = mock_conn
+        # Index has orphaned entry - using public get_all_ids method
+        mock_index_service.get_all_ids.return_value = {"decisions:orphan1"}
         mock_index_service.delete.return_value = True
 
         added, removed = sync_service.repair_index()
@@ -412,10 +398,8 @@ class TestRepairIndex:
 
         mock_git_ops.list_notes.side_effect = mock_list_notes
 
-        # Index has different entry (orphaned)
-        mock_conn = MagicMock()
-        mock_conn.execute.return_value = iter([{"id": "decisions:orphan1"}])
-        mock_index_service._get_connection.return_value = mock_conn
+        # Index has different entry (orphaned) - using public get_all_ids method
+        mock_index_service.get_all_ids.return_value = {"decisions:orphan1"}
 
         added, removed = sync_service.repair_index()
 
@@ -429,10 +413,7 @@ class TestGetSyncStatus:
     def test_get_sync_status(self, sync_service, mock_git_ops, mock_index_service):
         """Test getting sync status."""
         mock_git_ops.list_notes.return_value = []
-
-        mock_conn = MagicMock()
-        mock_conn.execute.return_value = iter([])
-        mock_index_service._get_connection.return_value = mock_conn
+        mock_index_service.get_all_ids.return_value = set()
 
         mock_index_service.get_stats.return_value = IndexStats(
             total_memories=5,
@@ -454,10 +435,7 @@ class TestGetSyncStatus:
     ):
         """Test status when last_sync is None."""
         mock_git_ops.list_notes.return_value = []
-
-        mock_conn = MagicMock()
-        mock_conn.execute.return_value = iter([])
-        mock_index_service._get_connection.return_value = mock_conn
+        mock_index_service.get_all_ids.return_value = set()
 
         mock_index_service.get_stats.return_value = IndexStats(
             total_memories=0,

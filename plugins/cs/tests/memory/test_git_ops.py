@@ -7,7 +7,124 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from memory.exceptions import StorageError
-from memory.git_ops import GitOps
+from memory.git_ops import GitOps, validate_git_ref, validate_path
+
+
+class TestValidateGitRef:
+    """Tests for validate_git_ref function (SEC-001)."""
+
+    def test_valid_refs(self):
+        """Test that valid refs pass validation."""
+        valid_refs = [
+            "HEAD",
+            "main",
+            "feature/new-feature",
+            "v1.0.0",
+            "abc123def456",
+            "HEAD~1",
+            "HEAD^2",
+            "origin/main",
+            "refs/heads/main",
+            "my-branch",
+            "my_branch",
+            "branch.name",
+            "feature@latest",
+        ]
+        for ref in valid_refs:
+            validate_git_ref(ref)  # Should not raise
+
+    def test_empty_ref_raises_error(self):
+        """Test that empty ref raises StorageError."""
+        with pytest.raises(StorageError) as exc_info:
+            validate_git_ref("")
+        assert "cannot be empty" in str(exc_info.value)
+
+    def test_dash_prefix_raises_error(self):
+        """Test that refs starting with dash are rejected (command injection)."""
+        with pytest.raises(StorageError) as exc_info:
+            validate_git_ref("-malicious")
+        assert "cannot start with dash" in str(exc_info.value)
+
+        with pytest.raises(StorageError) as exc_info:
+            validate_git_ref("--exec=evil")
+        assert "cannot start with dash" in str(exc_info.value)
+
+    def test_illegal_characters_raise_error(self):
+        """Test that refs with shell metacharacters are rejected."""
+        dangerous_refs = [
+            "ref;rm -rf",
+            "ref$(whoami)",
+            "ref`id`",
+            "ref|cat",
+            "ref>file",
+            "ref<file",
+            "ref&background",
+            "ref\ninjection",
+            "ref\x00null",
+        ]
+        for ref in dangerous_refs:
+            with pytest.raises(StorageError) as exc_info:
+                validate_git_ref(ref)
+            assert "illegal characters" in str(exc_info.value).lower()
+
+
+class TestValidatePath:
+    """Tests for validate_path function (SEC-001)."""
+
+    def test_valid_paths(self):
+        """Test that valid paths pass validation."""
+        valid_paths = [
+            "README.md",
+            "src/main.py",
+            "docs/api/index.html",
+            "file-with-dash.txt",
+            "file_with_underscore.txt",
+            "file.multiple.dots.txt",
+            "path/with spaces/file.txt",
+            "CamelCase/Path.py",
+        ]
+        for path in valid_paths:
+            validate_path(path)  # Should not raise
+
+    def test_empty_path_raises_error(self):
+        """Test that empty path raises StorageError."""
+        with pytest.raises(StorageError) as exc_info:
+            validate_path("")
+        assert "cannot be empty" in str(exc_info.value)
+
+    def test_dash_prefix_raises_error(self):
+        """Test that paths starting with dash are rejected."""
+        with pytest.raises(StorageError) as exc_info:
+            validate_path("-malicious")
+        assert "cannot start with dash" in str(exc_info.value)
+
+    def test_absolute_path_raises_error(self):
+        """Test that absolute paths are rejected."""
+        with pytest.raises(StorageError) as exc_info:
+            validate_path("/etc/passwd")
+        assert "absolute paths" in str(exc_info.value).lower()
+
+    def test_null_byte_raises_error(self):
+        """Test that paths with null bytes are rejected."""
+        with pytest.raises(StorageError) as exc_info:
+            validate_path("file\x00.txt")
+        assert "null bytes" in str(exc_info.value).lower()
+
+    def test_illegal_characters_raise_error(self):
+        """Test that paths with shell metacharacters are rejected."""
+        dangerous_paths = [
+            "file;rm -rf",
+            "file$(whoami)",
+            "file`id`",
+            "file|cat",
+            "file>out",
+            "file<in",
+            "file&bg",
+        ]
+        for path in dangerous_paths:
+            with pytest.raises(StorageError) as exc_info:
+                validate_path(path)
+            assert "illegal characters" in str(exc_info.value).lower()
 
 
 class TestGitOpsInit:
@@ -153,6 +270,15 @@ class TestAddNote:
 
         assert "Invalid namespace" in str(exc_info.value)
 
+    def test_add_note_invalid_ref(self):
+        """Test error for invalid ref (SEC-001)."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with pytest.raises(StorageError) as exc_info:
+            git_ops.add_note("decisions", "content", "-malicious")
+
+        assert "cannot start with dash" in str(exc_info.value)
+
 
 class TestAppendNote:
     """Tests for append_note method."""
@@ -177,6 +303,15 @@ class TestAppendNote:
             git_ops.append_note("invalid", "content")
 
         assert "Invalid namespace" in str(exc_info.value)
+
+    def test_append_note_invalid_ref(self):
+        """Test error for invalid ref (SEC-001)."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with pytest.raises(StorageError) as exc_info:
+            git_ops.append_note("learnings", "content", "$(whoami)")
+
+        assert "illegal characters" in str(exc_info.value).lower()
 
 
 class TestShowNote:
@@ -210,6 +345,15 @@ class TestShowNote:
             git_ops.show_note("invalid", "abc123")
 
         assert "Invalid namespace" in str(exc_info.value)
+
+    def test_show_note_invalid_ref(self):
+        """Test error for invalid ref (SEC-001)."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with pytest.raises(StorageError) as exc_info:
+            git_ops.show_note("decisions", ";rm -rf /")
+
+        assert "illegal characters" in str(exc_info.value).lower()
 
 
 class TestListNotes:
@@ -282,6 +426,24 @@ class TestRemoveNote:
 
             assert result is False
 
+    def test_remove_note_invalid_namespace(self):
+        """Test error for invalid namespace (SEC-003)."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with pytest.raises(StorageError) as exc_info:
+            git_ops.remove_note("invalid_namespace", "abc123")
+
+        assert "Invalid namespace" in str(exc_info.value)
+
+    def test_remove_note_invalid_ref(self):
+        """Test error for invalid ref (SEC-001)."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with pytest.raises(StorageError) as exc_info:
+            git_ops.remove_note("decisions", "-malicious")
+
+        assert "cannot start with dash" in str(exc_info.value)
+
 
 class TestConfigureSync:
     """Tests for configure_sync method."""
@@ -310,6 +472,15 @@ class TestGetCommitSha:
             result = git_ops.get_commit_sha("HEAD")
 
             assert result == "abc123def456789"
+
+    def test_get_commit_sha_invalid_ref(self):
+        """Test error for invalid ref (SEC-001)."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with pytest.raises(StorageError) as exc_info:
+            git_ops.get_commit_sha("--exec=evil")
+
+        assert "cannot start with dash" in str(exc_info.value)
 
 
 class TestGetCommitInfo:
@@ -342,6 +513,15 @@ class TestGetCommitInfo:
 
             assert result == {}
 
+    def test_get_commit_info_invalid_ref(self):
+        """Test error for invalid ref (SEC-001)."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with pytest.raises(StorageError) as exc_info:
+            git_ops.get_commit_info("`id`")
+
+        assert "illegal characters" in str(exc_info.value).lower()
+
 
 class TestGetFileAtCommit:
     """Tests for get_file_at_commit method."""
@@ -365,6 +545,24 @@ class TestGetFileAtCommit:
             result = git_ops.get_file_at_commit("nonexistent.txt", "HEAD")
 
             assert result is None
+
+    def test_get_file_invalid_path(self):
+        """Test error for invalid path (SEC-001)."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with pytest.raises(StorageError) as exc_info:
+            git_ops.get_file_at_commit("/etc/passwd", "HEAD")
+
+        assert "absolute paths" in str(exc_info.value).lower()
+
+    def test_get_file_invalid_ref(self):
+        """Test error for invalid ref (SEC-001)."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with pytest.raises(StorageError) as exc_info:
+            git_ops.get_file_at_commit("README.md", "-malicious")
+
+        assert "cannot start with dash" in str(exc_info.value)
 
 
 class TestGetChangedFiles:
@@ -391,3 +589,12 @@ class TestGetChangedFiles:
             result = git_ops.get_changed_files("HEAD")
 
             assert result == []
+
+    def test_get_changed_files_invalid_ref(self):
+        """Test error for invalid ref (SEC-001)."""
+        git_ops = GitOps(repo_path="/tmp")
+
+        with pytest.raises(StorageError) as exc_info:
+            git_ops.get_changed_files("$(malicious)")
+
+        assert "illegal characters" in str(exc_info.value).lower()

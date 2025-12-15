@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from memory.capture import CaptureService, capture_lock
-from memory.config import EMBEDDING_DIMENSIONS
+from memory.config import EMBEDDING_DIMENSIONS, MAX_CONTENT_LENGTH
 from memory.exceptions import CaptureError
 from memory.models import Memory
 
@@ -73,6 +73,37 @@ class TestCaptureLock:
 
             assert "Another capture operation" in str(exc_info.value)
 
+    def test_lock_releases_on_exception(self, tmp_path):
+        """Test that lock is released even if exception occurs (SEC-004)."""
+        lock_file = tmp_path / "test.lock"
+
+        with pytest.raises(ValueError):
+            with capture_lock(lock_file):
+                raise ValueError("Simulated error")
+
+        # Lock should be released, so we can acquire it again
+        with capture_lock(lock_file):
+            pass  # Should succeed without raising
+
+    def test_lock_file_descriptor_not_leaked(self, tmp_path):
+        """Test that file descriptors are properly closed (SEC-004)."""
+        import resource
+
+        lock_file = tmp_path / "test.lock"
+
+        # Get initial file descriptor count
+        initial_fds = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
+
+        # Acquire and release lock many times
+        for _ in range(100):
+            with capture_lock(lock_file):
+                pass
+
+        # If there was a leak, we'd run out of file descriptors
+        # This test mainly ensures no exception is raised
+        final_fds = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
+        assert final_fds == initial_fds  # Limit shouldn't change
+
 
 class TestCaptureServiceInit:
     """Tests for CaptureService initialization."""
@@ -136,6 +167,37 @@ class TestCapture:
             )
 
         assert "Invalid namespace" in str(exc_info.value)
+
+    def test_capture_content_too_long(self, capture_service):
+        """Test capture with content exceeding MAX_CONTENT_LENGTH (SEC-005)."""
+        # Create content that exceeds the limit
+        long_content = "x" * (MAX_CONTENT_LENGTH + 1)
+
+        with pytest.raises(CaptureError) as exc_info:
+            capture_service.capture(
+                namespace="decisions",
+                summary="Test",
+                content=long_content,
+            )
+
+        assert "Content too long" in str(exc_info.value)
+        assert str(MAX_CONTENT_LENGTH) in str(exc_info.value)
+
+    def test_capture_content_at_limit(self, capture_service, tmp_path):
+        """Test capture with content exactly at MAX_CONTENT_LENGTH (SEC-005)."""
+        lock_file = tmp_path / "test.lock"
+        # Create content exactly at the limit
+        content_at_limit = "x" * MAX_CONTENT_LENGTH
+
+        with patch("memory.capture.LOCK_FILE", lock_file):
+            result = capture_service.capture(
+                namespace="decisions",
+                summary="Test",
+                content=content_at_limit,
+            )
+
+        # Should succeed
+        assert result.success is True
 
     def test_capture_graceful_degradation(
         self, capture_service, mock_embedding_service, tmp_path

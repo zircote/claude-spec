@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import hashlib
 import time
+from collections import OrderedDict
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 from .config import (
@@ -97,9 +98,11 @@ class RankedResult:
 
 @dataclass
 class SearchCache:
-    """In-memory cache for search results."""
+    """In-memory cache for search results with O(1) eviction (PERF-006)."""
 
-    _cache: dict[str, tuple[list[MemoryResult], float]] = field(default_factory=dict)
+    _cache: OrderedDict[str, tuple[list[MemoryResult], float]] = field(
+        default_factory=OrderedDict
+    )
     _ttl_seconds: float = SEARCH_CACHE_TTL_SECONDS
     _max_size: int = 100
 
@@ -108,17 +111,22 @@ class SearchCache:
         if key in self._cache:
             results, timestamp = self._cache[key]
             if time.time() - timestamp < self._ttl_seconds:
+                # Move to end to mark as recently used (LRU behavior)
+                self._cache.move_to_end(key)
                 return results
             # Expired, remove from cache
             del self._cache[key]
         return None
 
     def set(self, key: str, results: list[MemoryResult]) -> None:
-        """Cache search results."""
-        # Evict oldest entries if cache is full
+        """Cache search results with O(1) eviction (PERF-006)."""
+        # If key exists, update it
+        if key in self._cache:
+            del self._cache[key]
+
+        # Evict oldest entry if cache is full - O(1) with OrderedDict
         if len(self._cache) >= self._max_size:
-            oldest_key = min(self._cache.keys(), key=lambda k: self._cache[k][1])
-            del self._cache[oldest_key]
+            self._cache.popitem(last=False)  # Remove oldest (first) item
 
         self._cache[key] = (results, time.time())
 
@@ -337,20 +345,10 @@ class ResultReranker:
         Returns:
             Recency boost value between 0 and 1.
         """
-        if timestamp is None:
-            return 0.5  # Default for unknown timestamps
+        # Use shared utility to avoid DRY violation (QUAL-002)
+        from .utils import calculate_temporal_decay
 
-        now = datetime.now(UTC)
-        if timestamp.tzinfo is None:
-            timestamp = timestamp.replace(tzinfo=UTC)
-
-        age = now - timestamp
-        age_days = age.total_seconds() / 86400
-
-        # Exponential decay: boost = 2^(-age/half_life)
-        import math
-
-        return math.pow(2, -age_days / half_life_days)
+        return calculate_temporal_decay(timestamp, half_life_days)
 
 
 class SearchOptimizer:

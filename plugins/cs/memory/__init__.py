@@ -19,8 +19,8 @@ from .config import (
 from .exceptions import (
     CaptureError,
     EmbeddingError,
-    IndexError,
     MemoryError,
+    MemoryIndexError,
     ParseError,
     StorageError,
 )
@@ -99,7 +99,7 @@ __all__ = [
     # Exceptions
     "MemoryError",
     "StorageError",
-    "IndexError",
+    "MemoryIndexError",
     "EmbeddingError",
     "ParseError",
     "CaptureError",
