@@ -1498,3 +1498,41 @@ The existing `/cr` command produces CODE_REVIEW.md, REVIEW_SUMMARY.md, and REMED
 - **Pattern detection**: Searching `cs/reviews` reveals recurring issues (e.g., "SQL injection found 5 times in past 3 months")
 - **Resolution tracking**: Status updates preserve remediation history
 - **Supplements artifacts**: CODE_REVIEW.md still generated for human consumption; notes provide machine-queryable index
+
+---
+type: decisions
+spec: cs-memory
+timestamp: '2025-12-15T06:46:57.177623Z'
+summary: History Rewriting and Note Orphaning
+phase: architecture
+tags:
+- cs-memory
+- adr
+- architecture
+- git
+- ci-cd
+- memory-system
+---
+
+## Context
+Git notes attach to specific commit SHAs. When developers rewrite history (rebase, squash, amend), the original commits are replaced with new commits having different SHAs. Notes attached to the original commits become "orphaned"—they still exist in `refs/notes/cs/*` but reference commits that no longer exist in the active branch history.
+
+This is a known Git behavior, not a cs-memory bug. The question is: how should cs-memory handle this scenario?
+
+## Decision
+**Document and warn, but do not automatically migrate notes.** The system will:
+
+1. **Detect orphaned notes** during `cs:memory status` by checking if referenced commits exist
+2. **Warn users** when orphaned notes are detected
+3. **Preserve orphaned notes** (they may reference commits in other branches or reflog)
+4. **Defer automatic migration** to a future phase unless user demand emerges
+
+- **Complexity vs. Frequency**: History rewriting after attaching memories is an edge case. Most teams push commits before memories accumulate.
+- **Git's Philosophy**: Notes are loosely coupled to commits by design. Orphaned notes are expected Git behavior.
+- **Safety**: Automatic migration could incorrectly reassign notes if the user intended the history change.
+- **Reflog Preservation**: "Orphaned" commits often exist in reflog for 90 days; notes may still be useful.
+
+## Alternatives Considered
+- Automatic migration via `git notes copy`
+- Block history rewriting when notes exist
+- Manual `cs:memory migrate` command
