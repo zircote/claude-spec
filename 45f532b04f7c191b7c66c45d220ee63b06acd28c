@@ -1045,3 +1045,26 @@ Rename `config.json` to `config.template.json`.
 - `config.default.json`
 - `config.example.json`
 - Keep `config.json`
+
+---
+type: decisions
+spec: worktree-config-install
+timestamp: '2025-12-15T06:50:33.488539Z'
+summary: Prompt Log Timing Fix Location
+phase: architecture
+tags:
+- worktree-config-install
+- adr
+- architecture
+---
+
+## Context
+When `/cs:p` creates a worktree and launches a new agent, the `.prompt-log-enabled` marker isn't created until after the first prompt is processed, causing the first prompt to be missed.
+
+## Decision
+Create the spec directory and `.prompt-log-enabled` marker in the worktree BEFORE launching the agent, within the `p.md` command's `mandatory_first_actions` section.
+
+## Alternatives Considered
+- Add flag to launch-agent.sh
+- Separate setup script
+- Hook modification
