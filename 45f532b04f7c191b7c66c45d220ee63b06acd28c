@@ -490,3 +490,28 @@ Implement as a standalone hook in `~/.claude/hooks/` with its own registration, 
 ## Alternatives Considered
 - Extend hookify
 - New plugin
+
+---
+type: decisions
+spec: quality-release-ci-github-act
+timestamp: '2025-12-15T06:50:32.497152Z'
+summary: Use uv for Python Package Management
+phase: architecture
+tags:
+- quality-release-ci-github-act
+- adr
+- architecture
+- python
+- ci-cd
+---
+
+## Context
+The CI pipeline needs to install Python dependencies quickly and reliably. Options include pip, poetry, pipenv, and uv.
+
+## Decision
+Use **uv** (by Astral) for package management in CI and local development.
+
+## Alternatives Considered
+- pip + pip-tools
+- poetry
+- pipenv
