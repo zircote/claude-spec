@@ -1168,3 +1168,27 @@ Use local embedding generation via sentence-transformers, defaulting to `all-Min
 - OpenAI text-embedding-3-small
 - Ollama with embedding model
 - Larger local models (e5-large, bge-large)
+
+---
+type: decisions
+spec: cs-memory
+timestamp: '2025-12-15T06:50:33.662292Z'
+summary: YAML Front Matter + Markdown Body
+phase: architecture
+tags:
+- cs-memory
+- adr
+- architecture
+---
+
+## Context
+Notes need both machine-parseable metadata and human-readable content.
+
+## Decision
+Use YAML front matter (delimited by `---`) for structured metadata, followed by Markdown body for content.
+
+- **Familiar format**: Common in static site generators, docs
+- **Machine parseable**: YAML is structured, typed
+- **Human readable**: Markdown renders nicely
+- **Flexible**: Body can contain any Markdown structure
+- **Tooling**: Many parsers available
