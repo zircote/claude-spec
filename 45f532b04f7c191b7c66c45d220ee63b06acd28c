@@ -1250,3 +1250,32 @@ Implement three-level progressive hydration:
 - **Flexibility**: User controls detail level
 - **Performance**: Summary search is fast
 - **Completeness**: Full detail available when needed
+
+---
+type: decisions
+spec: cs-memory
+timestamp: '2025-12-15T06:46:56.434344Z'
+summary: Commit Anchor Strategy
+phase: architecture
+tags:
+- cs-memory
+- adr
+- architecture
+- ci-cd
+- memory-system
+---
+
+## Context
+Memories must attach to commits (per core principle). Pre-implementation memories have no natural commit.
+
+## Decision
+Use specification documents as commit anchors:
+1. Scaffold spec directory early with templates
+2. Commit scaffold immediately
+3. Amend within phase as understanding develops
+4. New commit at phase boundaries
+
+- **Every memory has anchor**: No orphan memories
+- **Clean history**: Phase-delineated commits
+- **Document-as-anchor**: Spec docs serve dual purpose
+- **Flexible**: Amend allows refinement
