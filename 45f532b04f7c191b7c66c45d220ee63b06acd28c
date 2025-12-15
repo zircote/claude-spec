@@ -575,3 +575,34 @@ Use `astral-sh/setup-uv@v4` for Python setup (includes uv and Python).
 - v6 (latest)
 - Pin to SHA
 - Use latest tag
+
+---
+type: decisions
+spec: quality-release-ci-github-act
+timestamp: '2025-12-15T06:50:32.654106Z'
+summary: 'Matrix Testing with fail-fast: false'
+phase: architecture
+tags:
+- quality-release-ci-github-act
+- adr
+- architecture
+- python
+- testing
+---
+
+## Context
+Testing across Python 3.11, 3.12, 3.13 requires a strategy matrix. Default behavior cancels other jobs if one fails.
+
+## Decision
+Use `fail-fast: false` to see all failures.
+
+```yaml
+strategy:
+  fail-fast: false
+  matrix:
+    python-version: ["3.11", "3.12", "3.13"]
+```
+
+## Alternatives Considered
+- fail-fast: true (default)
+- Single version
