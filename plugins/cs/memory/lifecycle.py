@@ -528,3 +528,13 @@ def get_lifecycle_manager() -> LifecycleManager:
     if _lifecycle_manager is None:
         _lifecycle_manager = LifecycleManager()
     return _lifecycle_manager
+
+
+def reset_lifecycle_manager() -> None:
+    """Reset the lifecycle manager singleton for testing (ARCH-001).
+
+    This function allows tests to reset the module-level singleton
+    to ensure test isolation.
+    """
+    global _lifecycle_manager
+    _lifecycle_manager = None

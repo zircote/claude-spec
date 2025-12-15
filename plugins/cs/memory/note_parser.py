@@ -26,6 +26,7 @@ import yaml
 
 from .config import MAX_SUMMARY_LENGTH, NOTE_OPTIONAL_FIELDS, NOTE_REQUIRED_FIELDS
 from .exceptions import ParseError
+from .utils import parse_iso_timestamp
 
 # Regex to extract YAML front matter
 FRONT_MATTER_PATTERN = re.compile(
@@ -83,12 +84,10 @@ def parse_note(content: str) -> tuple[dict[str, Any], str]:
             f"Add these fields to front matter: {', '.join(sorted(missing))}",
         )
 
-    # Parse timestamp if string
+    # Parse timestamp if string (ARCH-008: use shared utility)
     if isinstance(metadata.get("timestamp"), str):
         try:
-            metadata["timestamp"] = datetime.fromisoformat(
-                metadata["timestamp"].replace("Z", "+00:00")
-            )
+            metadata["timestamp"] = parse_iso_timestamp(metadata["timestamp"])
         except ValueError as e:
             raise ParseError(
                 f"Invalid timestamp format: {e}",

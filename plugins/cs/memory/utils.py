@@ -65,3 +65,55 @@ def calculate_age_days(timestamp: datetime | None) -> float:
 
     age = now - timestamp
     return age.total_seconds() / SECONDS_PER_DAY
+
+
+def parse_iso_timestamp(timestamp_str: str) -> datetime:
+    """Parse an ISO 8601 timestamp string to datetime (ARCH-008).
+
+    Handles both 'Z' suffix (Zulu time) and explicit timezone offsets.
+    This is the canonical implementation to avoid duplicate timestamp
+    parsing logic across modules.
+
+    Args:
+        timestamp_str: ISO 8601 timestamp string (e.g., "2025-12-14T10:30:00Z"
+                       or "2025-12-14T10:30:00+00:00")
+
+    Returns:
+        datetime object with timezone info.
+
+    Raises:
+        ValueError: If the timestamp string is not valid ISO 8601 format.
+
+    Examples:
+        >>> parse_iso_timestamp("2025-12-14T10:30:00Z")
+        datetime.datetime(2025, 12, 14, 10, 30, tzinfo=datetime.timezone.utc)
+
+        >>> parse_iso_timestamp("2025-12-14T10:30:00+00:00")
+        datetime.datetime(2025, 12, 14, 10, 30, tzinfo=datetime.timezone.utc)
+    """
+    # Handle Z suffix (Zulu time / UTC)
+    if timestamp_str.endswith("Z"):
+        timestamp_str = timestamp_str[:-1] + "+00:00"
+
+    return datetime.fromisoformat(timestamp_str)
+
+
+def parse_iso_timestamp_safe(timestamp_str: str | None) -> datetime | None:
+    """Parse an ISO 8601 timestamp string safely, returning None on error.
+
+    A safe wrapper around parse_iso_timestamp that catches exceptions
+    and returns None instead of raising.
+
+    Args:
+        timestamp_str: ISO 8601 timestamp string, or None.
+
+    Returns:
+        datetime object with timezone info, or None if parsing fails.
+    """
+    if not timestamp_str:
+        return None
+
+    try:
+        return parse_iso_timestamp(timestamp_str)
+    except (ValueError, TypeError):
+        return None

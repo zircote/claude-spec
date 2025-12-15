@@ -72,13 +72,20 @@ class SearchQuery:
     filters: dict[str, Any] = field(default_factory=dict)
 
     def cache_key(self) -> str:
-        """Generate a cache key for this query."""
+        """Generate a cache key for this query.
+
+        SEC-002: Uses SHA-256 (truncated) instead of MD5 for cache key generation.
+        While MD5 is not cryptographically broken for non-security use cases like
+        cache keys, using SHA-256 avoids security scanner warnings and follows
+        best practices. Truncated to 16 chars for reasonable key length.
+        """
         key_parts = [
             self.original,
             ",".join(sorted(self.expanded_terms)),
             str(sorted(self.filters.items())),
         ]
-        return hashlib.md5("|".join(key_parts).encode()).hexdigest()
+        # Use SHA-256 truncated to 16 chars for cache key (not security-sensitive)
+        return hashlib.sha256("|".join(key_parts).encode()).hexdigest()[:16]
 
 
 @dataclass
@@ -411,3 +418,13 @@ def get_optimizer() -> SearchOptimizer:
     if _optimizer is None:
         _optimizer = SearchOptimizer()
     return _optimizer
+
+
+def reset_optimizer() -> None:
+    """Reset the optimizer singleton for testing (ARCH-001).
+
+    This function allows tests to reset the module-level singleton
+    to ensure test isolation.
+    """
+    global _optimizer
+    _optimizer = None

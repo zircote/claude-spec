@@ -6,7 +6,6 @@ the SQLite index (derived, for fast search).
 """
 
 from collections.abc import Callable
-from datetime import datetime
 
 from .config import NAMESPACES
 from .embedding import EmbeddingService
@@ -15,6 +14,7 @@ from .git_ops import GitOps
 from .index import IndexService
 from .models import IndexStats, Memory, VerificationResult
 from .note_parser import extract_memory_id, parse_note
+from .utils import parse_iso_timestamp_safe
 
 
 class SyncService:
@@ -74,10 +74,10 @@ class SyncService:
         # Generate memory ID
         memory_id = extract_memory_id(namespace, commit_sha)
 
-        # Parse timestamp
+        # Parse timestamp (ARCH-008: use shared utility)
         timestamp = metadata.get("timestamp")
         if isinstance(timestamp, str):
-            timestamp = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            timestamp = parse_iso_timestamp_safe(timestamp)
 
         # Create Memory object
         memory = Memory(
