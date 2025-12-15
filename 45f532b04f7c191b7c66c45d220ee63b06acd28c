@@ -890,3 +890,29 @@ When hooks encounter errors, they could:
 
 ## Decision
 All hooks follow fail-open design - errors are logged to stderr but never block command execution.
+
+---
+type: decisions
+spec: pre-post-steps-commands
+timestamp: '2025-12-15T06:50:33.192316Z'
+summary: Temp File for Hook State Passing
+phase: architecture
+tags:
+- pre-post-steps-commands
+- adr
+- architecture
+- hooks
+---
+
+## Context
+Hooks are stateless processes. To pass command context from UserPromptSubmit to Stop hook, options include:
+1. CLAUDE_ENV_FILE environment variable
+2. Temporary state file (.cs-session-state.json)
+3. Reading from transcript file
+
+## Decision
+Use temporary state file `.cs-session-state.json` in project directory.
+
+## Alternatives Considered
+- CLAUDE_ENV_FILE
+- Transcript file
