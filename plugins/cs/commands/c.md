@@ -336,3 +336,311 @@ abandoned_reason: [reason provided by user]
 Move to `completed/` (not deleted - we learn from failures too).
 
 </edge_cases>
+
+<memory_integration>
+## Memory System Integration
+
+The `/cs:c` command integrates with the cs-memory system for knowledge preservation.
+
+### On Invocation: Comprehensive Recall
+
+When closing a project, load ALL memories for the spec to inform the retrospective:
+
+```python
+# Pseudo-code for comprehensive recall
+from memory.recall import RecallService
+
+recall = RecallService()
+
+# Load full context for this spec
+context = recall.context(spec_slug)
+
+# Get all decisions made during this spec
+all_decisions = recall.search(
+    query="*",
+    spec=spec_slug,
+    namespace="decisions",
+    limit=100
+)
+
+# Get all blockers (resolved and unresolved)
+all_blockers = recall.search(
+    query="*",
+    spec=spec_slug,
+    namespace="blockers",
+    limit=100
+)
+
+# Get all learnings captured during implementation
+all_learnings = recall.search(
+    query="*",
+    spec=spec_slug,
+    namespace="learnings",
+    limit=100
+)
+
+# Get progress notes
+all_progress = recall.search(
+    query="*",
+    spec=spec_slug,
+    namespace="progress",
+    limit=100
+)
+
+# Get any captured patterns/deviations
+all_patterns = recall.search(
+    query="*",
+    spec=spec_slug,
+    namespace="patterns",
+    limit=50
+)
+```
+
+**Display Memory Summary:**
+```
+Memory Context for Retrospective
+══════════════════════════════════════════════════════════════════
+
+SPEC: ${SPEC_SLUG}
+TOTAL MEMORIES: ${TOTAL_COUNT}
+
+BREAKDOWN:
+  📋 Decisions:     ${DECISIONS_COUNT}
+  💡 Learnings:     ${LEARNINGS_COUNT}
+  🚧 Blockers:      ${BLOCKERS_COUNT} (${RESOLVED_COUNT} resolved)
+  ✅ Progress:      ${PROGRESS_COUNT}
+  🔄 Patterns:      ${PATTERNS_COUNT}
+
+KEY DECISIONS MADE:
+──────────────────────────────────────────────────────────────────
+${LIST_KEY_DECISIONS}
+
+LEARNINGS CAPTURED:
+──────────────────────────────────────────────────────────────────
+${LIST_LEARNINGS}
+
+BLOCKERS ENCOUNTERED:
+──────────────────────────────────────────────────────────────────
+${LIST_BLOCKERS_WITH_RESOLUTION}
+
+══════════════════════════════════════════════════════════════════
+
+This context will inform the retrospective generation.
+```
+
+### On Retrospective Generation: Learning Extraction
+
+When generating the retrospective, capture key learnings for future recall:
+
+#### 1. Retrospective Memory Capture
+
+After generating RETROSPECTIVE.md:
+
+```python
+from memory.capture import CaptureService
+
+capture = CaptureService()
+
+# Capture retrospective summary
+capture.capture(
+    namespace="retrospective",
+    spec=spec_slug,
+    summary=f"Retrospective: {project_name}",
+    content=f"""
+## Project Outcome
+{outcome_summary}
+
+## What Went Well
+{what_went_well}
+
+## What Could Be Improved
+{what_to_improve}
+
+## Key Learnings
+{key_learnings}
+
+## Recommendations
+{recommendations}
+
+## Final Metrics
+- Duration: {actual_duration}
+- Effort: {actual_effort} (planned: {planned_effort})
+- Scope changes: {scope_change_summary}
+""",
+    tags=["retrospective", outcome, project_type],
+)
+```
+
+#### 2. Extract and Promote Key Learnings
+
+Learnings from the retrospective should be captured as standalone notes:
+
+```python
+for learning in key_learnings:
+    capture.capture_learning(
+        spec=spec_slug,
+        summary=learning.title,
+        insight=learning.description,
+        evidence={
+            "project": project_name,
+            "outcome": outcome,
+            "context": learning.context,
+        },
+        applicability=learning.applicability,  # "broad" or "narrow"
+        tags=["retrospective", learning.domain],
+    )
+```
+
+#### 3. Pattern Extraction
+
+Capture reusable patterns from the project:
+
+```python
+# Positive patterns (what worked)
+for success in what_went_well:
+    capture.capture(
+        namespace="patterns",
+        spec=spec_slug,
+        summary=f"Pattern: {success.title}",
+        content=f"""
+## Pattern Type
+success
+
+## Description
+{success.description}
+
+## Context
+{project_context}
+
+## Applicability
+{when_to_apply}
+
+## Evidence
+This pattern contributed to {project_name} ({outcome})
+""",
+        tags=["pattern", "success", success.category],
+    )
+
+# Negative patterns (what to avoid)
+for improvement in what_to_improve:
+    capture.capture(
+        namespace="patterns",
+        spec=spec_slug,
+        summary=f"Anti-pattern: {improvement.title}",
+        content=f"""
+## Pattern Type
+anti-pattern
+
+## Description
+{improvement.description}
+
+## Impact
+{improvement.impact}
+
+## Better Approach
+{improvement.recommendation}
+
+## Evidence
+Identified during {project_name} ({outcome})
+""",
+        tags=["pattern", "anti-pattern", improvement.category],
+    )
+```
+
+### Capture Integration with Retrospective Steps
+
+Integrate memory capture with the close-out protocol:
+
+| Step | Memory Action |
+|------|---------------|
+| Step 1: Locate project | - |
+| Step 2: Gather metrics | - |
+| Step 3: Analyze logs | - |
+| Step 4: Generate RETROSPECTIVE | **Recall all spec memories** for context |
+| Step 4.5: Extract learnings | **Capture** retrospective, learnings, patterns |
+| Step 5: Update metadata | - |
+| Step 6: CHANGELOG entry | - |
+| Step 7: Move to completed | - |
+| Step 8: Update CLAUDE.md | - |
+| Step 9: Generate summary | **Include memory capture summary** |
+
+### Memory Capture Summary (Add to Step 9)
+
+Include in the final summary:
+
+```
+Memory Capture Complete
+══════════════════════════════════════════════════════════════════
+
+MEMORIES CAPTURED:
+  📊 Retrospective:  1 summary captured
+  💡 Learnings:      ${EXTRACTED_LEARNINGS_COUNT} promoted
+  🔄 Patterns:       ${PATTERNS_COUNT} (${POSITIVE} success, ${NEGATIVE} anti-pattern)
+
+MEMORIES PRESERVED FROM IMPLEMENTATION:
+  📋 Decisions:      ${DECISIONS_COUNT} archived
+  🚧 Blockers:       ${BLOCKERS_COUNT} archived
+  ✅ Progress:       ${PROGRESS_COUNT} archived
+
+SEARCHABLE VIA:
+  /cs:recall "learning from ${spec_slug}"
+  /cs:recall "pattern ${domain}"
+  /cs:recall "decision ${topic}"
+
+══════════════════════════════════════════════════════════════════
+```
+
+### Cross-Project Learning Surfacing
+
+When generating the retrospective, surface related learnings from other projects:
+
+```python
+# Find similar retrospectives
+similar_projects = recall.search(
+    query=f"retrospective {project_type} {technology_stack}",
+    namespace="retrospective",
+    limit=5
+)
+
+# Find relevant patterns from other projects
+relevant_patterns = recall.search(
+    query=f"pattern {domain}",
+    namespace="patterns",
+    limit=10
+)
+```
+
+**Display Cross-Project Context:**
+```
+Insights from Similar Projects
+══════════════════════════════════════════════════════════════════
+
+SIMILAR PROJECTS:
+──────────────────────────────────────────────────────────────────
+${LIST_SIMILAR_PROJECTS_WITH_OUTCOMES}
+
+RELEVANT PATTERNS TO CONSIDER:
+──────────────────────────────────────────────────────────────────
+${LIST_RELEVANT_PATTERNS}
+
+These insights may be helpful for the retrospective analysis.
+══════════════════════════════════════════════════════════════════
+```
+
+### Graceful Degradation
+
+Memory operations degrade gracefully:
+
+```
+IF memory services unavailable:
+  -> Proceed with standard close-out
+  -> Skip memory capture (warn user)
+  -> Recommend manual /cs:remember for key learnings
+
+IF index unavailable:
+  -> Capture to Git notes only
+  -> Skip recall-based context
+  -> Proceed with standard retrospective
+```
+
+</memory_integration>

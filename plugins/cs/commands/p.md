@@ -1479,6 +1479,152 @@ After displaying the above message:
 
 </execution_instruction>
 
+<memory_integration>
+## Memory Integration (cs-memory)
+
+The memory system automatically captures context during planning and surfaces relevant past work.
+
+### On Invocation: Auto-Recall
+
+**Before starting requirements elicitation**, search for relevant past work:
+
+```python
+# Pseudo-code for auto-recall
+from memory.recall import RecallService
+
+recall = RecallService()
+
+# Search for similar past specs
+similar_specs = recall.search(
+    query=project_seed,
+    namespace="inception",
+    limit=3,
+)
+
+# Search for relevant learnings
+relevant_learnings = recall.search(
+    query=project_seed,
+    namespace="learnings",
+    limit=5,
+)
+
+# Search for patterns that might apply
+patterns = recall.search(
+    query=project_seed,
+    namespace="patterns",
+    limit=3,
+)
+```
+
+**Display found memories** before proceeding:
+
+```
+Memory System: Found relevant context
+
++---------------------------------------------------------------+
+| SIMILAR PAST PROJECTS                                          |
++---------------------------------------------------------------+
+| [0.15] inception:abc123 - "User authentication system"         |
+|        Learnings: JWT rotation was challenging                 |
++---------------------------------------------------------------+
+| RELEVANT LEARNINGS                                             |
++---------------------------------------------------------------+
+| [0.22] learnings:def456 - "OAuth providers require callbacks"  |
+| [0.31] learnings:ghi789 - "Rate limiting is essential for..."  |
++---------------------------------------------------------------+
+
+Would you like to review any of these before proceeding?
+Use /cs:recall "query" to search for more context.
+```
+
+### During Execution: Auto-Capture
+
+**Phase 0 - After Scaffold Commit**:
+```python
+capture.capture(
+    namespace="inception",
+    spec=slug,
+    summary=f"Initiated spec: {project_name}",
+    content=project_seed,
+    commit="HEAD",
+    phase="inception",
+)
+```
+
+**Phase 1 - After Each Elicitation Round**:
+When significant clarifications are made, capture them:
+```python
+capture.capture(
+    namespace="elicitation",
+    spec=slug,
+    summary=f"Clarified: {clarification_topic}",
+    content=full_clarification_text,
+    commit="HEAD",
+    phase="elicitation",
+    tags=["requirement", topic_category],
+)
+```
+
+**Phase 2 - After Research**:
+Capture research findings from parallel agents:
+```python
+capture.capture(
+    namespace="research",
+    spec=slug,
+    summary=f"Research: {topic}",
+    content=research_findings,
+    commit="HEAD",
+    phase="research",
+)
+```
+
+**Phase 4 - After Architecture**:
+Capture each Architecture Decision Record:
+```python
+for adr in decisions:
+    capture.capture_decision(
+        spec=slug,
+        summary=adr.title,
+        context=adr.context,
+        rationale=adr.rationale,
+        alternatives=adr.alternatives,
+        tags=adr.tags,
+    )
+```
+
+### On Completion: Memory Summary
+
+After all planning documents are complete:
+
+```
+Memory Capture Summary
+
++---------------------------------------------------------------+
+| MEMORIES CAPTURED                                              |
++---------------------------------------------------------------+
+| ✓ inception:abc123 - Project inception captured                |
+| ✓ elicitation:abc124 - 3 clarifications captured               |
+| ✓ research:abc125 - 4 research findings captured               |
+| ✓ decisions:abc126-abc130 - 5 ADRs captured                    |
++---------------------------------------------------------------+
+| Total: 13 memories now searchable via /cs:recall               |
++---------------------------------------------------------------+
+
+These memories will be automatically loaded when you run /cs:i ${slug}
+```
+
+### Memory-Aware Questioning
+
+When asking Socratic questions, consider surfacing relevant memories:
+
+- If user mentions a topic similar to past decisions, say:
+  "I recall a past decision about [similar topic]. Would you like me to search for that context?"
+
+- If user's requirements conflict with captured learnings:
+  "Note: A previous learning suggests [insight]. Should we factor this in?"
+
+</memory_integration>
+
 <!-- ═══════════════════════════════════════════════════════════════════════════
      PROJECT SEED - INTENTIONALLY PLACED AT END OF FILE
 
