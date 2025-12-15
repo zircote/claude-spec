@@ -539,3 +539,39 @@ Use **ruff** for both formatting and linting.
 - Black + isort + flake8
 - Black + pylint
 - autopep8
+
+---
+type: decisions
+spec: quality-release-ci-github-act
+timestamp: '2025-12-15T06:50:32.608549Z'
+summary: Use Stable Action Versions (v4 over v6)
+phase: architecture
+tags:
+- quality-release-ci-github-act
+- adr
+- architecture
+- git
+- python
+- ci-cd
+- testing
+---
+
+## Context
+GitHub Actions like `actions/checkout` have multiple major versions available. v6 is latest but requires runner v2.327.1+.
+
+## Decision
+Use **v4** versions of core actions for stability.
+
+```yaml
+actions/checkout@v4
+actions/setup-python@v4  # Note: We use astral-sh/setup-uv instead
+actions/upload-artifact@v4
+actions/download-artifact@v4
+```
+
+Use `astral-sh/setup-uv@v4` for Python setup (includes uv and Python).
+
+## Alternatives Considered
+- v6 (latest)
+- Pin to SHA
+- Use latest tag
