@@ -38,11 +38,11 @@ Parse the command arguments to extract type and summary.
 ARGUMENTS = "$ARGUMENTS"
 
 IF ARGUMENTS is empty:
-  → Use AskUserQuestion to get memory type
-  → Use AskUserQuestion to get summary
+  -> Use AskUserQuestion to get memory type
+  -> Use AskUserQuestion to get summary
 
 IF ARGUMENTS has only type (no summary):
-  → Use AskUserQuestion to get summary
+  -> Use AskUserQuestion to get summary
 ```
 
 **AskUserQuestion for Memory Type:**
@@ -205,12 +205,16 @@ COMMIT_SHA=$(git rev-parse HEAD)
 
 Display confirmation with the memory ID and attached commit.
 
+**Memory ID Format**: `<namespace>:<short_sha>:<timestamp_ms>`
+
+The timestamp ensures uniqueness when multiple memories attach to the same commit.
+
 ```
 Memory captured successfully:
 
 +----------------------------------------------------------------+
 | TYPE: ${TYPE}                                                   |
-| ID: ${NAMESPACE}:${COMMIT_SHA}                                  |
+| ID: ${MEMORY_ID}                                                |
 | COMMIT: ${COMMIT_SHA:0:8} - "${COMMIT_MESSAGE}"                 |
 | SPEC: ${SPEC_SLUG:-"(global)"}                                  |
 +----------------------------------------------------------------+
@@ -218,11 +222,25 @@ Memory captured successfully:
 +----------------------------------------------------------------+
 
 The memory is now:
-✓ Attached to Git commit ${COMMIT_SHA:0:8}
-✓ Indexed for semantic search
-✓ Searchable via /cs:recall
+[check] Attached to Git commit ${COMMIT_SHA:0:8}
+[check] Indexed for semantic search
+[check] Searchable via /cs:recall
 
 To view: git notes --ref=cs/${NAMESPACE} show ${COMMIT_SHA}
+```
+
+**Example confirmation:**
+```
+Memory captured successfully:
+
++----------------------------------------------------------------+
+| TYPE: decision                                                  |
+| ID: decisions:abc123d:1702560000000                             |
+| COMMIT: abc123de - "feat: add user authentication"              |
+| SPEC: user-auth                                                 |
++----------------------------------------------------------------+
+| SUMMARY: Chose RS256 over HS256 for JWT signing                 |
++----------------------------------------------------------------+
 ```
 
 </execution_protocol>
@@ -230,9 +248,10 @@ To view: git notes --ref=cs/${NAMESPACE} show ${COMMIT_SHA}
 <output_format>
 After capture, always display:
 1. Confirmation box with memory details
-2. Commit SHA the memory is attached to
-3. Instructions for viewing the raw note
-4. Suggestion to use `/cs:recall` to search
+2. Memory ID in format `namespace:short_sha:timestamp_ms`
+3. Commit SHA the memory is attached to
+4. Instructions for viewing the raw note
+5. Suggestion to use `/cs:recall` to search
 </output_format>
 
 <error_handling>

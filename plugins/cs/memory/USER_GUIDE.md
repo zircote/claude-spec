@@ -18,11 +18,11 @@ The cs-memory system captures project context as Git notes, enabling:
 
 ```
 Session 1: "Let's use PostgreSQL for ACID compliance"
-           → Memory captured automatically
+           -> Memory captured automatically
 
 Session 5: *Claude starts suggesting MySQL*
-           → cs-memory proactively surfaces: "Previously decided PostgreSQL for ACID"
-           → Claude remembers and stays consistent
+           -> cs-memory proactively surfaces: "Previously decided PostgreSQL for ACID"
+           -> Claude remembers and stays consistent
 ```
 
 ---
@@ -38,7 +38,7 @@ Session 5: *Claude starts suggesting MySQL*
 **Expected output:**
 ```
 Memory System Status
-────────────────────
+--------------------
 Total memories: 0
 Index size: 24 KB
 Last sync: never
@@ -68,8 +68,18 @@ What's the rationale for this choice?
 Any relevant tags?
 > typescript, tooling, frontend
 
-✓ Decision captured as decisions:abc123
+Memory captured successfully:
++----------------------------------------------------------------+
+| TYPE: decision                                                  |
+| ID: decisions:abc123d:1702560000000                             |
+| COMMIT: abc123de - "feat: add user authentication"              |
+| SPEC: (global)                                                  |
++----------------------------------------------------------------+
+| SUMMARY: Using TypeScript over JavaScript for type safety       |
++----------------------------------------------------------------+
 ```
+
+**Note about Memory IDs**: The ID format is `<namespace>:<short_sha>:<timestamp_ms>`. The timestamp ensures uniqueness when multiple memories attach to the same commit.
 
 ### Step 3: Search Your Memories
 
@@ -81,7 +91,7 @@ Any relevant tags?
 ```
 Found 1 relevant memory:
 
-[1] decisions:abc123 (0.89 relevance)
+[1] decisions:abc123d:1702560000000 (0.89 relevance)
     "Using TypeScript over JavaScript for type safety"
     Tags: typescript, tooling, frontend
     Captured: 2 minutes ago
@@ -95,7 +105,7 @@ Found 1 relevant memory:
 
 **Output:**
 ```
-[1] decisions:abc123 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[1] decisions:abc123d:1702560000000 ----------------------------------------
 
 Using TypeScript over JavaScript for type safety
 
@@ -128,8 +138,8 @@ When beginning work on a new feature, recall relevant past decisions:
 
 # If starting a new spec, memories are auto-recalled
 /cs:p "Add OAuth2 login support"
-# → Claude automatically searches for: "OAuth authentication login security"
-# → Surfaces past decisions about auth, security, user management
+# -> Claude automatically searches for: "OAuth authentication login security"
+# -> Surfaces past decisions about auth, security, user management
 ```
 
 **Why this helps**: Claude immediately knows about past authentication decisions without you having to re-explain them.
@@ -153,13 +163,14 @@ What's the current impact?
 Any workarounds being considered?
 > Caching API responses, reducing API calls per build
 
-✓ Blocker captured as blockers:def456
+Memory captured:
+ID: blockers:def456a:1702563600000
 ```
 
 Later, when facing similar issues:
 ```bash
 /cs:recall "API rate limit"
-# → Surfaces the blocker and any learnings from resolving it
+# -> Surfaces the blocker and any learnings from resolving it
 ```
 
 ### Workflow 3: Capturing a Learning
@@ -184,7 +195,8 @@ Any code or config involved?
 Tags?
 > database, performance, postgres
 
-✓ Learning captured as learnings:ghi789
+Memory captured:
+ID: learnings:ghi789b:1702567200000
 ```
 
 ### Workflow 4: Code Review Integration
@@ -198,7 +210,7 @@ After a code review session:
 **Output:**
 ```
 Past Review Patterns
-────────────────────
+--------------------
 Pattern: Missing error handling (appeared 5 times)
   Most recent: 3 days ago in auth-feature
   Suggestion: Add try/catch for async operations
@@ -208,9 +220,9 @@ Pattern: Inconsistent naming (appeared 3 times)
   Suggestion: Follow camelCase for functions
 
 Recent Review Findings
-──────────────────────
-[1] reviews:jkl012 - "Add input validation for user endpoints"
-[2] reviews:mno345 - "Missing unit tests for error paths"
+----------------------
+[1] reviews:jkl012c:1702570800000 - "Add input validation for user endpoints"
+[2] reviews:mno345d:1702574400000 - "Missing unit tests for error paths"
 ```
 
 ### Workflow 5: Project Close-out
@@ -229,7 +241,7 @@ Claude automatically:
 
 ```
 Project Close-out: my-feature
-─────────────────────────────
+-----------------------------
 
 Memories captured: 23
   - decisions: 8
@@ -246,8 +258,8 @@ Patterns Detected:
 - SUCCESS: "Early performance testing" (3 occurrences)
 - ANTI_PATTERN: "Skipping input validation" (2 occurrences)
 
-✓ Retrospective captured as retrospective:pqr678
-✓ Memories archived with summaries
+Retrospective captured as retrospective:pqr678e:1702578000000
+Memories archived with summaries
 ```
 
 ---
@@ -447,9 +459,9 @@ Removes:
 ### Query Expansion
 
 Queries are automatically expanded with synonyms:
-- "database" → db, postgres, sql, storage
-- "decision" → chose, selected, opted
-- "problem" → issue, bug, blocker
+- "database" -> db, postgres, sql, storage
+- "decision" -> chose, selected, opted
+- "problem" -> issue, bug, blocker
 
 ### Combining Filters
 
@@ -587,11 +599,11 @@ Results are re-ranked using:
 /cs:memory verify
 
 # Expected output for healthy state:
-# ✓ Index consistent with git notes
+# Index consistent with git notes
 # Total: 42 memories
 
 # Problematic output:
-# ✗ Index inconsistent
+# Index inconsistent
 # Missing in index: 3
 # Orphaned in index: 1
 ```
@@ -648,6 +660,9 @@ python3 -c "from sentence_transformers import SentenceTransformer; SentenceTrans
 **Q: Where are memories stored?**
 A: In Git notes attached to commits. Run `git notes --ref=refs/notes/cs/decisions list` to see raw notes.
 
+**Q: What is the memory ID format?**
+A: Memory IDs use the format `<namespace>:<short_sha>:<timestamp_ms>`. For example: `decisions:abc123d:1702560000000`. The timestamp component (milliseconds since epoch) ensures uniqueness when multiple memories attach to the same commit.
+
 **Q: Can I share memories with my team?**
 A: Yes! Git notes are distributed with `git push` / `git pull`. Team members get all memories. The system auto-configures push/fetch refspecs on first capture.
 
@@ -656,11 +671,17 @@ A: Notes are automatically preserved during rebase. The system configures `notes
 
 **Q: Do I need to configure git manually?**
 A: No! The memory system auto-configures git on first capture:
-- Push/fetch refspecs for `refs/notes/cs/*`
-- `notes.rewriteRef` for rebase support
-- Merge strategy for conflict resolution
+- Push refspec: `refs/notes/cs/*:refs/notes/cs/*`
+- Fetch refspec: `refs/notes/cs/*:refs/notes/cs/*`
+- `notes.rewriteRef` for rebase support: `refs/notes/cs/*`
+- Merge strategy: `cat_sort_uniq` for conflict resolution
 
-This is idempotent - safe to run multiple times without creating duplicates.
+This is idempotent - safe to run multiple times without creating duplicates. You can verify configuration with:
+```bash
+git config --get-all remote.origin.push | grep notes
+git config --get-all remote.origin.fetch | grep notes
+git config --get-all notes.rewriteRef
+```
 
 **Q: How do I backup my memories?**
 A: Export to JSON: `/cs:memory export --output backup.json`
@@ -669,4 +690,7 @@ A: Export to JSON: `/cs:memory export --output backup.json`
 A: Not directly. Capture a new memory with corrected information; old memories age out naturally.
 
 **Q: How much disk space do memories use?**
-A: ~1KB per memory in the index, plus ~100 bytes per note in git. 1000 memories ≈ 1MB total.
+A: ~1KB per memory in the index, plus ~100 bytes per note in git. 1000 memories is approximately 1MB total.
+
+**Q: Why does my memory ID have a timestamp?**
+A: The timestamp ensures uniqueness when multiple memories are captured on the same commit. This commonly happens during batch operations like capturing multiple ADRs from a planning session. Without timestamps, IDs would collide.

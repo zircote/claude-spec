@@ -1,4 +1,4 @@
- # Technical Decisions: cs-memory
+# Technical Decisions: cs-memory
 
 This document records key architectural and technical decisions made for the cs-memory system.
 
@@ -197,16 +197,16 @@ Use separate Git notes namespaces for each memory type.
 ### Namespaces
 ```
 refs/notes/cs/
-├── inception
-├── elicitation
-├── research
-├── decisions
-├── progress
-├── blockers
-├── reviews
-├── learnings
-├── retrospective
-└── patterns
+    inception
+    elicitation
+    research
+    decisions
+    progress
+    blockers
+    reviews
+    learnings
+    retrospective
+    patterns
 ```
 
 ### Consequences
@@ -407,19 +407,19 @@ Implement a **two-tier proactive recall** strategy:
 - **Minimal awareness prevents drift**: Claude knows to search before making decisions
 - **Proactive search reduces friction**: No need to remember to run `/cs:recall`
 - **Non-blocking preserves flow**: Suggestions don't interrupt primary workflow
-- **Progressive revelation**: Summary → full content only when needed
+- **Progressive revelation**: Summary -> full content only when needed
 
 ### Implementation
 ```
 SessionStart Hook:
-  → Check for .cs-memory/index.db
-  → Output: "cs-memory: N memories available"
-  → Remind: "Use /cs:recall when working on related topics"
+  -> Check for .cs-memory/index.db
+  -> Output: "cs-memory: N memories available"
+  -> Remind: "Use /cs:recall when working on related topics"
 
 During Work:
-  → Topic detection triggers background search
-  → Relevant memories surfaced as suggestions
-  → User can dismiss or explore
+  -> Topic detection triggers background search
+  -> Relevant memories surfaced as suggestions
+  -> User can dismiss or explore
 ```
 
 ### Consequences
@@ -430,59 +430,67 @@ During Work:
 
 ---
 
-## ADR-012: SHA-Based Decision Identification (Revised)
+## ADR-012: SHA-Based Decision Identification with Timestamps
 
 ### Status
-Accepted (Revised from original "Monotonic ADR Numbering")
+Accepted (Revised from original "SHA-Based Identification")
 
 ### Context
-Architecture Decision Records (ADRs) need unique identifiers. Original options considered:
-1. **Timestamp-based**: `ADR-2025-12-14-001`
-2. **Sequential**: `ADR-001`, `ADR-002`, ...
-3. **Content hash**: Random unique ID
-4. **Commit SHA**: Use Git's native identifier
+Architecture Decision Records (ADRs) and other memories need unique identifiers. The original decision used commit SHA as the sole identifier: `<namespace>:<commit_sha>`.
 
-The original decision (sequential numbering) introduced a distributed synchronization problem: if two developers create decisions before syncing, both get the same number.
+However, during implementation we discovered that **multiple memories can legitimately attach to the same commit**. This happens when:
+- Batch ADR capture during planning captures multiple decisions
+- Multiple learnings discovered during a single implementation task
+- Review findings all attach to the reviewed commit
+
+The original format `decisions:abc123` would collide when two decisions attach to the same commit.
 
 ### Decision
-Use **commit SHA as the unique identifier** for decisions, with the existing `timestamp` field for temporal ordering.
+Use **commit SHA plus millisecond timestamp** as the unique identifier for memories.
+
+**Format**: `<namespace>:<short_sha>:<timestamp_ms>`
+
+**Example**: `decisions:abc123d:1702560000000`
 
 ### Rationale
-- **Zero coordination**: SHAs are globally unique by Git's design
-- **No counter to sync**: Eliminates distributed consistency problem
-- **Simpler implementation**: No counter table, no rebuild logic
-- **Temporal ordering preserved**: `timestamp` field already required (FR-001)
-- **Human references**: Use summary text or short SHA ("decision on JWT signing" or "decisions:abc123")
+- **Zero coordination**: Timestamps are locally generated, no distributed counter
+- **Collision-free**: Millisecond precision + SHA makes collisions astronomically unlikely
+- **Batch-friendly**: Multiple memories per commit work naturally
+- **Simpler than counters**: No need to maintain or sync a sequence number
+- **Backwards compatible**: Parser accepts legacy `namespace:sha` format (returns timestamp as None)
 
-### Format
-```yaml
----
-type: decision
-spec: user-auth
-timestamp: 2025-12-14T10:30:00Z  # Used for ordering
-summary: Chose RS256 over HS256 for JWT signing
----
+### Implementation
+```python
+# note_parser.py
+
+def extract_memory_id(
+    namespace: str,
+    commit_sha: str,
+    timestamp: datetime | None = None,
+) -> str:
+    """Generate unique memory ID."""
+    short_sha = commit_sha[:7]
+    if timestamp is None:
+        timestamp = datetime.now(UTC)
+    ts_ms = int(timestamp.timestamp() * 1000)
+    return f"{namespace}:{short_sha}:{ts_ms}"
+
+def parse_memory_id(memory_id: str) -> tuple[str, str, int | None]:
+    """Parse memory ID into components."""
+    parts = memory_id.split(":")
+    if len(parts) == 2:
+        return parts[0], parts[1], None  # Legacy format
+    elif len(parts) == 3:
+        return parts[0], parts[1], int(parts[2])
+    else:
+        raise ParseError(...)
 ```
-
-Memory ID: `decisions:<commit-sha>` (e.g., `decisions:abc123def`)
-
-### Display Convention
-When listing decisions, show chronological index for human readability:
-```
-Decisions for user-auth:
-  1. [2025-12-10] Chose PostgreSQL for JSONB support (decisions:abc123)
-  2. [2025-12-12] Selected RS256 for JWT signing (decisions:def456)
-  3. [2025-12-14] Implemented rate limiting at API gateway (decisions:ghi789)
-```
-
-The index (1, 2, 3) is **display-only**, not stored. It's computed from timestamp ordering.
 
 ### Consequences
-- No distributed synchronization issues
-- No counter rebuild during reindex
-- References use short SHA or summary text instead of "ADR-007"
-- Gaps cannot occur (no sequence to have gaps in)
-- Simpler index schema (no `adr_counter` table)
+- Memory IDs are longer but still human-readable
+- Display can show short form when context is clear
+- Legacy `namespace:sha` format still parseable
+- No database migration needed (IDs are strings)
 
 ---
 
@@ -559,7 +567,7 @@ The existing `/cr` command produces CODE_REVIEW.md, REVIEW_SUMMARY.md, and REMED
 **Code review findings are captured as Git notes in the `cs/reviews` namespace**, attached to the commit being reviewed. This provides:
 1. Semantic searchability via embeddings
 2. Pattern detection across reviews
-3. Resolution tracking (status: open → resolved)
+3. Resolution tracking (status: open -> resolved)
 4. Team-wide knowledge sharing via Git notes sync
 
 ### Format
@@ -600,7 +608,7 @@ resolved_at: <null-or-iso-8601>
 Accepted
 
 ### Context
-Git notes attach to specific commit SHAs. When developers rewrite history (rebase, squash, amend), the original commits are replaced with new commits having different SHAs. Notes attached to the original commits become "orphaned"—they still exist in `refs/notes/cs/*` but reference commits that no longer exist in the active branch history.
+Git notes attach to specific commit SHAs. When developers rewrite history (rebase, squash, amend), the original commits are replaced with new commits having different SHAs. Notes attached to the original commits become "orphaned"--they still exist in `refs/notes/cs/*` but reference commits that no longer exist in the active branch history.
 
 This is a known Git behavior, not a cs-memory bug. The question is: how should cs-memory handle this scenario?
 
@@ -645,4 +653,79 @@ def find_orphaned_notes(repo_path: str) -> list[str]:
     all_note_refs = git_notes_list_all()  # All commits with notes
     reachable_commits = git_rev_list("--all")  # All commits in branches
     return [sha for sha in all_note_refs if sha not in reachable_commits]
+```
+
+---
+
+## ADR-016: Auto-Configuration of Git Notes Sync
+
+### Status
+Accepted
+
+### Context
+Git notes require explicit configuration to sync with remote repositories. Without configuration:
+- `git push` does not push notes
+- `git pull` does not fetch notes
+- `git rebase` does not preserve notes
+
+Users unfamiliar with git notes would need to manually run configuration commands before the memory system works for team collaboration.
+
+### Decision
+**Auto-configure git notes sync on first memory capture.** The `CaptureService` automatically configures:
+
+1. **Push refspec**: `refs/notes/cs/*:refs/notes/cs/*`
+2. **Fetch refspec**: `refs/notes/cs/*:refs/notes/cs/*`
+3. **Rewrite ref**: `refs/notes/cs/*` (preserves notes during rebase)
+4. **Merge strategy**: `cat_sort_uniq` (handles concurrent note additions)
+
+### Implementation
+```python
+# In CaptureService
+def _ensure_sync_configured(self) -> None:
+    """Auto-configure on first capture (idempotent)."""
+    if CaptureService._sync_configured:
+        return
+
+    self.git_ops.configure_sync()
+    CaptureService._sync_configured = True
+
+# In GitOps
+def configure_sync(self, force: bool = False) -> dict[str, bool]:
+    """Configure git notes sync (idempotent)."""
+    current = self.is_sync_configured()
+
+    if not current["push"]:
+        self._run_git(["config", "--add", "remote.origin.push",
+                       "refs/notes/cs/*:refs/notes/cs/*"])
+    if not current["fetch"]:
+        self._run_git(["config", "--add", "remote.origin.fetch",
+                       "refs/notes/cs/*:refs/notes/cs/*"])
+    if not current["rewrite"]:
+        self._run_git(["config", "--add", "notes.rewriteRef",
+                       "refs/notes/cs/*"])
+    if not current["merge"]:
+        self._run_git(["config", "notes.cs.mergeStrategy", "cat_sort_uniq"])
+
+    return configured
+```
+
+### Rationale
+- **Zero friction**: Users don't need to know about git notes internals
+- **Team-ready immediately**: First capture enables collaboration
+- **Idempotent**: Safe to run multiple times, skips already-configured items
+- **Non-destructive**: Only adds configuration, never removes existing settings
+
+### Consequences
+- First capture takes slightly longer (configuration overhead)
+- Git config is modified automatically (may surprise users who inspect it)
+- Repositories gain notes refs after first use
+- Team members must `git pull` to receive notes after cloning
+
+### Verification
+Users can verify configuration with:
+```bash
+git config --get-all remote.origin.push | grep notes
+git config --get-all remote.origin.fetch | grep notes
+git config --get-all notes.rewriteRef
+git config --get notes.cs.mergeStrategy
 ```
