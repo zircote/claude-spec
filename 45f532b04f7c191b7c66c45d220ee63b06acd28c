@@ -93,3 +93,37 @@ Detection logic:
 ## Alternatives Considered
 - Always require argument
 - Interactive selection only
+
+---
+type: decisions
+spec: arch-lifecycle-automation
+timestamp: '2025-12-15T06:50:31.726221Z'
+summary: Hierarchical Status Rollup
+phase: architecture
+tags:
+- arch-lifecycle-automation
+- adr
+- architecture
+---
+
+## Context
+We need to determine project and phase status from granular task states. How should rollup work?
+
+Options:
+1. Per-task only (no aggregation)
+2. Per-phase only
+3. Per-deliverable
+4. Hierarchical (task → phase → project)
+
+## Decision
+Use hierarchical rollup: Task completion rolls up to phase progress, phase completion rolls up to project status.
+
+Rollup rules:
+- Phase progress = (done + skipped) / total tasks
+- Phase status: pending → in-progress (first task starts) → done (all tasks done/skipped)
+- Project status: draft → in-progress (first task starts) → completed (all phases done)
+
+## Alternatives Considered
+- Per-task only
+- Per-phase only
+- Per-deliverable
