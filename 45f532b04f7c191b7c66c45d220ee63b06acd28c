@@ -822,3 +822,26 @@ Context loading (CLAUDE.md, git state, project structure) could happen:
 
 ## Decision
 Load context once on session start via SessionStart hook.
+
+---
+type: decisions
+spec: pre-post-steps-commands
+timestamp: '2025-12-15T06:50:33.046122Z'
+summary: Security Review as Pre-Step for /cs:c
+phase: architecture
+tags:
+- pre-post-steps-commands
+- adr
+- architecture
+- security
+---
+
+## Context
+Security review could be:
+1. A pre-step before /cs:c (audit before close-out)
+2. A post-step after /cs:p (audit the plan)
+3. A post-step after /cs:c (audit after close-out)
+4. Applied to all commands
+
+## Decision
+Security review is a pre-step for `/cs:c` only.
