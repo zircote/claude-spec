@@ -2,7 +2,7 @@
 argument-hint: [project-id|project-slug]
 description: Implementation progress tracker for spec projects. Creates and maintains PROGRESS.md checkpoint file, tracks task completion, syncs state to planning documents. Part of the /cs suite - use /cs/p to plan, /cs/s for status, /cs/c to complete.
 model: claude-opus-4-5-20251101
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, TodoWrite
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, TodoWrite, AskUserQuestion
 ---
 
 # /cs/i - Implementation Progress Manager

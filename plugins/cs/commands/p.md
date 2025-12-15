@@ -2,7 +2,7 @@
 argument-hint: <project-idea|feature|problem-statement>
 description: Strategic project planning with Socratic requirements elicitation. Produces PRD, technical architecture, and implementation plan with full artifact lifecycle management. Part of the /cs suite - use /cs/c to complete projects, /cs/s for status.
 model: claude-opus-4-5-20251101
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, WebSearch, WebFetch, TodoRead, TodoWrite
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, WebSearch, WebFetch, TodoRead, TodoWrite, AskUserQuestion
 ---
 
 # /cs/p - Strategic Project Planner
