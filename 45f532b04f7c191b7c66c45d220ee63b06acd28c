@@ -1279,3 +1279,29 @@ Use specification documents as commit anchors:
 - **Clean history**: Phase-delineated commits
 - **Document-as-anchor**: Spec docs serve dual purpose
 - **Flexible**: Amend allows refinement
+
+---
+type: decisions
+spec: cs-memory
+timestamp: '2025-12-15T06:46:56.490301Z'
+summary: Shared Team Memory
+phase: architecture
+tags:
+- cs-memory
+- adr
+- architecture
+- git
+- ci-cd
+- memory-system
+---
+
+## Context
+Memories could be personal (per-developer) or shared (team knowledge).
+
+## Decision
+All memories are shared and sync with the repository via Git notes push/pull.
+
+- **Knowledge preservation**: Team inherits institutional knowledge
+- **Onboarding**: New members benefit from history
+- **Consistency**: Decisions don't get relitigated
+- **Collaboration**: Shared patterns emerge
