@@ -1468,3 +1468,33 @@ These serve different purposes and the question arose: should cs-memory replace 
 - Useful for debugging hooks, validating behavior
 
 **Key insight:** The valuable artifacts (decisions, learnings, review findings) are now captured structurally in cs-memory. Prompt capture's raw logs become useful primarily for debugging and retrospective analysis of interaction patterns, not knowledge retrieval.
+
+---
+type: decisions
+spec: cs-memory
+timestamp: '2025-12-15T06:46:56.960914Z'
+summary: Code Review Findings as Commit-Anchored Notes
+phase: architecture
+tags:
+- cs-memory
+- adr
+- architecture
+- git
+- embeddings
+- memory-system
+---
+
+## Context
+The existing `/cr` command produces CODE_REVIEW.md, REVIEW_SUMMARY.md, and REMEDIATION_TASKS.md artifacts. These are markdown files that exist independently of Git history. Questions arose about how to integrate code review with cs-memory.
+
+## Decision
+**Code review findings are captured as Git notes in the `cs/reviews` namespace**, attached to the commit being reviewed. This provides:
+1. Semantic searchability via embeddings
+2. Pattern detection across reviews
+3. Resolution tracking (status: open → resolved)
+4. Team-wide knowledge sharing via Git notes sync
+
+- **Commit anchoring**: Findings attach to the code state that caused them
+- **Pattern detection**: Searching `cs/reviews` reveals recurring issues (e.g., "SQL injection found 5 times in past 3 months")
+- **Resolution tracking**: Status updates preserve remediation history
+- **Supplements artifacts**: CODE_REVIEW.md still generated for human consumption; notes provide machine-queryable index
