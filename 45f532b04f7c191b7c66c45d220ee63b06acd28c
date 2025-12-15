@@ -1135,3 +1135,36 @@ Use SQLite with the sqlite-vec extension for the vector index.
 - FAISS
 - ChromaDB
 - sqlite-vss
+
+---
+type: decisions
+spec: cs-memory
+timestamp: '2025-12-15T06:46:56.229385Z'
+summary: Local Embedding Model
+phase: architecture
+tags:
+- cs-memory
+- adr
+- architecture
+- ci-cd
+- embeddings
+---
+
+## Context
+Semantic search requires text embeddings. Options:
+- Cloud APIs (OpenAI, Cohere, Voyage)
+- Local models (sentence-transformers, Ollama)
+
+## Decision
+Use local embedding generation via sentence-transformers, defaulting to `all-MiniLM-L6-v2` (384 dimensions).
+
+- **Privacy**: No project data leaves the machine
+- **Offline capable**: Works without internet
+- **Free**: No API costs
+- **Fast enough**: ~50ms per embedding on CPU
+- **Quality**: Sufficient for our semantic similarity needs
+
+## Alternatives Considered
+- OpenAI text-embedding-3-small
+- Ollama with embedding model
+- Larger local models (e5-large, bge-large)
