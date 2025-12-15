@@ -1068,3 +1068,35 @@ Create the spec directory and `.prompt-log-enabled` marker in the worktree BEFOR
 - Add flag to launch-agent.sh
 - Separate setup script
 - Hook modification
+
+---
+type: decisions
+spec: cs-memory
+timestamp: '2025-12-15T06:46:56.146557Z'
+summary: Git Notes for Canonical Storage
+phase: architecture
+tags:
+- cs-memory
+- adr
+- architecture
+- git
+- ci-cd
+- storage
+---
+
+## Context
+We need persistent storage for AI-generated memories that:
+- Survives across Claude Code sessions
+- Travels with the repository
+- Attaches to specific commits
+- Is version-controlled
+- Doesn't pollute commit history
+
+## Decision
+Use Git notes as the canonical storage layer for all memories.
+
+## Alternatives Considered
+- Separate files (DECISIONS.md, LEARNINGS.md)
+- SQLite database (committed)
+- External database (e.g., PostgreSQL)
+- Commit message metadata (trailers)
