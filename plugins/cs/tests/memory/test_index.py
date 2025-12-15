@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from memory.config import EMBEDDING_DIMENSIONS
-from memory.exceptions import IndexError
+from memory.exceptions import MemoryIndexError
 from memory.index import IndexService
 from memory.models import Memory
 
@@ -118,7 +118,7 @@ class TestConnectionErrors:
                 del sys.modules["sqlite_vec"]
 
             with patch.dict(sys.modules, {"sqlite_vec": None}):
-                with pytest.raises(IndexError) as exc_info:
+                with pytest.raises(MemoryIndexError) as exc_info:
                     service._create_connection()
 
                 assert "sqlite-vec" in str(exc_info.value).lower()

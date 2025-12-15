@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import EMBEDDING_DIMENSIONS, INDEX_PATH
-from .exceptions import IndexError
+from .exceptions import MemoryIndexError
 from .models import IndexStats, Memory
 
 
@@ -50,7 +50,7 @@ class IndexService:
             conn = sqlite3.connect(str(self.db_path))
             conn.row_factory = sqlite3.Row
         except sqlite3.Error as e:
-            raise IndexError(
+            raise MemoryIndexError(
                 f"Failed to open database: {e}", f"Check permissions on {self.db_path}"
             ) from e
 
@@ -62,12 +62,12 @@ class IndexService:
             sqlite_vec.load(conn)
             conn.enable_load_extension(False)
         except ImportError as err:
-            raise IndexError(
+            raise MemoryIndexError(
                 "sqlite-vec package not installed",
                 "Install with: pip install sqlite-vec",
             ) from err
         except Exception as e:
-            raise IndexError(
+            raise MemoryIndexError(
                 f"Failed to load sqlite-vec extension: {e}",
                 "Ensure sqlite-vec is properly installed",
             ) from e
@@ -121,7 +121,7 @@ class IndexService:
             conn.commit()
 
         except sqlite3.Error as e:
-            raise IndexError(
+            raise MemoryIndexError(
                 f"Failed to initialize database: {e}",
                 "Try deleting the database file and retrying",
             ) from e
@@ -169,7 +169,7 @@ class IndexService:
             )
             row = cursor.fetchone()
             if not row:
-                raise IndexError(
+                raise MemoryIndexError(
                     "Failed to get rowid after insert",
                     "Database may be corrupted - try reindex",
                 )
@@ -188,7 +188,7 @@ class IndexService:
 
         except sqlite3.Error as e:
             conn.rollback()
-            raise IndexError(
+            raise MemoryIndexError(
                 f"Failed to insert memory: {e}",
                 "Check database integrity and try again",
             ) from e
@@ -212,6 +212,57 @@ class IndexService:
             return None
 
         return self._row_to_memory(row)
+
+    def get_batch(self, memory_ids: list[str]) -> dict[str, Memory]:
+        """
+        Batch retrieve memories by IDs.
+
+        This avoids N+1 query patterns when loading multiple memories.
+
+        Args:
+            memory_ids: List of memory IDs to retrieve
+
+        Returns:
+            Dictionary mapping memory_id to Memory object
+        """
+        if not memory_ids:
+            return {}
+
+        conn = self._get_connection()
+        placeholders = ",".join("?" * len(memory_ids))
+        cursor = conn.execute(
+            f"SELECT * FROM memories WHERE id IN ({placeholders})", memory_ids
+        )
+        return {row["id"]: self._row_to_memory(row) for row in cursor}
+
+    def get_by_spec(self, spec: str) -> dict[str, list[Memory]]:
+        """
+        Get all memories for a specification, grouped by namespace.
+
+        This is an optimized method that avoids N+1 queries and
+        repeated embedding generation for full context loading.
+
+        Args:
+            spec: Specification slug to filter by
+
+        Returns:
+            Dictionary mapping namespace to list of Memory objects
+        """
+        conn = self._get_connection()
+
+        cursor = conn.execute(
+            "SELECT * FROM memories WHERE spec = ? ORDER BY timestamp",
+            (spec,),
+        )
+
+        result: dict[str, list[Memory]] = {}
+        for row in cursor:
+            memory = self._row_to_memory(row)
+            if memory.namespace not in result:
+                result[memory.namespace] = []
+            result[memory.namespace].append(memory)
+
+        return result
 
     def delete(self, memory_id: str) -> bool:
         """
@@ -245,7 +296,7 @@ class IndexService:
 
         except sqlite3.Error as e:
             conn.rollback()
-            raise IndexError(
+            raise MemoryIndexError(
                 f"Failed to delete memory: {e}", "Check database integrity"
             ) from e
 
@@ -290,7 +341,7 @@ class IndexService:
 
         except sqlite3.Error as e:
             conn.rollback()
-            raise IndexError(
+            raise MemoryIndexError(
                 f"Failed to update memory: {e}", "Check database integrity"
             ) from e
 
@@ -356,7 +407,7 @@ class IndexService:
             cursor = conn.execute(query, params)
             return [(row["id"], row["distance"]) for row in cursor]
         except sqlite3.Error as e:
-            raise IndexError(
+            raise MemoryIndexError(
                 f"Vector search failed: {e}",
                 "Try rebuilding the index with /cs:memory reindex",
             ) from e
@@ -424,7 +475,7 @@ class IndexService:
             conn.commit()
         except sqlite3.Error as e:
             conn.rollback()
-            raise IndexError(
+            raise MemoryIndexError(
                 f"Failed to clear index: {e}", "Try deleting the database file manually"
             ) from e
 
@@ -433,6 +484,68 @@ class IndexService:
         if self._conn:
             self._conn.close()
             self._conn = None
+
+    def list_recent(
+        self,
+        spec: str | None = None,
+        namespace: str | None = None,
+        limit: int = 10,
+    ) -> list[Memory]:
+        """
+        Get the most recent memories.
+
+        Args:
+            spec: Filter to specification
+            namespace: Filter to namespace
+            limit: Maximum results
+
+        Returns:
+            List of Memory objects, most recent first
+        """
+        conn = self._get_connection()
+
+        query = "SELECT * FROM memories WHERE 1=1"
+        params: list[Any] = []
+
+        if spec:
+            query += " AND spec = ?"
+            params.append(spec)
+        if namespace:
+            query += " AND namespace = ?"
+            params.append(namespace)
+
+        query += " ORDER BY timestamp DESC LIMIT ?"
+        params.append(limit)
+
+        cursor = conn.execute(query, params)
+        return [self._row_to_memory(row) for row in cursor]
+
+    def get_by_commit(self, commit_sha: str) -> list[Memory]:
+        """
+        Get all memories attached to a specific commit.
+
+        Args:
+            commit_sha: Git commit SHA
+
+        Returns:
+            List of memories attached to that commit
+        """
+        conn = self._get_connection()
+        cursor = conn.execute(
+            "SELECT * FROM memories WHERE commit_sha = ?", (commit_sha,)
+        )
+        return [self._row_to_memory(row) for row in cursor]
+
+    def get_all_ids(self) -> set[str]:
+        """
+        Get all memory IDs in the index.
+
+        Returns:
+            Set of all memory IDs
+        """
+        conn = self._get_connection()
+        cursor = conn.execute("SELECT id FROM memories")
+        return {row["id"] for row in cursor}
 
     def _row_to_memory(self, row: sqlite3.Row) -> Memory:
         """Convert a database row to a Memory object."""

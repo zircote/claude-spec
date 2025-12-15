@@ -5,12 +5,63 @@ Provides a clean interface to Git notes commands with proper error handling.
 All operations use subprocess and parse Git output appropriately.
 """
 
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
 
 from .config import NAMESPACES
 from .exceptions import StorageError
+
+
+def validate_git_ref(ref: str) -> None:
+    """
+    Validate a Git reference to prevent command injection.
+
+    Args:
+        ref: Git reference (commit SHA, branch, tag)
+
+    Raises:
+        StorageError: If ref is invalid or potentially dangerous
+    """
+    if not ref:
+        raise StorageError("Git ref cannot be empty", "Provide a valid reference")
+    if ref.startswith("-"):
+        raise StorageError("Invalid ref: cannot start with dash", "Check ref format")
+    # Allow alphanumeric, dots, underscores, slashes, dashes, and tilde/caret for relative refs
+    if not re.match(r"^[a-zA-Z0-9_./@^~-]+$", ref):
+        raise StorageError(
+            "Invalid ref format: contains illegal characters",
+            "Use alphanumeric characters, dots, underscores, slashes, and dashes only",
+        )
+
+
+def validate_path(path: str) -> None:
+    """
+    Validate a file path to prevent command injection and path traversal.
+
+    Args:
+        path: File path relative to repo root
+
+    Raises:
+        StorageError: If path is invalid or potentially dangerous
+    """
+    if not path:
+        raise StorageError("Path cannot be empty", "Provide a valid file path")
+    if path.startswith("-"):
+        raise StorageError("Invalid path: cannot start with dash", "Check path format")
+    # Prevent absolute paths and null bytes
+    if path.startswith("/") or "\x00" in path:
+        raise StorageError(
+            "Invalid path: absolute paths and null bytes not allowed",
+            "Use relative paths from repository root",
+        )
+    # Allow common path characters but prevent shell metacharacters
+    if not re.match(r"^[a-zA-Z0-9_./@-][a-zA-Z0-9_./@ -]*$", path):
+        raise StorageError(
+            "Invalid path format: contains illegal characters",
+            "Use alphanumeric characters, dots, underscores, slashes, spaces, and dashes only",
+        )
 
 
 class GitOps:
@@ -87,6 +138,22 @@ class GitOps:
         """Get the full ref name for a namespace."""
         return f"cs/{namespace}"
 
+    def _validate_namespace(self, namespace: str) -> None:
+        """
+        Validate namespace against allowed values.
+
+        Args:
+            namespace: Memory namespace to validate
+
+        Raises:
+            StorageError: If namespace is invalid
+        """
+        if namespace not in NAMESPACES:
+            raise StorageError(
+                f"Invalid namespace: {namespace}",
+                f"Use one of: {', '.join(sorted(NAMESPACES))}",
+            )
+
     def add_note(
         self,
         namespace: str,
@@ -109,11 +176,8 @@ class GitOps:
         Raises:
             StorageError: If operation fails
         """
-        if namespace not in NAMESPACES:
-            raise StorageError(
-                f"Invalid namespace: {namespace}",
-                f"Use one of: {', '.join(sorted(NAMESPACES))}",
-            )
+        self._validate_namespace(namespace)
+        validate_git_ref(commit)
 
         args = ["notes", f"--ref={self._note_ref(namespace)}", "add"]
         if force:
@@ -142,11 +206,8 @@ class GitOps:
         Raises:
             StorageError: If operation fails
         """
-        if namespace not in NAMESPACES:
-            raise StorageError(
-                f"Invalid namespace: {namespace}",
-                f"Use one of: {', '.join(sorted(NAMESPACES))}",
-            )
+        self._validate_namespace(namespace)
+        validate_git_ref(commit)
 
         args = [
             "notes",
@@ -174,11 +235,8 @@ class GitOps:
         Returns:
             Note content, or None if no note exists
         """
-        if namespace not in NAMESPACES:
-            raise StorageError(
-                f"Invalid namespace: {namespace}",
-                f"Use one of: {', '.join(sorted(NAMESPACES))}",
-            )
+        self._validate_namespace(namespace)
+        validate_git_ref(commit)
 
         result = self._run_git(
             ["notes", f"--ref={self._note_ref(namespace)}", "show", commit],
@@ -203,11 +261,7 @@ class GitOps:
         Returns:
             List of (note_object_sha, commit_sha) tuples
         """
-        if namespace not in NAMESPACES:
-            raise StorageError(
-                f"Invalid namespace: {namespace}",
-                f"Use one of: {', '.join(sorted(NAMESPACES))}",
-            )
+        self._validate_namespace(namespace)
 
         result = self._run_git(
             ["notes", f"--ref={self._note_ref(namespace)}", "list"],
@@ -241,6 +295,10 @@ class GitOps:
         Returns:
             True if note was removed, False if no note existed
         """
+        # SEC-003: Add namespace validation
+        self._validate_namespace(namespace)
+        validate_git_ref(commit)
+
         result = self._run_git(
             ["notes", f"--ref={self._note_ref(namespace)}", "remove", commit],
             check=False,
@@ -294,6 +352,7 @@ class GitOps:
         Raises:
             StorageError: If ref is invalid
         """
+        validate_git_ref(ref)
         result = self._run_git(["rev-parse", ref])
         return result.stdout.strip()
 
@@ -307,6 +366,8 @@ class GitOps:
         Returns:
             Dict with author, date, message fields
         """
+        validate_git_ref(commit)
+
         # Get commit metadata in one call
         result = self._run_git(
             [
@@ -344,6 +405,9 @@ class GitOps:
         Returns:
             File content, or None if file doesn't exist at commit
         """
+        validate_path(path)
+        validate_git_ref(commit)
+
         result = self._run_git(
             ["show", f"{commit}:{path}"],
             check=False,
@@ -364,6 +428,7 @@ class GitOps:
         Returns:
             List of file paths
         """
+        validate_git_ref(commit)
         result = self._run_git(["show", "--name-only", "--format=", commit])
 
         return [f for f in result.stdout.strip().split("\n") if f]

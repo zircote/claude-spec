@@ -170,10 +170,8 @@ class SyncService:
                 memory_id = extract_memory_id(namespace, commit_sha)
                 notes_ids.add(memory_id)
 
-        # Get all memory IDs from index
-        conn = self.index_service._get_connection()
-        cursor = conn.execute("SELECT id FROM memories")
-        index_ids = {row["id"] for row in cursor}
+        # Get all memory IDs from index using public method (ARCH-002 fix)
+        index_ids = self.index_service.get_all_ids()
 
         # Calculate differences
         missing_in_index = notes_ids - index_ids

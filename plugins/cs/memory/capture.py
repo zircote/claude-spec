@@ -1,7 +1,7 @@
 """
 Capture service for cs-memory.
 
-Orchestrates the memory capture flow: format → git notes → embed → index.
+Orchestrates the memory capture flow: format -> git notes -> embed -> index.
 Includes concurrency safety via file locking per FR-022.
 """
 
@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
-from .config import LOCK_FILE, NAMESPACES
+from .config import LOCK_FILE, MAX_CONTENT_LENGTH, NAMESPACES
 from .embedding import EmbeddingService
 from .exceptions import CaptureError
 from .git_ops import GitOps
@@ -25,6 +25,8 @@ def capture_lock(lock_path: Path = LOCK_FILE) -> Generator[None, None, None]:
     """
     Acquire exclusive lock for capture operations (FR-022).
 
+    SEC-004: Uses proper context manager pattern to prevent file descriptor leaks.
+
     Args:
         lock_path: Path to lock file
 
@@ -35,19 +37,19 @@ def capture_lock(lock_path: Path = LOCK_FILE) -> Generator[None, None, None]:
         CaptureError: If lock cannot be acquired
     """
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    lock_fd = open(lock_path, "w")
 
-    try:
-        fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        yield
-    except BlockingIOError as err:
-        raise CaptureError(
-            "Another capture operation is in progress",
-            f"Wait and retry, or remove {lock_path} if stuck",
-        ) from err
-    finally:
-        fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
-        lock_fd.close()
+    # SEC-004: Use context manager to ensure file is always closed
+    with open(lock_path, "w") as lock_fd:
+        try:
+            fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            yield
+        except BlockingIOError as err:
+            raise CaptureError(
+                "Another capture operation is in progress",
+                f"Wait and retry, or remove {lock_path} if stuck",
+            ) from err
+        finally:
+            fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
 
 
 class CaptureService:
@@ -116,6 +118,13 @@ class CaptureService:
             raise CaptureError(
                 f"Invalid namespace: {namespace}",
                 f"Use one of: {', '.join(sorted(NAMESPACES))}",
+            )
+
+        # SEC-005: Validate content length to prevent resource exhaustion
+        if len(content) > MAX_CONTENT_LENGTH:
+            raise CaptureError(
+                f"Content too long: {len(content)} bytes exceeds {MAX_CONTENT_LENGTH} limit",
+                "Reduce content size or split into multiple captures",
             )
 
         timestamp = datetime.now(UTC)

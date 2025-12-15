@@ -8,7 +8,12 @@ progressive hydration, and context loading.
 from datetime import datetime
 from typing import Any
 
-from .config import DEFAULT_RECALL_LIMIT, MAX_RECALL_LIMIT
+from .config import (
+    DEFAULT_RECALL_LIMIT,
+    MAX_FILE_SIZE_BYTES,
+    MAX_FILES_PER_HYDRATION,
+    MAX_RECALL_LIMIT,
+)
 from .embedding import EmbeddingService
 from .git_ops import GitOps
 from .index import IndexService
@@ -88,11 +93,13 @@ class RecallService:
             limit=limit,
         )
 
-        # Hydrate results to Level 1 (summary)
+        # Hydrate results to Level 1 (summary) - use batch get to avoid N+1 (PERF-001)
+        memory_ids = [mid for mid, _ in results]
+        memories_map = self.index_service.get_batch(memory_ids)
+
         memory_results = []
         for memory_id, distance in results:
-            memory = self.index_service.get(memory_id)
-            if memory:
+            if memory := memories_map.get(memory_id):
                 memory_results.append(
                     MemoryResult(
                         memory=memory,
@@ -143,12 +150,16 @@ class RecallService:
             changed_files = self.git_ops.get_changed_files(memory.commit_sha)
 
             files = {}
-            for file_path in changed_files:
+            # Limit number of files to prevent unbounded loading (PERF-003)
+            for file_path in changed_files[:MAX_FILES_PER_HYDRATION]:
                 content = self.git_ops.get_file_at_commit(
                     file_path,
                     memory.commit_sha,
                 )
                 if content:
+                    # Truncate large files (PERF-003)
+                    if len(content) > MAX_FILE_SIZE_BYTES:
+                        content = content[:MAX_FILE_SIZE_BYTES] + "\n... [truncated]"
                     files[file_path] = content
 
             hydrated = HydratedMemory(
@@ -167,42 +178,28 @@ class RecallService:
         Retrieves all memories across namespaces for the given spec,
         organized chronologically and grouped by namespace.
 
+        This method uses a single database query instead of N queries
+        per namespace, and avoids embedding generation entirely since
+        semantic relevance is not needed for full context retrieval. (PERF-002)
+
         Args:
             spec: Specification slug
 
         Returns:
             SpecContext with all memories
         """
-        # Get all memories for spec (no semantic search, just filter)
-        # We need to query each namespace since we can't do a full table scan
-        # efficiently with vector tables
+        # Use optimized single-query retrieval grouped by namespace (PERF-002)
+        all_memories = self.index_service.get_by_spec(spec)
 
-        from .config import NAMESPACES
-
-        all_memories: dict[str, list[Memory]] = {}
         total_count = 0
         total_content_length = 0
 
-        for namespace in NAMESPACES:
-            # Search with empty query but spec filter
-            # This is a bit of a hack - we use a generic query
-            # In production, we might want a separate method for filtered listing
-            results = self.search(
-                query=spec,  # Use spec name as query for now
-                spec=spec,
-                namespace=namespace,
-                limit=MAX_RECALL_LIMIT,
+        for memories in all_memories.values():
+            # Memories are already sorted by timestamp from query
+            total_count += len(memories)
+            total_content_length += sum(
+                len(m.summary) + len(m.content) for m in memories
             )
-
-            memories = [r.memory for r in results]
-            if memories:
-                # Sort by timestamp
-                memories.sort(key=lambda m: m.timestamp)
-                all_memories[namespace] = memories
-                total_count += len(memories)
-                total_content_length += sum(
-                    len(m.summary) + len(m.content) for m in memories
-                )
 
         # Rough token estimate (4 chars per token)
         token_estimate = total_content_length // 4
@@ -231,26 +228,12 @@ class RecallService:
         Returns:
             List of Memory objects, most recent first
         """
-        # This is a convenience method that doesn't use semantic search
-        # It queries the index directly for recent entries
-
-        conn = self.index_service._get_connection()
-
-        query = "SELECT * FROM memories WHERE 1=1"
-        params: list[Any] = []
-
-        if spec:
-            query += " AND spec = ?"
-            params.append(spec)
-        if namespace:
-            query += " AND namespace = ?"
-            params.append(namespace)
-
-        query += " ORDER BY timestamp DESC LIMIT ?"
-        params.append(limit)
-
-        cursor = conn.execute(query, params)
-        return [self.index_service._row_to_memory(row) for row in cursor]
+        # Delegate to IndexService public method (ARCH-001 fix)
+        return self.index_service.list_recent(
+            spec=spec,
+            namespace=namespace,
+            limit=limit,
+        )
 
     def similar(
         self,
@@ -284,10 +267,5 @@ class RecallService:
         Returns:
             List of memories attached to that commit
         """
-        conn = self.index_service._get_connection()
-
-        cursor = conn.execute(
-            "SELECT * FROM memories WHERE commit_sha = ?", (commit_sha,)
-        )
-
-        return [self.index_service._row_to_memory(row) for row in cursor]
+        # Delegate to IndexService public method (ARCH-001 fix)
+        return self.index_service.get_by_commit(commit_sha)

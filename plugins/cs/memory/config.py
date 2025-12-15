@@ -37,10 +37,20 @@ CONFIG_FILE = INDEX_DIR / "config.yaml"
 LOCK_FILE = INDEX_DIR / ".capture.lock"
 LOCK_TIMEOUT = 5  # seconds
 
+# Time constants (QUAL-007)
+SECONDS_PER_DAY = 86400
+
 # Recall defaults
 DEFAULT_RECALL_LIMIT = 10
 DEFAULT_SEARCH_LIMIT = 10
 MAX_RECALL_LIMIT = 100
+
+# Hydration limits (PERF-003)
+MAX_FILES_PER_HYDRATION = 20
+MAX_FILE_SIZE_BYTES = 100_000  # 100KB
+
+# Content length limits (SEC-005)
+MAX_CONTENT_LENGTH = 100_000  # 100KB max content for capture
 
 # Search optimization
 SEARCH_CACHE_TTL_SECONDS = 300.0  # 5 minutes
