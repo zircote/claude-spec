@@ -57,3 +57,39 @@ Use Hybrid Checkpoint System: Load a condensed implementation brief at startup, 
 - Condensed brief only
 - Progressive loading
 - Reference mode
+
+---
+type: decisions
+spec: arch-lifecycle-automation
+timestamp: '2025-12-15T06:50:31.635340Z'
+summary: Auto-Detect Project from Branch Name
+phase: architecture
+tags:
+- arch-lifecycle-automation
+- adr
+- architecture
+- git
+- ci-cd
+---
+
+## Context
+When user runs `/arch:i`, we need to determine which architecture project to work on. Options:
+
+1. Always require explicit project ID argument
+2. Auto-detect from current git branch
+3. Interactive selection from active projects
+4. Combination with fallback chain
+
+## Decision
+Auto-detect project from current git branch name, with explicit argument as override and interactive selection as fallback for ambiguous cases.
+
+Detection logic:
+1. If explicit argument provided, use it
+2. Parse current branch name (e.g., `fix/arch-commands` → `arch-commands`)
+3. Search `docs/architecture/active/*/README.md` for matching slug
+4. If multiple matches, prompt user to select
+5. If no matches, provide helpful error
+
+## Alternatives Considered
+- Always require argument
+- Interactive selection only
