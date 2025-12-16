@@ -450,9 +450,53 @@ When implementation work completes a task:
 <quality_gate>
 ### Quality Gate (Before ANY Task Completion)
 
-**MANDATORY**: Before marking ANY task as complete, run the project's CI/validation command and fix all issues.
+**MANDATORY**: Before marking ANY task as complete, run code review, fix findings, and validate CI passes.
 
-#### Step 1: Detect Validation Command
+#### Step 1: Code Review (Integrated /cs:review)
+
+Identify changed files and run code review:
+
+```bash
+# Get files changed in this task
+CHANGED_FILES=$(git diff --name-only HEAD~1)
+```
+
+Run code review on changed files using the pr-review-toolkit agents:
+
+```
+Deploy parallel review agents:
+- code-reviewer: Style, patterns, conventions
+- security-auditor: Security vulnerabilities
+- performance-engineer: Performance issues
+- test-automator: Test coverage gaps
+```
+
+Capture findings to memory via `/cs:review --capture`:
+- Creates memory entries for recurring patterns
+- Links findings to current commit for traceability
+
+#### Step 2: Fix Findings (Integrated /cs:fix)
+
+If code review found issues:
+
+```
+IF findings exist:
+  -> Run /cs:fix logic automatically
+  -> Route findings to appropriate specialist agents:
+     | Category | Agent |
+     |----------|-------|
+     | Security | security-engineer |
+     | Performance | performance-engineer |
+     | Code Quality | refactoring-specialist |
+     | Tests | test-automator |
+  -> Fix all Critical and High severity issues
+  -> Medium/Low: Fix if quick, otherwise log for future
+  -> Re-run review to verify fixes
+```
+
+Skip to Step 3 if no findings or all findings addressed.
+
+#### Step 3: Detect CI Validation Command
 
 Check in this order:
 1. **CLAUDE.md** - Look for `make ci`, `npm test`, build commands in "Build & Test" section
@@ -464,14 +508,14 @@ Check in this order:
    - Go: `go test ./... && golangci-lint run`
    - Rust: `cargo clippy && cargo test`
 
-#### Step 2: Run Validation
+#### Step 4: Run CI Validation
 
 ```bash
 # Run the detected command (example: make ci)
 ${VALIDATION_COMMAND}
 ```
 
-#### Step 3: Handle Results
+#### Step 5: Handle Results
 
 ```
 IF validation PASSES:
@@ -484,29 +528,41 @@ IF validation FAILS:
   -> Repeat until all checks pass
 ```
 
-**A task is NOT complete until CI passes. No exceptions.**
+**A task is NOT complete until review passes AND CI passes. No exceptions.**
 
-#### Example Flow
+#### Complete Example Flow
 
 ```
 [Implementing Task 2.3...]
 [Code written]
 
-Running quality gate: make ci
-  ✗ ruff check: 2 errors
-  ✗ mypy: 1 type error
-  ✓ pytest: 45 passed
+Step 1: Code Review
+  Reviewing: capture.py, models.py, test_capture.py
+  Deploying: code-reviewer, security-auditor, test-automator
 
-Fixing issues...
-  - Fixed ruff errors in capture.py
-  - Fixed type error in models.py
+  Findings:
+    [HIGH] capture.py:45 - Missing input validation
+    [MED] models.py:23 - Consider using frozen dataclass
+    [LOW] test_capture.py:12 - Test name could be clearer
 
-Re-running: make ci
-  ✓ ruff check: passed
-  ✓ mypy: passed
-  ✓ pytest: 45 passed
+Step 2: Fix Findings
+  Fixing HIGH issues...
+    ✓ Added input validation to capture.py:45
+
+  MED/LOW logged for future (non-blocking)
+
+  Re-review: No new findings
+
+Step 3: CI Validation
+  Running: make ci
+    ✓ ruff check: passed
+    ✓ mypy: passed
+    ✓ pytest: 47 passed (2 new tests)
 
 Quality gate passed. Marking Task 2.3 complete.
+
+Memory captured:
+  ✓ review:abc123d:1702560000 - "Input validation pattern for capture"
 ```
 </quality_gate>
 
