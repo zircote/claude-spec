@@ -91,6 +91,14 @@ The step system follows a "fail-open" philosophy:
 - Only ``StepError`` exceptions propagate up (for critical failures)
 - Use ``result.add_warning()`` for non-fatal issues
 
+Error Categorization (ARCH-009)
+-------------------------------
+
+StepResult includes error categorization for better error handling:
+
+- ``error_code``: Categorized error code (e.g., "validation", "io", "timeout")
+- ``retriable``: Whether the error is transient and the step can be retried
+
 Hook Integration
 ----------------
 
@@ -116,7 +124,42 @@ Post-steps (run after command):
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any
+
+
+class ErrorCode(Enum):
+    """Categorized error codes for step failures (ARCH-009).
+
+    These codes help classify errors for better handling and reporting.
+    """
+
+    # No error
+    NONE = "none"
+
+    # Validation errors - preconditions not met
+    VALIDATION = "validation"
+
+    # I/O errors - file system, network, etc.
+    IO = "io"
+
+    # Timeout errors - operation took too long
+    TIMEOUT = "timeout"
+
+    # Configuration errors - invalid or missing config
+    CONFIG = "config"
+
+    # Dependency errors - required external tool/service unavailable
+    DEPENDENCY = "dependency"
+
+    # Permission errors - access denied
+    PERMISSION = "permission"
+
+    # Parse errors - invalid input format
+    PARSE = "parse"
+
+    # Unknown/unclassified errors
+    UNKNOWN = "unknown"
 
 
 @dataclass
@@ -128,6 +171,8 @@ class StepResult:
         message: Human-readable description of the result.
         data: Optional dictionary of result data (findings, paths, counts, etc.).
         warnings: List of non-fatal warning messages.
+        error_code: Categorized error code for failures (ARCH-009).
+        retriable: Whether the error is transient and step can be retried (ARCH-009).
 
     Examples:
         Creating a successful result::
@@ -137,6 +182,14 @@ class StepResult:
         Creating a failed result::
 
             result = StepResult.fail("File not found: config.json")
+
+        Creating a retriable failure::
+
+            result = StepResult.fail(
+                "Network timeout",
+                error_code=ErrorCode.TIMEOUT,
+                retriable=True
+            )
 
         Adding warnings::
 
@@ -149,6 +202,8 @@ class StepResult:
     message: str
     data: dict[str, Any] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
+    error_code: ErrorCode = ErrorCode.NONE
+    retriable: bool = False
 
     @classmethod
     def ok(cls, message: str = "Success", **data: Any) -> "StepResult":
@@ -161,20 +216,34 @@ class StepResult:
         Returns:
             A StepResult with success=True.
         """
-        return cls(success=True, message=message, data=data)
+        return cls(success=True, message=message, data=data, error_code=ErrorCode.NONE)
 
     @classmethod
-    def fail(cls, message: str, **data: Any) -> "StepResult":
+    def fail(
+        cls,
+        message: str,
+        error_code: ErrorCode = ErrorCode.UNKNOWN,
+        retriable: bool = False,
+        **data: Any,
+    ) -> "StepResult":
         """Create a failed result.
 
         Args:
             message: Description of what failed.
+            error_code: Categorized error code (ARCH-009).
+            retriable: Whether the error is transient and step can be retried.
             **data: Arbitrary key-value pairs to include in result data.
 
         Returns:
             A StepResult with success=False.
         """
-        return cls(success=False, message=message, data=data)
+        return cls(
+            success=False,
+            message=message,
+            data=data,
+            error_code=error_code,
+            retriable=retriable,
+        )
 
     def add_warning(self, warning: str) -> "StepResult":
         """Add a warning to the result.
@@ -191,6 +260,14 @@ class StepResult:
         self.warnings.append(warning)
         return self
 
+    def is_retriable(self) -> bool:
+        """Check if this failure is retriable.
+
+        Returns:
+            True if the step failed and can be retried.
+        """
+        return not self.success and self.retriable
+
 
 class StepError(Exception):
     """Exception raised when a step fails critically.
@@ -204,10 +281,17 @@ class StepError(Exception):
 
     Attributes:
         step_name: Name of the step that raised the error.
+        error_code: Categorized error code (ARCH-009).
     """
 
-    def __init__(self, message: str, step_name: str = "unknown"):
+    def __init__(
+        self,
+        message: str,
+        step_name: str = "unknown",
+        error_code: ErrorCode = ErrorCode.UNKNOWN,
+    ):
         self.step_name = step_name
+        self.error_code = error_code
         super().__init__(f"[{step_name}] {message}")
 
 
@@ -290,12 +374,35 @@ class BaseStep(ABC):
         """
         try:
             if not self.validate():
-                return StepResult.fail(f"Validation failed for {self.name}")
+                return StepResult.fail(
+                    f"Validation failed for {self.name}",
+                    error_code=ErrorCode.VALIDATION,
+                )
             return self.execute()
         except StepError:
             raise
+        except TimeoutError as e:
+            return StepResult.fail(
+                str(e),
+                error_code=ErrorCode.TIMEOUT,
+                retriable=True,
+            ).add_warning(f"Step {self.name} timed out")
+        except PermissionError as e:
+            return StepResult.fail(
+                str(e),
+                error_code=ErrorCode.PERMISSION,
+                retriable=False,
+            ).add_warning(f"Step {self.name} permission denied")
+        except OSError as e:
+            return StepResult.fail(
+                str(e),
+                error_code=ErrorCode.IO,
+                retriable=True,
+            ).add_warning(f"Step {self.name} I/O error")
         except Exception as e:
             # Fail-open: log error but don't block
-            return StepResult.fail(str(e)).add_warning(
-                f"Step {self.name} encountered error"
-            )
+            return StepResult.fail(
+                str(e),
+                error_code=ErrorCode.UNKNOWN,
+                retriable=False,
+            ).add_warning(f"Step {self.name} encountered error")

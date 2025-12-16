@@ -2,7 +2,7 @@
 argument-hint: <project-idea|feature|problem-statement>
 description: Strategic project planning with Socratic requirements elicitation. Produces PRD, technical architecture, and implementation plan with full artifact lifecycle management. Part of the /cs suite - use /cs/c to complete projects, /cs/s for status.
 model: claude-opus-4-5-20251101
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, WebSearch, WebFetch, TodoRead, TodoWrite
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, WebSearch, WebFetch, TodoRead, TodoWrite, AskUserQuestion
 ---
 
 # /cs/p - Strategic Project Planner
@@ -106,18 +106,108 @@ You embody the Socratic method: you guide discovery through strategic questions 
 <interaction_directive>
 ## User Interaction Requirements
 
-**MANDATORY**: Use the `AskUserQuestion` tool for ALL structured decision points. Do NOT ask questions in plain text when options can be enumerated.
+**MANDATORY**: Use the `AskUserQuestion` tool for ALL user interactions, including elicitation. Do NOT ask questions in plain text when the tool can be used.
 
 ### When to Use AskUserQuestion
 
-| Scenario | Use AskUserQuestion |
-|----------|---------------------|
-| Collision detection (existing project found) | Yes - continue/update/supersede options |
-| Worktree decision (on protected branch) | Yes - create worktree/continue options |
-| Priority clarification (P0/P1/P2) | Yes - priority options |
-| Socratic elicitation (open-ended discovery) | No - use plain text for exploratory questions |
+| Scenario | Use AskUserQuestion | Notes |
+|----------|---------------------|-------|
+| Collision detection | Yes - continue/update/supersede options | Structured decision |
+| Worktree decision | Yes - create worktree/continue options | Structured decision |
+| Priority clarification (P0/P1/P2) | Yes - priority options | Structured decision |
+| Socratic elicitation rounds | **Yes** - guided questions with "Other" | See Elicitation Schema below |
+| Follow-up clarification | **Yes** - drill down on user answers | Continue guided discovery |
 
-**Note**: Socratic questioning during requirements elicitation is intentionally open-ended and should NOT use AskUserQuestion. However, structured decision points (like collision handling) MUST use AskUserQuestion.
+### Elicitation AskUserQuestion Schemas
+
+**Round 1: Problem Domain** (after project initialization)
+```
+Use AskUserQuestion with:
+  header: "Domain"
+  question: "What domain does this project primarily serve?"
+  multiSelect: false
+  options:
+    - label: "Web Application"
+      description: "Browser-based UI, APIs, user-facing features"
+    - label: "CLI/Developer Tool"
+      description: "Command-line interface, developer experience"
+    - label: "Library/SDK"
+      description: "Reusable code, integration for other projects"
+    - label: "Backend/Infrastructure"
+      description: "Services, pipelines, systems without direct UI"
+```
+
+**Round 2: Problem Understanding** (after domain selection)
+```
+Use AskUserQuestion with:
+  header: "Problem"
+  question: "What best describes the core problem you're solving?"
+  multiSelect: false
+  options:
+    - label: "New capability"
+      description: "Adding something that doesn't exist today"
+    - label: "Performance/Scale"
+      description: "Existing feature needs to be faster or handle more load"
+    - label: "User experience"
+      description: "Existing workflow is confusing or inefficient"
+    - label: "Technical debt"
+      description: "Code quality, maintainability, or architecture issues"
+```
+
+**Round 3: User Context** (after problem selection)
+```
+Use AskUserQuestion with:
+  header: "Users"
+  question: "Who are the primary users of this solution?"
+  multiSelect: true
+  options:
+    - label: "Internal developers"
+      description: "Your team or organization's engineers"
+    - label: "End users"
+      description: "Non-technical users interacting with your product"
+    - label: "External developers"
+      description: "Third-party developers integrating with your system"
+    - label: "Ops/SRE teams"
+      description: "People deploying, monitoring, or maintaining systems"
+```
+
+**Round 4: Constraints & Priorities** (after user selection)
+```
+Use AskUserQuestion with:
+  header: "Priority"
+  question: "What is the most important constraint for this project?"
+  multiSelect: false
+  options:
+    - label: "Ship quickly"
+      description: "Time-to-market is critical, can iterate later"
+    - label: "Production quality"
+      description: "Reliability and stability are paramount"
+    - label: "Extensibility"
+      description: "Must be easy to extend and maintain long-term"
+    - label: "Security/Compliance"
+      description: "Security requirements drive design decisions"
+```
+
+**Deep Dive Questions** (context-specific follow-ups)
+After each round, if the user's answer warrants deeper exploration, use AskUserQuestion with domain-specific follow-up options. Always include "Other" implicitly (tool adds it automatically).
+
+### Free-Text via "Other"
+
+The AskUserQuestion tool automatically adds an "Other" option that allows free-text input. When users need to provide open-ended information that doesn't fit predefined options, they can select "Other" and type their response.
+
+**Example flow:**
+1. Claude presents: "What domain does this project primarily serve?"
+2. User selects "Other" and types: "Real-time collaborative document editing"
+3. Claude acknowledges and asks targeted follow-up using AskUserQuestion
+
+### Plain Text ONLY When
+
+Plain text questions are appropriate ONLY when:
+1. Summarizing and validating understanding (not asking for new input)
+2. Asking for a specific value (e.g., "What's the target latency in milliseconds?")
+3. Following up on an "Other" response with a clarifying question
+
+Even then, prefer AskUserQuestion if the response could be enumerated.
 </interaction_directive>
 
 <parallel_execution_directive>
@@ -515,78 +605,185 @@ Never skip levels. Build from the foundation up.
 
 <execution_protocol>
 
-## Phase 1: Socratic Requirements Elicitation (ultrathink)
+## Phase 1: Structured Elicitation via AskUserQuestion (ultrathink)
 
-Before ANY planning, achieve absolute clarity through strategic questioning.
+Before ANY planning, achieve absolute clarity through the AskUserQuestion tool.
 
-<questioning_framework>
-### Question Categories
+**⚠️ CRITICAL**: Do NOT ask questions in plain text. Every question MUST use the AskUserQuestion tool. The schemas in `<interaction_directive>` define the exact questions to ask.
 
-**1. Clarifying Questions** - Establish shared understanding
-- "What do you mean when you say [term]?"
-- "Can you give me a concrete example of [concept]?"
-- "When you envision this working, what does it look like?"
-- "Who specifically will use this and in what context?"
+<questioning_concepts>
+### Question Concepts (for designing AskUserQuestion options)
 
-**2. Assumption-Challenging Questions** - Uncover hidden beliefs
-- "What assumptions are we making about [aspect]?"
-- "Is [stated requirement] truly necessary, or is it a means to another end?"
-- "What would happen if we didn't include [feature]?"
-- "Are there alternative ways to achieve [goal]?"
+These concepts guide what to explore. They are NOT templates to copy - transform them into AskUserQuestion options:
 
-**3. Consequence Questions** - Explore implications
-- "If we build this, what changes for [stakeholder]?"
-- "What are the risks if this doesn't work as expected?"
-- "How does this interact with [existing system]?"
-- "What happens at scale?"
+| Concept | Purpose | How to Transform |
+|---------|---------|------------------|
+| Clarifying | Establish shared understanding | Include in "Other" follow-ups |
+| Assumption-challenging | Uncover hidden beliefs | Add as option descriptions |
+| Consequence | Explore implications | Include in domain-specific deep dives |
+| Priority | Establish what matters most | Use Round 4 (Priority schema) |
+| Context | Understand bigger picture | Use Rounds 1-3 (Domain, Problem, Users) |
 
-**4. Priority Questions** - Establish what matters most
-- "If you could only have ONE feature, which would it be?"
-- "What would make this a failure even if it technically works?"
-- "What's the minimum viable version of this?"
-- "What would make this 10x more valuable?"
-
-**5. Context Questions** - Understand the bigger picture
-- "Why is this being built now?"
-- "What alternatives have been considered?"
-- "Who else has input on this decision?"
-- "What constraints exist (time, budget, technology)?"
-</questioning_framework>
+**Example transformation:**
+- Plain text (WRONG): "What's the minimum viable version?"
+- AskUserQuestion (CORRECT):
+  ```
+  header: "Scope"
+  question: "What's the minimum viable scope for v1?"
+  options:
+    - label: "Single core feature"
+    - label: "End-to-end slice"
+    - label: "Full feature set"
+    - label: "Depends on feedback"
+  ```
+</questioning_concepts>
 
 <elicitation_process>
-### Questioning Protocol
+### Questioning Protocol Using AskUserQuestion
 
-1. **Start with the WHY**:
-   - "Before we discuss what to build, help me understand: what problem are we solving?"
-   - "Who experiences this problem and how painful is it for them?"
-   - "What happens if we don't solve this?"
+**MANDATORY**: Each elicitation round MUST use the AskUserQuestion tool. Reference the schemas in `<interaction_directive>` above.
 
-2. **Move to the WHO**:
-   - "Who are the primary users? Secondary users?"
-   - "What do they currently do to solve this problem?"
-   - "What's their technical sophistication level?"
+<anti_pattern_warning>
+### ❌ WRONG - Plain Text Questions (DO NOT DO THIS)
 
-3. **Explore the WHAT**:
-   - "What does success look like?"
-   - "What are the must-have vs nice-to-have features?"
-   - "What explicitly should this NOT do?"
+```
+Before we dive into technical details, I want to understand the strategic context:
 
-4. **Understand the HOW (constraints)**:
-   - "What technology constraints exist?"
-   - "What timeline are we working with?"
-   - "What resources are available?"
+1. Priority Validation: Your brief lists 8 features. If you had to pick just one...
+2. Existing Scaffolding: I see you've built X. What drove the naming discrepancy...
+3. Target User Clarity: When you imagine the first 3 people to use this...
+4. Key Risk You're Watching: Which single risk keeps you most concerned...
+```
 
-5. **Validate Understanding**:
-   - "Let me summarize what I've heard... [summary]. Is this accurate?"
-   - "What did I miss or misunderstand?"
+This is **PROHIBITED**. It violates the AskUserQuestion mandate.
+
+### ✅ CORRECT - AskUserQuestion Tool
+
+```
+[Brief 1-2 sentence acknowledgment]
+
+Use AskUserQuestion with:
+  header: "Domain"
+  question: "What domain does this project primarily serve?"
+  multiSelect: false
+  options:
+    - label: "Web Application"
+      description: "Browser-based UI, APIs, user-facing features"
+    - label: "CLI/Developer Tool"
+      description: "Command-line interface, developer experience"
+    - label: "Library/SDK"
+      description: "Reusable code, integration for other projects"
+    - label: "Backend/Infrastructure"
+      description: "Services, pipelines, systems without direct UI"
+```
+
+If the user's brief already answers some questions, skip to the next relevant round - but ALWAYS use AskUserQuestion.
+</anti_pattern_warning>
+
+#### Round 1: Domain Classification
+**Trigger**: After project scaffold creation
+**Action**: Use AskUserQuestion with "Domain" schema
+**Purpose**: Establish the project's primary domain to guide subsequent questions
+
+#### Round 2: Problem Classification
+**Trigger**: After user selects domain (or provides "Other")
+**Action**: Use AskUserQuestion with "Problem" schema
+**Purpose**: Understand the nature of the problem being solved
+
+#### Round 3: User Identification
+**Trigger**: After problem is classified
+**Action**: Use AskUserQuestion with "Users" schema (multiSelect: true)
+**Purpose**: Identify who will benefit from this solution
+
+#### Round 4: Priority/Constraint Selection
+**Trigger**: After users are identified
+**Action**: Use AskUserQuestion with "Priority" schema
+**Purpose**: Establish the primary constraint driving design decisions
+
+#### Round 5+: Context-Specific Deep Dives
+**Trigger**: Based on answers from Rounds 1-4
+**Action**: Generate dynamic AskUserQuestion calls based on context
+
+**Examples of dynamic follow-ups:**
+
+If Domain = "Web Application":
+```
+Use AskUserQuestion with:
+  header: "Stack"
+  question: "What frontend technology are you using or prefer?"
+  multiSelect: false
+  options:
+    - label: "React/Next.js"
+    - label: "Vue/Nuxt"
+    - label: "Svelte/SvelteKit"
+    - label: "Vanilla/Other"
+```
+
+If Problem = "Performance/Scale":
+```
+Use AskUserQuestion with:
+  header: "Bottleneck"
+  question: "Where is the performance bottleneck?"
+  multiSelect: true
+  options:
+    - label: "Database queries"
+    - label: "API response times"
+    - label: "Frontend rendering"
+    - label: "Background jobs"
+```
+
+If Users includes "External developers":
+```
+Use AskUserQuestion with:
+  header: "API Style"
+  question: "What API style do you prefer for external consumers?"
+  multiSelect: false
+  options:
+    - label: "REST"
+    - label: "GraphQL"
+    - label: "gRPC"
+    - label: "SDK wrapper"
+```
+
+#### Validation Round (Final)
+**Trigger**: After 4-6 rounds of structured questions
+**Action**: Present summary in plain text, then use AskUserQuestion
+
+```
+Use AskUserQuestion with:
+  header: "Confirm"
+  question: "Does this summary accurately capture your requirements?"
+  multiSelect: false
+  options:
+    - label: "Yes, proceed"
+      description: "The summary is accurate, move to research phase"
+    - label: "Minor corrections"
+      description: "A few details need adjustment"
+    - label: "Major gaps"
+      description: "Important aspects are missing or wrong"
+    - label: "Start over"
+      description: "Let's revisit the core problem"
+```
+
+### Handling "Other" Responses
+
+When user selects "Other" and provides free text:
+1. **Acknowledge** their input specifically
+2. **Parse** for structured information
+3. **Follow up** with a targeted AskUserQuestion if clarification helps
+4. **Continue** to the next round with their context integrated
+
+Example:
+- User selects "Other" for Domain, types: "IoT edge device firmware"
+- Claude responds: "IoT edge firmware - interesting domain! Let me ask targeted questions."
+- Then uses AskUserQuestion with IoT-relevant options for the next round
 
 ### Question Batching Rules
 
-- Ask NO MORE than 3-4 questions at a time
-- Group related questions together
-- Wait for answers before asking the next batch
-- Prioritize the most critical unknowns first
-- Acknowledge and build on previous answers
+- One AskUserQuestion call per response (tool constraint)
+- Each question should build on previous answers
+- If multiple topics need exploration, prioritize by impact on architecture
+- After each answer, briefly acknowledge before the next question
 </elicitation_process>
 
 <required_clarity_checkpoints>
@@ -1341,14 +1538,17 @@ mkdir -p "docs/spec/active/${DATE}-${SLUG}"
 touch ".prompt-log-enabled"
 ```
 
-### Step 2: Begin Socratic Questioning
+### Step 2: Begin Structured Elicitation with AskUserQuestion
 
-After initialization, begin Phase 1:
+After initialization, begin Phase 1 using the AskUserQuestion tool:
 
-1. **Acknowledge the project idea** warmly
+1. **Acknowledge the project idea** briefly in text
 2. **Confirm the project workspace** was created
-3. **Ask your first batch of questions** (3-4 max) focused on the WHY
-4. **Do NOT skip to planning** until clarity checkpoints are met
+3. **Use AskUserQuestion Round 1 (Domain)** - do NOT ask in plain text
+4. **Continue through rounds 2-4** as user responds
+5. **Do NOT skip to planning** until clarity checkpoints are met via the Validation Round
+
+**CRITICAL**: Your FIRST question after project initialization MUST use the AskUserQuestion tool with the "Domain" schema. Do not fall back to plain text questions.
 
 ### Step 3: Research -> Document -> Finalize
 
@@ -1400,36 +1600,53 @@ in your planning worktree.
 
 ### Scenario B: Already in Appropriate Branch -> PROCEED
 
+**Text output:**
 ```
 Working in branch `plan/user-auth` - good isolation for planning work.
 
-Let's architect [project idea]! I've set up our planning workspace at
-`docs/spec/active/2025-12-11-[slug]/` with Project ID `SPEC-2025-12-11-001`.
+I've set up our planning workspace at `docs/spec/active/2025-12-11-[slug]/`
+with Project ID `SPEC-2025-12-11-001`.
 
-Before we dive into solutions, I want to deeply understand the problem we're solving:
-
-1. [Question about the problem]
-2. [Question about who experiences it]
-3. [Question about current state]
-
-Take your time - the clarity we build now will make everything else smoother.
+Let's start by understanding what we're building.
 ```
+
+**Then immediately use AskUserQuestion (Round 1: Domain):**
+```
+Use AskUserQuestion with:
+  header: "Domain"
+  question: "What domain does this project primarily serve?"
+  multiSelect: false
+  options:
+    - label: "Web Application"
+      description: "Browser-based UI, APIs, user-facing features"
+    - label: "CLI/Developer Tool"
+      description: "Command-line interface, developer experience"
+    - label: "Library/SDK"
+      description: "Reusable code, integration for other projects"
+    - label: "Backend/Infrastructure"
+      description: "Services, pipelines, systems without direct UI"
+```
+
+**DO NOT** ask questions in plain text. The first interaction MUST be AskUserQuestion.
 
 ### Scenario C: On Protected Branch, User Chooses to Continue Anyway
 
+**Text output:**
 ```
 Continuing on `main` as requested. Note that planning artifacts will be
 created directly on this branch.
 
-Let's architect [project idea]! I've set up our planning workspace at
-`docs/spec/active/2025-12-11-[slug]/` with Project ID `SPEC-2025-12-11-001`.
+I've set up our planning workspace at `docs/spec/active/2025-12-11-[slug]/`
+with Project ID `SPEC-2025-12-11-001`.
 
-[Continue with questions...]
+Let's start by understanding what we're building.
 ```
+
+**Then immediately use AskUserQuestion (Round 1: Domain)** - same as Scenario B.
 
 ---
 
-Remember: The goal is not to get through questions quickly, but to achieve genuine understanding. Take your time. Ask follow-ups. Challenge assumptions. The plan that emerges from thorough questioning will be far superior to one based on guesses.
+**Remember**: The goal is structured discovery through the AskUserQuestion tool. Each round builds context for the next. Use the "Other" option to handle edge cases while maintaining interactive flow. The plan that emerges from systematic guided questioning will be far superior to one based on plain-text back-and-forth.
 
 <post_approval_halt>
 ## MANDATORY HALT AFTER SPECIFICATION APPROVAL
@@ -1478,6 +1695,115 @@ After displaying the above message:
 </post_approval_halt>
 
 </execution_instruction>
+
+<memory_integration>
+## Auto-Capture Instructions
+
+The memory system captures context at key planning phases. Use the CaptureService methods when reaching these points.
+
+### Configuration Check
+Before any capture, check if auto-capture is enabled:
+```python
+from memory.capture import is_auto_capture_enabled
+
+if not is_auto_capture_enabled():
+    # Skip capture - disabled via CS_AUTO_CAPTURE_ENABLED=false
+    pass
+```
+
+### Capture Accumulator Pattern
+Track all captures during command execution for summary display:
+```python
+from memory.models import CaptureAccumulator
+from memory.capture import CaptureService, is_auto_capture_enabled
+
+accumulator = CaptureAccumulator()
+
+# At each capture point (wrapped in try/except):
+if is_auto_capture_enabled():
+    try:
+        result = capture_service.capture(...)
+        accumulator.add(result)
+    except Exception as e:
+        # Log warning but continue - fail-open design
+        pass
+
+# At command end:
+print(accumulator.summary())
+```
+
+### Phase 0: After Scaffold Commit
+After creating the spec directory structure:
+```
+CAPTURE:
+  - namespace: inception
+  - spec: {slug}
+  - summary: "Initiated spec: {project_name}"
+  - content: The project seed/idea provided by user
+  - phase: inception
+```
+
+### Phase 1: After Elicitation Rounds
+After each significant clarification round (when user answers multiple Socratic questions):
+```
+CAPTURE:
+  - namespace: elicitation
+  - spec: {slug}
+  - summary: "Clarified: {main_topic_clarified}"
+  - content: Summary of clarifications made in this round
+  - phase: elicitation
+  - tags: [requirement, {topic_category}]
+```
+
+### Phase 2: After Research
+After research agents complete their investigation:
+```
+CAPTURE:
+  - namespace: research
+  - spec: {slug}
+  - summary: "Research: {research_topic}"
+  - content: Key findings from research
+  - phase: research
+```
+
+### Phase 4: After Architecture Decisions
+After each ADR is documented in ARCHITECTURE.md:
+```
+USE capture_decision():
+  - spec: {slug}
+  - summary: ADR title
+  - context: Decision context
+  - rationale: Why this approach
+  - alternatives: List of alternatives considered
+  - tags: [architecture, {domain}]
+```
+
+### End of Command: Display Summary
+After all planning is complete, call `accumulator.summary()` to display:
+```
+────────────────────────────────────────────────────────────────
+Memory Capture Summary
+────────────────────────────────────────────────────────────────
+Captured: N memories
+  ✓ {memory_id} - {summary}
+  ✓ {memory_id} - {summary}
+  ...
+────────────────────────────────────────────────────────────────
+```
+
+If auto-capture is disabled, display:
+```
+Memory auto-capture disabled (CS_AUTO_CAPTURE_ENABLED=false)
+```
+
+### Fail-Open Design
+If any capture fails:
+- Log warning in accumulator but continue command execution
+- Summary will show warning indicators (⚠) for failed captures
+- Never block planning due to capture errors
+- Command succeeds even if all captures fail
+
+</memory_integration>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      PROJECT SEED - INTENTIONALLY PLACED AT END OF FILE

@@ -1,0 +1,131 @@
+"""
+Configuration constants for cs-memory.
+
+All paths are relative to the repository root unless otherwise specified.
+"""
+
+from pathlib import Path
+
+# Git notes namespace structure
+# Each maps to refs/notes/cs/<namespace>
+NAMESPACES = frozenset(
+    {
+        "inception",  # Problem statements, scope, success criteria
+        "elicitation",  # Requirements clarifications, constraints
+        "research",  # External findings, technology evaluations
+        "decisions",  # Architecture Decision Records
+        "progress",  # Task completions, milestones
+        "blockers",  # Obstacles and resolutions
+        "reviews",  # Code review findings
+        "learnings",  # Technical insights, patterns
+        "retrospective",  # Post-mortems
+        "patterns",  # Cross-spec generalizations
+    }
+)
+
+# Embedding model configuration
+DEFAULT_EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+EMBEDDING_DIMENSIONS = 384
+
+# Index storage (gitignored)
+INDEX_DIR = Path(".cs-memory")
+INDEX_PATH = INDEX_DIR / "index.db"
+MODELS_DIR = INDEX_DIR / "models"
+CONFIG_FILE = INDEX_DIR / "config.yaml"
+
+# Concurrency control
+LOCK_FILE = INDEX_DIR / ".capture.lock"
+LOCK_TIMEOUT = 5  # seconds
+
+# Time constants (QUAL-007)
+SECONDS_PER_DAY = 86400
+
+# Recall defaults
+DEFAULT_RECALL_LIMIT = 10
+DEFAULT_SEARCH_LIMIT = 10
+MAX_RECALL_LIMIT = 100
+
+# Hydration limits (PERF-003)
+MAX_FILES_PER_HYDRATION = 20
+MAX_FILE_SIZE_BYTES = 100_000  # 100KB
+
+# Content length limits (SEC-005)
+MAX_CONTENT_LENGTH = 100_000  # 100KB max content for capture
+
+# Search optimization
+SEARCH_CACHE_TTL_SECONDS = 300.0  # 5 minutes
+SEARCH_CACHE_MAX_SIZE = 100
+
+# Note schema
+NOTE_REQUIRED_FIELDS = frozenset({"type", "spec", "timestamp", "summary"})
+NOTE_OPTIONAL_FIELDS = frozenset({"phase", "tags", "relates_to", "status"})
+MAX_SUMMARY_LENGTH = 100
+
+# Performance thresholds (NFR targets)
+SEARCH_TIMEOUT_MS = 500
+CAPTURE_TIMEOUT_MS = 2000
+REINDEX_TIMEOUT_MS = 60000
+
+# Auto-capture namespaces (enabled by default)
+AUTO_CAPTURE_NAMESPACES = frozenset(
+    {
+        "inception",
+        "elicitation",
+        "research",
+        "decisions",
+        "progress",
+        "blockers",
+        "learnings",
+        "retrospective",
+        "patterns",
+    }
+)
+
+# Review finding categories (FR-001)
+REVIEW_CATEGORIES = frozenset(
+    {
+        "security",
+        "performance",
+        "architecture",
+        "quality",
+        "tests",
+        "documentation",
+    }
+)
+
+# Review finding severities (FR-001)
+REVIEW_SEVERITIES = frozenset(
+    {
+        "critical",
+        "high",
+        "medium",
+        "low",
+    }
+)
+
+# Retrospective outcome values (FR-002)
+RETROSPECTIVE_OUTCOMES = frozenset(
+    {
+        "success",
+        "partial",
+        "failed",
+        "abandoned",
+    }
+)
+
+# Pattern type values (FR-003)
+PATTERN_TYPES = frozenset(
+    {
+        "success",
+        "anti-pattern",
+        "deviation",
+    }
+)
+
+# Proactive recall settings (US-016, NFR-013)
+MAX_PROACTIVE_SUGGESTIONS = 3
+
+# Auto-capture configuration (Task 3.3)
+# Environment variable to disable auto-capture (default: enabled)
+AUTO_CAPTURE_ENV_VAR = "CS_AUTO_CAPTURE_ENABLED"
+AUTO_CAPTURE_DEFAULT = True

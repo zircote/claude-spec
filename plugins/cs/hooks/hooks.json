@@ -3,28 +3,44 @@
   "hooks": {
     "SessionStart": [
       {
-        "type": "command",
-        "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py",
-        "timeout": 10
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
       {
-        "type": "command",
-        "command": "${CLAUDE_PLUGIN_ROOT}/hooks/command_detector.py",
-        "timeout": 30
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/command_detector.py",
+            "timeout": 30
+          }
+        ]
       },
       {
-        "type": "command",
-        "command": "${CLAUDE_PLUGIN_ROOT}/hooks/prompt_capture.py",
-        "timeout": 30
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/prompt_capture.py",
+            "timeout": 30
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "type": "command",
-        "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post_command.py",
-        "timeout": 60
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post_command.py",
+            "timeout": 60
+          }
+        ]
       }
     ]
   }

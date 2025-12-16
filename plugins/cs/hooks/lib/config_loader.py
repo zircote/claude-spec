@@ -109,6 +109,10 @@ import json
 from pathlib import Path
 from typing import Any
 
+# Module-level cache for config (ARCH-002)
+_config_cache: dict[str, Any] | None = None
+_config_mtime: float | None = None
+
 
 def get_user_config_path() -> Path:
     """Get the path to the user's worktree-manager config file."""
@@ -145,8 +149,32 @@ def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]
     return result
 
 
-def load_config() -> dict[str, Any]:
-    """Load configuration with fallback chain.
+def _get_config_mtime() -> float:
+    """Get the most recent modification time of config files.
+
+    Returns:
+        Max mtime of user and template configs, or 0 if neither exists.
+    """
+    user_config = get_user_config_path()
+    template_config = get_template_config_path()
+
+    mtimes = []
+    if user_config.exists():
+        try:
+            mtimes.append(user_config.stat().st_mtime)
+        except OSError:
+            pass
+    if template_config.exists():
+        try:
+            mtimes.append(template_config.stat().st_mtime)
+        except OSError:
+            pass
+
+    return max(mtimes) if mtimes else 0
+
+
+def load_config(*, force_reload: bool = False) -> dict[str, Any]:
+    """Load configuration with fallback chain and caching (ARCH-002).
 
     Order of precedence:
     1. User config (~/.claude/worktree-manager.config.json)
@@ -155,10 +183,28 @@ def load_config() -> dict[str, Any]:
 
     User config values are deep-merged over template values.
 
+    The configuration is cached in memory and only reloaded when:
+    - force_reload=True is passed
+    - The config files have been modified since last load
+
+    Args:
+        force_reload: If True, bypass cache and reload from disk.
+
     Returns:
         The merged configuration dictionary (empty dict on any error)
     """
     import sys
+
+    global _config_cache, _config_mtime
+
+    # Check if we can use cached config
+    current_mtime = _get_config_mtime()
+    if (
+        not force_reload
+        and _config_cache is not None
+        and _config_mtime == current_mtime
+    ):
+        return _config_cache
 
     user_config = get_user_config_path()
     template_config = get_template_config_path()
@@ -171,9 +217,9 @@ def load_config() -> dict[str, Any]:
             with open(template_config, encoding="utf-8") as f:
                 config = json.load(f)
         except json.JSONDecodeError as e:
-            sys.stderr.write(f"config_loader: Malformed template config JSON: {e}\n")
+            sys.stderr.write(f"cs-config: Malformed template config JSON: {e}\n")
         except OSError as e:
-            sys.stderr.write(f"config_loader: Error reading template config: {e}\n")
+            sys.stderr.write(f"cs-config: Error reading template config: {e}\n")
 
     # Override with user config if it exists
     if user_config.exists():
@@ -182,11 +228,26 @@ def load_config() -> dict[str, Any]:
                 user = json.load(f)
                 config = deep_merge(config, user)
         except json.JSONDecodeError as e:
-            sys.stderr.write(f"config_loader: Malformed user config JSON: {e}\n")
+            sys.stderr.write(f"cs-config: Malformed user config JSON: {e}\n")
         except OSError as e:
-            sys.stderr.write(f"config_loader: Error reading user config: {e}\n")
+            sys.stderr.write(f"cs-config: Error reading user config: {e}\n")
+
+    # Update cache
+    _config_cache = config
+    _config_mtime = current_mtime
 
     return config
+
+
+def reset_config_cache() -> None:
+    """Reset the config cache for testing (ARCH-002).
+
+    This function allows tests to reset the module-level cache
+    to ensure test isolation.
+    """
+    global _config_cache, _config_mtime
+    _config_cache = None
+    _config_mtime = None
 
 
 def get_lifecycle_config() -> dict[str, Any]:

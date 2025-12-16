@@ -49,7 +49,22 @@ plugins/cs/
 │   ├── s.md           # /cs:s - Status monitoring
 │   ├── c.md           # /cs:c - Project close-out
 │   ├── log.md         # /cs:log - Prompt capture toggle
+│   ├── remember.md    # /cs:remember - Memory capture
+│   ├── recall.md      # /cs:recall - Memory search
+│   ├── context.md     # /cs:context - Load spec memories
+│   ├── memory.md      # /cs:memory - Memory admin
 │   └── wt/            # Worktree commands
+├── memory/            # cs-memory Git-native memory system
+│   ├── models.py      # Data models (Memory, CaptureResult, etc.)
+│   ├── config.py      # Configuration constants
+│   ├── git_ops.py     # Git notes operations
+│   ├── note_parser.py # YAML front matter parsing
+│   ├── capture.py     # Memory capture service
+│   ├── recall.py      # Search/recall service
+│   ├── embedding.py   # sentence-transformers embeddings
+│   ├── index.py       # SQLite + sqlite-vec index
+│   ├── USER_GUIDE.md  # End-user documentation
+│   └── DEVELOPER_GUIDE.md  # Developer integration guide
 ├── filters/           # Content filtering pipeline
 │   ├── pipeline.py    # Secret detection + truncation
 │   ├── log_entry.py   # Log entry schema (dataclass)
@@ -73,7 +88,41 @@ plugins/cs/
 │   ├── log_analyzer.py    # Log file analysis
 │   └── analyze_cli.py     # CLI for retrospective analysis
 ├── skills/worktree-manager/  # Worktree automation (config at ~/.claude/worktree-manager.config.json)
-└── tests/             # Pytest test suite (200 tests)
+└── tests/             # Pytest test suite (600+ tests)
+```
+
+### cs-memory Module
+
+The memory module (`plugins/cs/memory/`) provides Git-native persistent memory:
+
+**Key Files:**
+- `models.py` - Frozen dataclasses: `Memory`, `MemoryResult`, `CaptureResult`, `HydrationLevel`
+- `capture.py` - `CaptureService` with auto-sync configuration
+- `recall.py` - `RecallService` for semantic search
+- `git_ops.py` - `GitOps` for Git notes operations
+- `index.py` - `IndexService` using SQLite + sqlite-vec
+- `note_parser.py` - YAML front matter parsing, memory ID generation
+
+**Memory ID Format:** `<namespace>:<short_sha>:<timestamp_ms>`
+- Example: `decisions:abc123d:1702560000000`
+- Timestamp ensures uniqueness when multiple memories attach to the same commit
+
+**Auto-Configuration:** On first capture, git is configured for notes sync:
+- Push/fetch refspecs: `refs/notes/cs/*:refs/notes/cs/*`
+- Rewrite ref: `refs/notes/cs/*` (preserves notes during rebase)
+- Merge strategy: `cat_sort_uniq`
+
+**Auto-Capture:** Memories are automatically captured during `/cs:*` commands:
+- `/cs:p` - Inception, elicitation, research, decisions
+- `/cs:i` - Progress, blockers, learnings, deviations
+- `/cs:c` - Retrospective, learnings, patterns
+- `/cs:review` - Review findings, recurring patterns
+
+Specialized capture methods: `capture_review()`, `capture_retrospective()`, `capture_pattern()`
+
+Control via environment variable:
+```bash
+export CS_AUTO_CAPTURE_ENABLED=false  # Disable auto-capture
 ```
 
 ### Data Flow
@@ -106,7 +155,7 @@ plugins/cs/
 
 4. **Filter Pipeline** (`filters/pipeline.py`):
    - Pre-compiled regex patterns for 15+ secret types (AWS, GitHub, API keys, etc.)
-   - Order: secrets → truncation
+   - Order: secrets -> truncation
    - Returns `FilterResult` with statistics
 
 ### Lifecycle Configuration
@@ -151,6 +200,9 @@ Pre/post steps are configured via `~/.claude/worktree-manager.config.json`:
 project-root/
 ├── .prompt-log-enabled   # Marker at root to capture first prompt
 ├── .prompt-log.json      # Log file at root (archived to completed/)
+├── .cs-memory/           # Memory index (gitignored)
+│   ├── index.db          # SQLite + sqlite-vec index
+│   └── models/           # Cached embedding model
 └── docs/spec/
     ├── active/           # In-progress projects
     │   └── YYYY-MM-DD-slug/
@@ -207,16 +259,29 @@ def test_something(temp_project_dir, monkeypatch):
 ## Plugin Command Workflow
 
 ```
-/cs:p "idea"  →  Plan with Socratic elicitation
-       ↓
-/cs:i slug    →  Track implementation (PROGRESS.md)
-       ↓
-/cs:s         →  Monitor status
-       ↓
-/cs:c slug    →  Close out with retrospective
+/cs:p "idea"  ->  Plan with Socratic elicitation
+       |
+/cs:i slug    ->  Track implementation (PROGRESS.md)
+       |
+/cs:s         ->  Monitor status
+       |
+/cs:c slug    ->  Close out with retrospective
 ```
 
 Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planning.
+
+### Memory Commands
+
+| Command | Description |
+|---------|-------------|
+| `/cs:remember <type> <summary>` | Capture a memory (decision, learning, blocker, progress, pattern) |
+| `/cs:recall <query>` | Semantic search across memories |
+| `/cs:context [spec]` | Load all memories for a spec |
+| `/cs:memory status` | View memory statistics and index health |
+| `/cs:memory reindex` | Rebuild index from Git notes |
+| `/cs:memory verify` | Check index consistency |
+| `/cs:memory gc` | Remove orphaned entries |
+| `/cs:memory export` | Export memories to JSON |
 
 ### Worktree Commands
 
@@ -232,6 +297,34 @@ Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planni
 (None - all projects completed)
 
 ## Completed Spec Projects
+
+- `docs/spec/completed/2025-12-15-memory-auto-capture/` - Memory Auto-Capture Implementation
+  - Completed: 2025-12-15
+  - Outcome: success
+  - Effort: 2.5 hours (17 tasks across 4 phases)
+  - Quality: 634 tests passing, 87% coverage maintained
+  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, IMPLEMENTATION_PLAN.md, RETROSPECTIVE.md
+  - Key changes:
+    - 3 new capture methods: `capture_review()`, `capture_retrospective()`, `capture_pattern()`
+    - Auto-capture integration in `/cs:p`, `/cs:i`, `/cs:c`, `/cs:review` commands
+    - CaptureAccumulator model for tracking captures during command execution
+    - CS_AUTO_CAPTURE_ENABLED environment variable for user control
+    - Command file cleanup: 400+ lines of pseudo-code replaced with executable integration
+    - validate_auto_capture_namespace() wiring AUTO_CAPTURE_NAMESPACES config
+
+- `docs/spec/completed/2025-12-14-cs-memory/` - Git-Native Memory System for claude-spec
+  - Completed: 2025-12-15
+  - Outcome: success
+  - Effort: 12 hours (vs 40-80 planned, -70% variance)
+  - Quality: 9.0/10 (post code review remediation)
+  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, IMPLEMENTATION_PLAN.md, DECISIONS.md
+  - Key changes:
+    - Git notes storage + SQLite/sqlite-vec semantic search
+    - 4 new commands: /cs:remember, /cs:recall, /cs:context, /cs:memory
+    - Memory ID format: `namespace:sha:timestamp_ms` (supports multiple per commit)
+    - Auto-configuration of git notes sync on first capture
+    - 600 tests passing (84 new memory tests)
+    - Comprehensive code review: 45 findings remediated
 
 - `docs/spec/completed/2025-12-13-pre-post-steps-commands/` - Pre and Post Steps for cs:* Commands
   - Completed: 2025-12-13

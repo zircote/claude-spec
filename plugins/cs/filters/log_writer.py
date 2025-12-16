@@ -89,6 +89,11 @@ Security Features
     during the open operation itself, preventing TOCTOU (time-of-check to
     time-of-use) vulnerabilities.
 
+**Restrictive File Permissions (SEC-005)**:
+    Log files are created with 0o600 (owner read/write only) to prevent
+    unauthorized access to potentially sensitive prompt data. This is more
+    restrictive than the typical 0o644 default.
+
 File Locations
 --------------
 
@@ -107,6 +112,11 @@ from pathlib import Path
 from .log_entry import LogEntry
 
 PROMPT_LOG_FILENAME = ".prompt-log.json"
+
+# SEC-005: Restrictive file permissions for log files
+# 0o600 = owner read/write only (no group or world access)
+# This prevents other users from reading potentially sensitive prompt data
+LOG_FILE_PERMISSIONS = 0o600
 
 
 class PathTraversalError(ValueError):
@@ -201,6 +211,7 @@ def append_to_log(project_dir: str, entry: LogEntry) -> bool:
     - Path traversal validation
     - Symlink attack prevention
     - Atomic write with file locking
+    - Restrictive file permissions (0o600 - owner only)
 
     Args:
         project_dir: Path to the spec project directory
@@ -231,11 +242,12 @@ def append_to_log(project_dir: str, entry: LogEntry) -> bool:
 
         # Open in append mode, create if doesn't exist
         # Use os.open with O_NOFOLLOW to prevent symlink attacks on open
+        # SEC-005: Use restrictive permissions (0o600) for new log files
         try:
             fd = os.open(
                 str(log_path),
                 os.O_WRONLY | os.O_CREAT | os.O_APPEND | getattr(os, "O_NOFOLLOW", 0),
-                0o644,
+                LOG_FILE_PERMISSIONS,
             )
         except OSError as e:
             # If O_NOFOLLOW fails because path is symlink, this is a security issue
