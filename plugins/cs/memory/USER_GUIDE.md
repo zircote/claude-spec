@@ -331,18 +331,54 @@ Memories are automatically captured during spec workflows:
 - Project inception notes
 - Requirements elicitation
 - Research findings
-- Architecture decisions
+- Architecture decisions (via `capture_decision()`)
 
 ### During Implementation (`/cs:i`)
-- Progress milestones
-- Blockers encountered
-- Learnings discovered
-- Plan deviations
+- Progress milestones (via `capture_progress()`)
+- Blockers encountered (via `capture_blocker()`)
+- Learnings discovered (via `capture_learning()`)
+- Plan deviations (via `capture_pattern()`)
 
 ### During Close-out (`/cs:c`)
-- Retrospective summary
-- Extracted learnings
-- Detected patterns
+- Retrospective summary (via `capture_retrospective()`)
+- Extracted learnings (via `capture_learning()`)
+- Success patterns (via `capture_pattern()`)
+- Anti-patterns (via `capture_pattern()`)
+
+### During Code Review (`/cs:review`)
+- Review findings (via `capture_review()`)
+- Recurring issue patterns (via `capture_pattern()`)
+
+### Capture Summary Display
+
+At the end of each command, a capture summary is displayed:
+```
+────────────────────────────────────────────────────────────────
+Memory Capture Summary
+────────────────────────────────────────────────────────────────
+Captured: 3 memories
+  ✓ decisions:abc123d:1702560000000 - Chose PostgreSQL for ACID
+  ✓ learnings:def456a:1702563600000 - Connection pooling critical
+  ✓ patterns:ghi789b:1702567200000 - Success: Early testing
+────────────────────────────────────────────────────────────────
+```
+
+### Disabling Auto-Capture
+
+To disable auto-capture, set the environment variable:
+```bash
+export CS_AUTO_CAPTURE_ENABLED=false
+```
+
+When disabled, commands display:
+```
+Memory auto-capture disabled (CS_AUTO_CAPTURE_ENABLED=false)
+```
+
+This is useful for:
+- Debugging command behavior without memory side effects
+- Running in environments where git notes aren't desired
+- Testing without accumulating test memories
 
 ## Hydration Levels
 
