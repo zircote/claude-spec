@@ -95,6 +95,9 @@ PROMPT_LOG.json
 # Prompt logging marker (ephemeral)
 .prompt-log-enabled
 
+# Worktree metadata (local to each worktree)
+.worktree-info
+
 # Worktree registry (user-specific)
 worktree-registry.json
 
