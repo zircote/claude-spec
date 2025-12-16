@@ -112,6 +112,19 @@ The memory module (`plugins/cs/memory/`) provides Git-native persistent memory:
 - Rewrite ref: `refs/notes/cs/*` (preserves notes during rebase)
 - Merge strategy: `cat_sort_uniq`
 
+**Auto-Capture:** Memories are automatically captured during `/cs:*` commands:
+- `/cs:p` - Inception, elicitation, research, decisions
+- `/cs:i` - Progress, blockers, learnings, deviations
+- `/cs:c` - Retrospective, learnings, patterns
+- `/cs:review` - Review findings, recurring patterns
+
+Specialized capture methods: `capture_review()`, `capture_retrospective()`, `capture_pattern()`
+
+Control via environment variable:
+```bash
+export CS_AUTO_CAPTURE_ENABLED=false  # Disable auto-capture
+```
+
 ### Data Flow
 
 1. **SessionStart Hook** (`hooks/session_start.py`):
@@ -284,6 +297,20 @@ Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planni
 (None - all projects completed)
 
 ## Completed Spec Projects
+
+- `docs/spec/completed/2025-12-15-memory-auto-capture/` - Memory Auto-Capture Implementation
+  - Completed: 2025-12-15
+  - Outcome: success
+  - Effort: 2.5 hours (17 tasks across 4 phases)
+  - Quality: 634 tests passing, 87% coverage maintained
+  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, IMPLEMENTATION_PLAN.md, RETROSPECTIVE.md
+  - Key changes:
+    - 3 new capture methods: `capture_review()`, `capture_retrospective()`, `capture_pattern()`
+    - Auto-capture integration in `/cs:p`, `/cs:i`, `/cs:c`, `/cs:review` commands
+    - CaptureAccumulator model for tracking captures during command execution
+    - CS_AUTO_CAPTURE_ENABLED environment variable for user control
+    - Command file cleanup: 400+ lines of pseudo-code replaced with executable integration
+    - validate_auto_capture_namespace() wiring AUTO_CAPTURE_NAMESPACES config
 
 - `docs/spec/completed/2025-12-14-cs-memory/` - Git-Native Memory System for claude-spec
   - Completed: 2025-12-15
