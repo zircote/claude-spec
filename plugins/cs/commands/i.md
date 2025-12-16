@@ -566,6 +566,138 @@ Memory captured:
 ```
 </quality_gate>
 
+<documentation_gate>
+### Documentation Gate (Before Phase/Project Completion)
+
+**MANDATORY**: Before marking a phase complete (especially the final phase), ensure all documentation is current.
+
+#### Trigger Conditions
+
+```
+IF phase is final phase (project completion):
+  -> Run FULL documentation gate (all checks)
+
+IF phase is intermediate:
+  -> Run LIGHT documentation gate (API docs only if APIs changed)
+```
+
+#### Step 1: Detect Documentation Locations
+
+Check for documentation in this order:
+1. **README.md** (project root) - Project overview, installation, usage
+2. **docs/** directory - User guides, tutorials, architecture
+3. **API docs** - OpenAPI/Swagger, docstrings, type annotations
+4. **CHANGELOG.md** - Version history, breaking changes
+5. **Man pages** - CLI tools (if applicable)
+6. **CLAUDE.md** - Project-specific AI instructions
+
+#### Step 2: Identify What Changed
+
+```bash
+# Files changed in this phase
+git diff --name-only $(git merge-base HEAD main)..HEAD
+
+# Categorize changes
+- New features added?     -> Update README, docs/, CHANGELOG
+- API changes?            -> Update API docs, CHANGELOG
+- CLI changes?            -> Update README, man pages
+- Configuration changes?  -> Update README, docs/
+- Breaking changes?       -> Update CHANGELOG (## Breaking), migration guide
+```
+
+#### Step 3: Documentation Checklist
+
+For **project completion**, ALL must be checked:
+
+```
+[ ] README.md reflects current functionality
+    - Installation instructions accurate
+    - Usage examples work with current API
+    - Feature list complete
+    - Badge/status indicators current
+
+[ ] CHANGELOG.md has release entry
+    - All notable changes listed
+    - Breaking changes highlighted
+    - Migration steps if needed
+
+[ ] API documentation current (if applicable)
+    - All public functions/methods documented
+    - Type signatures accurate
+    - Examples compile/run
+
+[ ] docs/ folder updated (if exists)
+    - User guides reflect current behavior
+    - Tutorials work with current version
+    - Architecture docs match implementation
+
+[ ] CLAUDE.md updated (if exists)
+    - Build commands current
+    - Project structure accurate
+    - Completed specs listed
+```
+
+#### Step 4: Deploy Documentation Agent
+
+```
+Use Task tool with:
+  subagent_type: "documentation-engineer"
+  prompt: "Review and update all documentation for {project}.
+           Changed files: {list}.
+           Ensure README, CHANGELOG, and docs/ are current.
+           Return list of updates made."
+```
+
+#### Step 5: Handle Missing Documentation
+
+```
+IF documentation gaps found:
+  -> Create missing docs (README sections, user guides)
+  -> Update stale content
+  -> Re-run documentation check
+
+IF documentation complete:
+  -> Proceed to mark phase/project complete
+```
+
+**A phase is NOT complete until documentation is current. No exceptions.**
+
+#### Example Flow
+
+```
+[Phase 4 complete - triggering documentation gate]
+
+Step 1: Detected documentation locations
+  ✓ README.md (project root)
+  ✓ docs/USER_GUIDE.md
+  ✓ docs/DEVELOPER_GUIDE.md
+  ✓ CHANGELOG.md
+  ✓ CLAUDE.md
+
+Step 2: Changes in this phase
+  - New capture methods added
+  - Config options added
+  - 3 new commands
+
+Step 3: Documentation checklist
+  ✗ README.md - missing new commands
+  ✗ CHANGELOG.md - no release entry
+  ✓ docs/USER_GUIDE.md - current
+  ✗ docs/DEVELOPER_GUIDE.md - missing capture methods
+  ✓ CLAUDE.md - current
+
+Step 4: Deploying documentation-engineer...
+  Updated README.md: Added commands section
+  Updated CHANGELOG.md: Added v1.1.0 entry
+  Updated DEVELOPER_GUIDE.md: Added capture method docs
+
+Step 5: Re-checking...
+  ✓ All documentation current
+
+Documentation gate passed. Proceeding to project completion.
+```
+</documentation_gate>
+
 ### Marking Tasks In-Progress
 
 When starting work on a task:
