@@ -362,9 +362,7 @@ class TestPatternDetectorLearningPatterns:
         patterns = detector.detect_patterns(memories)
 
         # Should detect performance learning cluster
-        learning_clusters = [
-            p for p in patterns if "Learning cluster" in p.name
-        ]
+        learning_clusters = [p for p in patterns if "Learning cluster" in p.name]
         assert len(learning_clusters) >= 1
         assert any("performance" in p.tags for p in learning_clusters)
 
@@ -395,9 +393,7 @@ class TestPatternDetectorDecisionPatterns:
         patterns = detector.detect_patterns(memories)
 
         # Should detect decision pattern for frontend
-        decision_patterns = [
-            p for p in patterns if "Decision pattern" in p.name
-        ]
+        decision_patterns = [p for p in patterns if "Decision pattern" in p.name]
         assert len(decision_patterns) >= 1
 
 

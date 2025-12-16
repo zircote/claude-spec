@@ -141,7 +141,6 @@ class TestConnectionErrors:
 
     def test_sqlite_vec_load_error(self, tmp_path):
         """Test error when sqlite-vec fails to load."""
-        import sqlite3
         from unittest.mock import MagicMock
 
         db_path = tmp_path / "test_vec_load.db"
@@ -743,7 +742,6 @@ class TestErrorHandling:
 
     def test_insert_rowid_not_found(self, tmp_path):
         """Test error when rowid not found after insert."""
-        import sqlite3
         from unittest.mock import MagicMock
 
         db_path = tmp_path / "test_insert_rowid.db"
