@@ -283,6 +283,97 @@ class TestGetDimensions:
             assert result == 384
 
 
+class TestLoadModelDirectly:
+    """Tests for _load_model method directly."""
+
+    def test_load_model_import_error(self, monkeypatch):
+        """Test ImportError when sentence-transformers not installed."""
+        service = EmbeddingService()
+
+        def mock_import(name, *args, **kwargs):
+            if name == "sentence_transformers":
+                raise ImportError("No module named 'sentence_transformers'")
+            return __builtins__.__import__(name, *args, **kwargs)
+
+        with patch("builtins.__import__", side_effect=mock_import):
+            with pytest.raises(EmbeddingError) as exc_info:
+                service._load_model()
+            assert "not installed" in str(exc_info.value)
+
+    def test_load_model_memory_error(self, monkeypatch, tmp_path):
+        """Test MemoryError during model loading."""
+        service = EmbeddingService(cache_dir=str(tmp_path))
+
+        mock_st = MagicMock()
+        mock_st.SentenceTransformer.side_effect = MemoryError("out of memory")
+
+        monkeypatch.setattr("memory.embedding.MODELS_DIR", tmp_path)
+
+        with patch.dict("sys.modules", {"sentence_transformers": mock_st}):
+            with pytest.raises(EmbeddingError) as exc_info:
+                service._load_model()
+            assert "Insufficient memory" in str(exc_info.value)
+
+    def test_load_model_oserror_no_space(self, monkeypatch, tmp_path):
+        """Test OSError with no space left on device."""
+        service = EmbeddingService(cache_dir=str(tmp_path))
+
+        mock_st = MagicMock()
+        mock_st.SentenceTransformer.side_effect = OSError("No space left on device")
+
+        monkeypatch.setattr("memory.embedding.MODELS_DIR", tmp_path)
+
+        with patch.dict("sys.modules", {"sentence_transformers": mock_st}):
+            with pytest.raises(EmbeddingError) as exc_info:
+                service._load_model()
+            assert "Insufficient disk space" in str(exc_info.value)
+
+    def test_load_model_oserror_generic(self, monkeypatch, tmp_path):
+        """Test generic OSError during model loading."""
+        service = EmbeddingService(cache_dir=str(tmp_path))
+
+        mock_st = MagicMock()
+        mock_st.SentenceTransformer.side_effect = OSError("Network error")
+
+        monkeypatch.setattr("memory.embedding.MODELS_DIR", tmp_path)
+
+        with patch.dict("sys.modules", {"sentence_transformers": mock_st}):
+            with pytest.raises(EmbeddingError) as exc_info:
+                service._load_model()
+            assert "Failed to load" in str(exc_info.value)
+
+    def test_load_model_generic_exception(self, monkeypatch, tmp_path):
+        """Test generic exception during model loading."""
+        service = EmbeddingService(cache_dir=str(tmp_path))
+
+        mock_st = MagicMock()
+        mock_st.SentenceTransformer.side_effect = RuntimeError("unexpected error")
+
+        monkeypatch.setattr("memory.embedding.MODELS_DIR", tmp_path)
+
+        with patch.dict("sys.modules", {"sentence_transformers": mock_st}):
+            with pytest.raises(EmbeddingError) as exc_info:
+                service._load_model()
+            assert "Unexpected error" in str(exc_info.value)
+
+
+class TestEmbedBatchException:
+    """Tests for batch embedding exception paths."""
+
+    def test_batch_generic_exception(self):
+        """Test generic exception during batch embedding."""
+        service = EmbeddingService()
+
+        mock_model = MagicMock()
+        mock_model.encode.side_effect = RuntimeError("batch encoding failed")
+        service._model = mock_model
+
+        with pytest.raises(EmbeddingError) as exc_info:
+            service.embed_batch(["text1", "text2"])
+
+        assert "Batch embedding failed" in str(exc_info.value)
+
+
 class TestSimilarityBehavior:
     """Tests for embedding similarity behavior."""
 

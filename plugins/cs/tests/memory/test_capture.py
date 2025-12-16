@@ -5,7 +5,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from memory.capture import CaptureService, capture_lock
+from memory.capture import (
+    CaptureService,
+    capture_lock,
+    is_auto_capture_enabled,
+    validate_auto_capture_namespace,
+)
 from memory.config import EMBEDDING_DIMENSIONS, MAX_CONTENT_LENGTH
 from memory.exceptions import CaptureError
 from memory.models import Memory
@@ -529,3 +534,291 @@ class TestCaptureProgress:
 
         assert result.success is True
         assert result.memory.content == "Task completed"
+
+
+class TestValidateAutoCaptureNamespace:
+    """Tests for validate_auto_capture_namespace function."""
+
+    def test_valid_namespace_in_auto_capture(self):
+        """Test that valid namespace in AUTO_CAPTURE_NAMESPACES returns True."""
+        # 'decisions' is in both NAMESPACES and AUTO_CAPTURE_NAMESPACES
+        result = validate_auto_capture_namespace("decisions")
+        assert result is True
+
+    def test_valid_namespace_not_in_auto_capture(self):
+        """Test that valid namespace not in AUTO_CAPTURE_NAMESPACES returns False."""
+        # 'reviews' is in NAMESPACES but not in AUTO_CAPTURE_NAMESPACES
+        result = validate_auto_capture_namespace("reviews")
+        assert result is False
+
+    def test_invalid_namespace_raises_error(self):
+        """Test that invalid namespace raises CaptureError."""
+        with pytest.raises(CaptureError) as exc_info:
+            validate_auto_capture_namespace("invalid_namespace")
+
+        assert "Invalid namespace" in str(exc_info.value)
+        assert "invalid_namespace" in str(exc_info.value)
+
+
+class TestCaptureReview:
+    """Tests for capture_review method."""
+
+    def test_capture_review_success(self, capture_service, tmp_path):
+        """Test successful review capture."""
+        lock_file = tmp_path / "test.lock"
+
+        with patch("memory.capture.LOCK_FILE", lock_file):
+            result = capture_service.capture_review(
+                spec="test-spec",
+                summary="SQL injection vulnerability",
+                category="security",
+                severity="critical",
+                file_path="src/db/queries.py",
+                line=42,
+                description="User input is concatenated directly into SQL query",
+                suggested_fix="Use parameterized queries",
+                impact="Allows attacker to execute arbitrary SQL",
+                tags=["owasp"],
+            )
+
+        assert result.success is True
+        assert result.memory is not None
+        assert result.memory.namespace == "reviews"
+        assert result.memory.status == "open"
+        assert result.indexed is True
+
+    def test_capture_review_invalid_category(self, capture_service):
+        """Test capture_review with invalid category raises error."""
+        with pytest.raises(CaptureError) as exc_info:
+            capture_service.capture_review(
+                spec="test-spec",
+                summary="Test finding",
+                category="invalid_category",
+                severity="high",
+                file_path="test.py",
+                line=1,
+                description="Test",
+            )
+
+        assert "Invalid review category" in str(exc_info.value)
+        assert "invalid_category" in str(exc_info.value)
+
+    def test_capture_review_invalid_severity(self, capture_service):
+        """Test capture_review with invalid severity raises error."""
+        with pytest.raises(CaptureError) as exc_info:
+            capture_service.capture_review(
+                spec="test-spec",
+                summary="Test finding",
+                category="security",
+                severity="invalid_severity",
+                file_path="test.py",
+                line=1,
+                description="Test",
+            )
+
+        assert "Invalid review severity" in str(exc_info.value)
+        assert "invalid_severity" in str(exc_info.value)
+
+    def test_capture_review_formats_content(self, capture_service, tmp_path):
+        """Test that capture_review formats content correctly."""
+        lock_file = tmp_path / "test.lock"
+
+        with patch("memory.capture.LOCK_FILE", lock_file):
+            result = capture_service.capture_review(
+                spec="test-spec",
+                summary="Performance issue",
+                category="performance",
+                severity="medium",
+                file_path="src/api/handlers.py",
+                line=100,
+                description="N+1 query in loop",
+                suggested_fix="Use eager loading",
+                impact="Slow response times",
+            )
+
+        content = result.memory.content
+        assert "## Category" in content
+        assert "performance" in content
+        assert "## Severity" in content
+        assert "medium" in content
+        assert "## Location" in content
+        assert "src/api/handlers.py:100" in content
+        assert "## Description" in content
+        assert "N+1 query in loop" in content
+        assert "## Impact" in content
+        assert "Slow response times" in content
+        assert "## Suggested Fix" in content
+        assert "Use eager loading" in content
+
+
+class TestCaptureRetrospective:
+    """Tests for capture_retrospective method."""
+
+    def test_capture_retrospective_success(self, capture_service, tmp_path):
+        """Test successful retrospective capture."""
+        lock_file = tmp_path / "test.lock"
+
+        with patch("memory.capture.LOCK_FILE", lock_file):
+            result = capture_service.capture_retrospective(
+                spec="test-spec",
+                summary="Retrospective: test-spec",
+                outcome="success",
+                what_went_well=["Good planning", "Clear requirements"],
+                what_to_improve=["Better testing", "More documentation"],
+                key_learnings=["Start testing early", "Document as you go"],
+                recommendations=["Use TDD", "Weekly reviews"],
+                tags=["q4-2024"],
+            )
+
+        assert result.success is True
+        assert result.memory is not None
+        assert result.memory.namespace == "retrospective"
+        assert result.memory.phase == "close-out"
+        assert "retrospective" in result.memory.tags
+        assert "success" in result.memory.tags
+        assert result.indexed is True
+
+    def test_capture_retrospective_invalid_outcome(self, capture_service):
+        """Test capture_retrospective with invalid outcome raises error."""
+        with pytest.raises(CaptureError) as exc_info:
+            capture_service.capture_retrospective(
+                spec="test-spec",
+                summary="Retrospective: test-spec",
+                outcome="invalid_outcome",
+                what_went_well=["Good"],
+                what_to_improve=["Better"],
+                key_learnings=["Learning"],
+            )
+
+        assert "Invalid retrospective outcome" in str(exc_info.value)
+        assert "invalid_outcome" in str(exc_info.value)
+
+    def test_capture_retrospective_with_metrics(self, capture_service, tmp_path):
+        """Test capture_retrospective with metrics formats content correctly."""
+        lock_file = tmp_path / "test.lock"
+
+        with patch("memory.capture.LOCK_FILE", lock_file):
+            result = capture_service.capture_retrospective(
+                spec="test-spec",
+                summary="Retrospective: test-spec",
+                outcome="partial",
+                what_went_well=["Fast delivery"],
+                what_to_improve=["Scope creep"],
+                key_learnings=["Define scope clearly"],
+                metrics={
+                    "duration": "2 weeks",
+                    "effort": "40 hours",
+                    "scope_variance": "+15%",
+                },
+            )
+
+        content = result.memory.content
+        assert "## Outcome" in content
+        assert "partial" in content
+        assert "## What Went Well" in content
+        assert "- Fast delivery" in content
+        assert "## What Could Be Improved" in content
+        assert "- Scope creep" in content
+        assert "## Key Learnings" in content
+        assert "- Define scope clearly" in content
+        assert "## Metrics" in content
+        assert "**duration**: 2 weeks" in content
+        assert "**effort**: 40 hours" in content
+        assert "**scope_variance**: +15%" in content
+
+
+class TestIsAutoCaptureEnabled:
+    """Tests for is_auto_capture_enabled function."""
+
+    def test_enabled_by_default(self, monkeypatch):
+        """Test that auto-capture is enabled by default when env var not set."""
+        monkeypatch.delenv("CS_AUTO_CAPTURE_ENABLED", raising=False)
+        assert is_auto_capture_enabled() is True
+
+    def test_enabled_with_true_values(self, monkeypatch):
+        """Test that various truthy values enable auto-capture."""
+        for value in ["true", "True", "TRUE", "1", "yes", "Yes", "on", "ON"]:
+            monkeypatch.setenv("CS_AUTO_CAPTURE_ENABLED", value)
+            assert is_auto_capture_enabled() is True, f"Failed for value: {value}"
+
+    def test_disabled_with_false_values(self, monkeypatch):
+        """Test that various falsy values disable auto-capture."""
+        for value in ["false", "False", "FALSE", "0", "no", "No", "off", "OFF"]:
+            monkeypatch.setenv("CS_AUTO_CAPTURE_ENABLED", value)
+            assert is_auto_capture_enabled() is False, f"Failed for value: {value}"
+
+    def test_empty_string_uses_default(self, monkeypatch):
+        """Test that empty string uses the default (enabled)."""
+        monkeypatch.setenv("CS_AUTO_CAPTURE_ENABLED", "")
+        assert is_auto_capture_enabled() is True
+
+
+class TestCapturePattern:
+    """Tests for capture_pattern method."""
+
+    def test_capture_pattern_success(self, capture_service, tmp_path):
+        """Test successful pattern capture."""
+        lock_file = tmp_path / "test.lock"
+
+        with patch("memory.capture.LOCK_FILE", lock_file):
+            result = capture_service.capture_pattern(
+                spec="test-spec",
+                summary="Repository pattern for data access",
+                pattern_type="success",
+                description="Abstraction layer between business logic and data layer",
+                context="When working with multiple data sources",
+                applicability="Any project with complex data access requirements",
+                evidence="Reduced coupling in 3 projects",
+                tags=["architecture", "data-access"],
+            )
+
+        assert result.success is True
+        assert result.memory is not None
+        assert result.memory.namespace == "patterns"
+        assert "pattern" in result.memory.tags
+        assert "success" in result.memory.tags
+        assert result.indexed is True
+
+    def test_capture_pattern_invalid_type(self, capture_service):
+        """Test capture_pattern with invalid pattern_type raises error."""
+        with pytest.raises(CaptureError) as exc_info:
+            capture_service.capture_pattern(
+                spec="test-spec",
+                summary="Test pattern",
+                pattern_type="invalid_type",
+                description="Description",
+                context="Context",
+                applicability="Applicability",
+            )
+
+        assert "Invalid pattern type" in str(exc_info.value)
+        assert "invalid_type" in str(exc_info.value)
+
+    def test_capture_pattern_formats_content(self, capture_service, tmp_path):
+        """Test that capture_pattern formats content correctly."""
+        lock_file = tmp_path / "test.lock"
+
+        with patch("memory.capture.LOCK_FILE", lock_file):
+            result = capture_service.capture_pattern(
+                spec=None,  # Global pattern
+                summary="Avoid global state",
+                pattern_type="anti-pattern",
+                description="Using global variables for state management",
+                context="Multi-threaded applications",
+                applicability="All concurrent code",
+                evidence="Caused 5 race conditions in project X",
+            )
+
+        content = result.memory.content
+        assert "## Pattern Type" in content
+        assert "anti-pattern" in content
+        assert "## Description" in content
+        assert "Using global variables" in content
+        assert "## Context" in content
+        assert "Multi-threaded applications" in content
+        assert "## Applicability" in content
+        assert "All concurrent code" in content
+        assert "## Evidence" in content
+        assert "Caused 5 race conditions" in content
+        # Verify spec is None for global pattern
+        assert result.memory.spec is None

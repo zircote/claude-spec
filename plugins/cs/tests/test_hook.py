@@ -386,5 +386,108 @@ class TestMain(unittest.TestCase):
         self.assertEqual(output["decision"], "approve")
 
 
+class TestFallbackPaths(unittest.TestCase):
+    """Tests for fallback I/O paths."""
+
+    def setUp(self):
+        """Create temporary directory structure."""
+        self.temp_dir = tempfile.mkdtemp()
+        # Enable logging
+        marker_path = os.path.join(self.temp_dir, ".prompt-log-enabled")
+        open(marker_path, "w").close()
+
+    def tearDown(self):
+        """Clean up temporary files."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_fallback_io_when_io_unavailable(self):
+        """Should use fallback I/O when IO_AVAILABLE is False."""
+        input_data = {
+            "prompt": "test prompt",
+            "cwd": self.temp_dir,
+            "session_id": "test",
+        }
+        # Patch IO_AVAILABLE to False but keep FALLBACK_AVAILABLE True
+        with patch("hooks.prompt_capture.IO_AVAILABLE", False):
+            with patch("hooks.prompt_capture.FALLBACK_AVAILABLE", True):
+                with patch("sys.stdin", StringIO(json.dumps(input_data))):
+                    with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                        main()
+
+        output = json.loads(mock_stdout.getvalue().strip())
+        self.assertEqual(output["decision"], "approve")
+
+    def test_inline_fallback_when_all_unavailable(self):
+        """Should use inline fallback when both IO and FALLBACK are unavailable."""
+        input_data = {
+            "prompt": "test prompt",
+            "cwd": self.temp_dir,
+            "session_id": "test",
+        }
+        # Patch both to False
+        with patch("hooks.prompt_capture.IO_AVAILABLE", False):
+            with patch("hooks.prompt_capture.FALLBACK_AVAILABLE", False):
+                with patch("sys.stdin", StringIO(json.dumps(input_data))):
+                    with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                        main()
+
+        output = json.loads(mock_stdout.getvalue().strip())
+        self.assertEqual(output["decision"], "approve")
+
+    def test_inline_fallback_with_malformed_input(self):
+        """Should handle malformed input with inline fallback."""
+        with patch("hooks.prompt_capture.IO_AVAILABLE", False):
+            with patch("hooks.prompt_capture.FALLBACK_AVAILABLE", False):
+                with patch("sys.stdin", StringIO("not json")):
+                    with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                        with patch("sys.stderr", new_callable=StringIO):
+                            main()
+
+        output = json.loads(mock_stdout.getvalue().strip())
+        self.assertEqual(output["decision"], "approve")
+
+    def test_inline_fallback_write_output_exception(self):
+        """Should handle write exception in inline fallback."""
+        input_data = {
+            "prompt": "test prompt",
+            "cwd": self.temp_dir,
+            "session_id": "test",
+        }
+        # Patch to use inline fallback
+        with patch("hooks.prompt_capture.IO_AVAILABLE", False):
+            with patch("hooks.prompt_capture.FALLBACK_AVAILABLE", False):
+                with patch("hooks.prompt_capture.FILTERS_AVAILABLE", False):
+                    with patch("sys.stdin", StringIO(json.dumps(input_data))):
+                        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                            main()
+
+        output = json.loads(mock_stdout.getvalue().strip())
+        self.assertEqual(output["decision"], "approve")
+
+
+class TestFallbackIOFunctions(unittest.TestCase):
+    """Tests for _fallback_io_read_input and _fallback_io_write_output functions."""
+
+    def test_fallback_io_read_input(self):
+        """Test _fallback_io_read_input wrapper function."""
+        from hooks.prompt_capture import _fallback_io_read_input
+
+        input_data = {"prompt": "test", "cwd": "/tmp"}
+        with patch("sys.stdin", StringIO(json.dumps(input_data))):
+            result = _fallback_io_read_input()
+
+        self.assertEqual(result, input_data)
+
+    def test_fallback_io_write_output(self):
+        """Test _fallback_io_write_output wrapper function."""
+        from hooks.prompt_capture import _fallback_io_write_output
+
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            _fallback_io_write_output({"decision": "approve"})
+
+        output = json.loads(mock_stdout.getvalue().strip())
+        self.assertEqual(output["decision"], "approve")
+
+
 if __name__ == "__main__":
     unittest.main()

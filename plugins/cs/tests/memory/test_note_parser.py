@@ -276,3 +276,132 @@ class TestMemoryIdFunctions:
         assert parsed_ns == original_ns
         assert parsed_sha == original_sha[:7]  # Short SHA
         assert parsed_ts == int(original_ts.timestamp() * 1000)
+
+
+# ============================================================================
+# ADDITIONAL TESTS FOR COVERAGE
+# ============================================================================
+
+
+class TestParseNoteEdgeCases:
+    """Tests for edge cases in parse_note function."""
+
+    def test_front_matter_not_a_dict_raises_error(self):
+        """Test that front matter not being a dict raises ParseError."""
+        content = """---
+Just a string value
+---
+
+Body content.
+"""
+        with pytest.raises(ParseError) as exc_info:
+            parse_note(content)
+        assert "must be a YAML mapping" in str(exc_info.value)
+
+    def test_tags_as_integer_normalized_to_list(self):
+        """Test that numeric tags are normalized to list of strings."""
+        content = """---
+type: decision
+spec: test
+timestamp: 2025-12-14T10:30:00Z
+summary: Test summary here
+tags: 42
+---
+
+Body content.
+"""
+        metadata, body = parse_note(content)
+        assert metadata["tags"] == ["42"]
+
+    def test_relates_to_as_string_normalized_to_list(self):
+        """Test that relates_to as string is normalized to list."""
+        content = """---
+type: decision
+spec: test
+timestamp: 2025-12-14T10:30:00Z
+summary: Test summary here
+relates_to: decisions:abc123:123456
+---
+
+Body content.
+"""
+        metadata, body = parse_note(content)
+        assert metadata["relates_to"] == ["decisions:abc123:123456"]
+
+    def test_relates_to_as_integer_normalized_to_list(self):
+        """Test that relates_to as non-list/non-string is normalized."""
+        content = """---
+type: decision
+spec: test
+timestamp: 2025-12-14T10:30:00Z
+summary: Test summary here
+relates_to: 12345
+---
+
+Body content.
+"""
+        metadata, body = parse_note(content)
+        assert metadata["relates_to"] == ["12345"]
+
+
+class TestValidateNoteWarnings:
+    """Tests for validate_note warnings."""
+
+    def test_warns_when_no_tags(self):
+        """Test that missing tags produces a warning."""
+        content = """---
+type: decision
+spec: test
+timestamp: 2025-12-14T10:30:00Z
+summary: A descriptive summary about this decision
+---
+
+Full context here.
+"""
+        warnings = validate_note(content)
+        assert any("tags" in w.lower() for w in warnings)
+
+    def test_warns_when_body_empty(self):
+        """Test that empty body produces a warning."""
+        content = """---
+type: decision
+spec: test
+timestamp: 2025-12-14T10:30:00Z
+summary: A descriptive summary about this decision
+tags: [test]
+---
+"""
+        warnings = validate_note(content)
+        assert any("body" in w.lower() and "empty" in w.lower() for w in warnings)
+
+    def test_warns_when_summary_too_short(self):
+        """Test that short summary produces a warning."""
+        content = """---
+type: decision
+spec: test
+timestamp: 2025-12-14T10:30:00Z
+summary: Short
+tags: [test]
+---
+
+Full context here.
+"""
+        warnings = validate_note(content)
+        assert any("summary" in w.lower() and "short" in w.lower() for w in warnings)
+
+
+class TestParseMemoryIdEdgeCases:
+    """Tests for edge cases in parse_memory_id function."""
+
+    def test_parse_memory_id_with_invalid_timestamp(self):
+        """Test parsing memory ID with non-integer timestamp."""
+        namespace, commit_sha, ts_ms = parse_memory_id("decisions:abc123d:not-a-number")
+        assert namespace == "decisions"
+        assert commit_sha == "abc123d"
+        assert ts_ms is None  # Invalid timestamp returns None
+
+    def test_parse_memory_id_with_too_many_colons_raises_error(self):
+        """Test that memory ID with too many parts raises ParseError."""
+        with pytest.raises(ParseError) as exc_info:
+            parse_memory_id("decisions:abc123d:123456:extra:parts")
+        assert "Invalid memory ID format" in str(exc_info.value)

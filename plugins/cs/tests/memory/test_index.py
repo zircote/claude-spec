@@ -125,6 +125,39 @@ class TestConnectionErrors:
         finally:
             sys.modules.update(original_modules)
 
+    def test_sqlite_connect_error(self, tmp_path):
+        """Test error when SQLite connection fails."""
+        import sqlite3
+
+        db_path = tmp_path / "test_connect_error.db"
+        service = IndexService(db_path=db_path)
+
+        with patch("sqlite3.connect") as mock_connect:
+            mock_connect.side_effect = sqlite3.Error("connection refused")
+            with pytest.raises(MemoryIndexError) as exc_info:
+                service._create_connection()
+
+            assert "Failed to open database" in str(exc_info.value)
+
+    def test_sqlite_vec_load_error(self, tmp_path):
+        """Test error when sqlite-vec fails to load."""
+        import sqlite3
+        from unittest.mock import MagicMock
+
+        db_path = tmp_path / "test_vec_load.db"
+        service = IndexService(db_path=db_path)
+
+        mock_conn = MagicMock()
+        mock_vec = MagicMock()
+        mock_vec.load.side_effect = Exception("extension load failed")
+
+        with patch("sqlite3.connect", return_value=mock_conn):
+            with patch.dict(sys.modules, {"sqlite_vec": mock_vec}):
+                with pytest.raises(MemoryIndexError) as exc_info:
+                    service._create_connection()
+
+                assert "Failed to load sqlite-vec" in str(exc_info.value)
+
 
 class TestInitialize:
     """Tests for database initialization."""
@@ -404,3 +437,439 @@ class TestRowToMemory:
         assert retrieved.tags == ()
         assert retrieved.status is None
         assert retrieved.relates_to == ()
+
+
+class TestGetBatch:
+    """Tests for batch retrieval."""
+
+    def test_get_batch_returns_matching(self, index_service):
+        """Test get_batch returns matching memories."""
+        index_service.initialize()
+
+        memory1 = make_memory(memory_id="test:001", summary="First")
+        memory2 = make_memory(memory_id="test:002", summary="Second")
+        memory3 = make_memory(memory_id="test:003", summary="Third")
+        embedding = make_embedding()
+
+        index_service.insert(memory1, embedding)
+        index_service.insert(memory2, embedding)
+        index_service.insert(memory3, embedding)
+
+        result = index_service.get_batch(["test:001", "test:003"])
+
+        assert len(result) == 2
+        assert "test:001" in result
+        assert "test:003" in result
+        assert result["test:001"].summary == "First"
+        assert result["test:003"].summary == "Third"
+
+    def test_get_batch_empty_list(self, index_service):
+        """Test get_batch with empty list returns empty dict."""
+        index_service.initialize()
+
+        result = index_service.get_batch([])
+        assert result == {}
+
+    def test_get_batch_partial_match(self, index_service):
+        """Test get_batch with some non-existent IDs."""
+        index_service.initialize()
+
+        memory1 = make_memory(memory_id="test:001", summary="First")
+        embedding = make_embedding()
+        index_service.insert(memory1, embedding)
+
+        result = index_service.get_batch(["test:001", "nonexistent:id"])
+
+        assert len(result) == 1
+        assert "test:001" in result
+
+
+class TestGetBySpec:
+    """Tests for spec-based retrieval."""
+
+    def test_get_by_spec_groups_by_namespace(self, index_service):
+        """Test get_by_spec returns memories grouped by namespace."""
+        index_service.initialize()
+
+        # Insert memories with same spec but different namespaces
+        memory1 = make_memory(
+            memory_id="test:001", spec="my-spec", namespace="decisions"
+        )
+        memory2 = make_memory(
+            memory_id="test:002", spec="my-spec", namespace="learnings"
+        )
+        memory3 = make_memory(
+            memory_id="test:003", spec="my-spec", namespace="decisions"
+        )
+        embedding = make_embedding()
+
+        index_service.insert(memory1, embedding)
+        index_service.insert(memory2, embedding)
+        index_service.insert(memory3, embedding)
+
+        result = index_service.get_by_spec("my-spec")
+
+        assert "decisions" in result
+        assert "learnings" in result
+        assert len(result["decisions"]) == 2
+        assert len(result["learnings"]) == 1
+
+    def test_get_by_spec_no_matches(self, index_service):
+        """Test get_by_spec with no matches returns empty dict."""
+        index_service.initialize()
+
+        result = index_service.get_by_spec("nonexistent-spec")
+        assert result == {}
+
+
+class TestListRecent:
+    """Tests for listing recent memories."""
+
+    def test_list_recent_ordered_by_timestamp(self, index_service):
+        """Test list_recent returns memories in timestamp order."""
+        index_service.initialize()
+
+        from datetime import timedelta
+
+        now = datetime.now()
+        memory1 = make_memory(
+            memory_id="test:001",
+            summary="Oldest",
+            timestamp=now - timedelta(days=2),
+        )
+        memory2 = make_memory(
+            memory_id="test:002",
+            summary="Middle",
+            timestamp=now - timedelta(days=1),
+        )
+        memory3 = make_memory(
+            memory_id="test:003",
+            summary="Newest",
+            timestamp=now,
+        )
+        embedding = make_embedding()
+
+        index_service.insert(memory1, embedding)
+        index_service.insert(memory2, embedding)
+        index_service.insert(memory3, embedding)
+
+        result = index_service.list_recent(limit=3)
+
+        assert len(result) == 3
+        assert result[0].summary == "Newest"
+        assert result[2].summary == "Oldest"
+
+    def test_list_recent_with_spec_filter(self, index_service):
+        """Test list_recent with spec filter."""
+        index_service.initialize()
+
+        memory1 = make_memory(memory_id="test:001", spec="spec-a")
+        memory2 = make_memory(memory_id="test:002", spec="spec-b")
+        embedding = make_embedding()
+
+        index_service.insert(memory1, embedding)
+        index_service.insert(memory2, embedding)
+
+        result = index_service.list_recent(spec="spec-a", limit=10)
+
+        assert len(result) == 1
+        assert result[0].spec == "spec-a"
+
+    def test_list_recent_with_namespace_filter(self, index_service):
+        """Test list_recent with namespace filter."""
+        index_service.initialize()
+
+        memory1 = make_memory(memory_id="test:001", namespace="decisions")
+        memory2 = make_memory(memory_id="test:002", namespace="learnings")
+        embedding = make_embedding()
+
+        index_service.insert(memory1, embedding)
+        index_service.insert(memory2, embedding)
+
+        result = index_service.list_recent(namespace="decisions", limit=10)
+
+        assert len(result) == 1
+        assert result[0].namespace == "decisions"
+
+    def test_list_recent_respects_limit(self, index_service):
+        """Test list_recent respects limit parameter."""
+        index_service.initialize()
+
+        for i in range(5):
+            memory = make_memory(memory_id=f"test:{i:03d}", summary=f"Memory {i}")
+            embedding = make_embedding()
+            index_service.insert(memory, embedding)
+
+        result = index_service.list_recent(limit=2)
+
+        assert len(result) == 2
+
+
+class TestGetByCommit:
+    """Tests for commit-based retrieval."""
+
+    def test_get_by_commit_returns_matching(self, index_service):
+        """Test get_by_commit returns memories for a commit."""
+        index_service.initialize()
+
+        memory1 = make_memory(memory_id="test:001", commit_sha="abc123")
+        memory2 = make_memory(memory_id="test:002", commit_sha="abc123")
+        memory3 = make_memory(memory_id="test:003", commit_sha="def456")
+        embedding = make_embedding()
+
+        index_service.insert(memory1, embedding)
+        index_service.insert(memory2, embedding)
+        index_service.insert(memory3, embedding)
+
+        result = index_service.get_by_commit("abc123")
+
+        assert len(result) == 2
+        for memory in result:
+            assert memory.commit_sha == "abc123"
+
+    def test_get_by_commit_no_matches(self, index_service):
+        """Test get_by_commit with no matches returns empty list."""
+        index_service.initialize()
+
+        result = index_service.get_by_commit("nonexistent")
+        assert result == []
+
+
+class TestGetAllIds:
+    """Tests for getting all memory IDs."""
+
+    def test_get_all_ids_returns_set(self, index_service):
+        """Test get_all_ids returns set of all IDs."""
+        index_service.initialize()
+
+        memory1 = make_memory(memory_id="test:001")
+        memory2 = make_memory(memory_id="test:002")
+        embedding = make_embedding()
+
+        index_service.insert(memory1, embedding)
+        index_service.insert(memory2, embedding)
+
+        result = index_service.get_all_ids()
+
+        assert result == {"test:001", "test:002"}
+
+    def test_get_all_ids_empty_db(self, index_service):
+        """Test get_all_ids on empty database."""
+        index_service.initialize()
+
+        result = index_service.get_all_ids()
+        assert result == set()
+
+
+class TestSearchVectorDateFilters:
+    """Tests for vector search with date filters."""
+
+    def test_search_with_since_filter(self, index_service):
+        """Test vector search with since filter."""
+        index_service.initialize()
+
+        from datetime import timedelta
+
+        now = datetime.now()
+        old = now - timedelta(days=7)
+        recent = now - timedelta(days=1)
+
+        memory_old = make_memory(memory_id="test:old", timestamp=old)
+        memory_recent = make_memory(memory_id="test:recent", timestamp=recent)
+        embedding = make_embedding()
+
+        index_service.insert(memory_old, embedding)
+        index_service.insert(memory_recent, embedding)
+
+        # Search with since filter (last 3 days)
+        since = now - timedelta(days=3)
+        results = index_service.search_vector(
+            embedding, filters={"since": since}, limit=5
+        )
+
+        # Should only find recent memory
+        result_ids = [r[0] for r in results]
+        assert "test:recent" in result_ids
+        assert "test:old" not in result_ids
+
+    def test_search_with_until_filter(self, index_service):
+        """Test vector search with until filter."""
+        index_service.initialize()
+
+        from datetime import timedelta
+
+        now = datetime.now()
+        old = now - timedelta(days=7)
+        recent = now - timedelta(days=1)
+
+        memory_old = make_memory(memory_id="test:old", timestamp=old)
+        memory_recent = make_memory(memory_id="test:recent", timestamp=recent)
+        embedding = make_embedding()
+
+        index_service.insert(memory_old, embedding)
+        index_service.insert(memory_recent, embedding)
+
+        # Search with until filter (before 3 days ago)
+        until = now - timedelta(days=3)
+        results = index_service.search_vector(
+            embedding, filters={"until": until}, limit=5
+        )
+
+        # Should only find old memory
+        result_ids = [r[0] for r in results]
+        assert "test:old" in result_ids
+        assert "test:recent" not in result_ids
+
+
+class TestErrorHandling:
+    """Tests for error handling paths."""
+
+    def test_initialize_error(self, tmp_path):
+        """Test error during database initialization."""
+        import sqlite3
+        from unittest.mock import MagicMock
+
+        db_path = tmp_path / "test_init_error.db"
+        service = IndexService(db_path=db_path)
+
+        mock_conn = MagicMock()
+        mock_conn.executescript.side_effect = sqlite3.Error("init failed")
+        service._conn = mock_conn
+
+        with pytest.raises(MemoryIndexError) as exc_info:
+            service.initialize()
+
+        assert "Failed to initialize database" in str(exc_info.value)
+
+    def test_insert_rowid_not_found(self, tmp_path):
+        """Test error when rowid not found after insert."""
+        import sqlite3
+        from unittest.mock import MagicMock
+
+        db_path = tmp_path / "test_insert_rowid.db"
+        service = IndexService(db_path=db_path)
+
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = None
+
+        mock_conn = MagicMock()
+        mock_conn.execute.return_value = mock_cursor
+        service._conn = mock_conn
+
+        memory = make_memory()
+        embedding = make_embedding()
+
+        with pytest.raises(MemoryIndexError) as exc_info:
+            service.insert(memory, embedding)
+
+        assert "Failed to get rowid" in str(exc_info.value)
+
+    def test_insert_sqlite_error(self, index_service):
+        """Test SQLite error during insert."""
+        import sqlite3
+        from unittest.mock import MagicMock
+
+        index_service.initialize()
+
+        # Replace connection with mock that raises error
+        mock_conn = MagicMock()
+        mock_conn.execute.side_effect = sqlite3.Error("insert failed")
+        index_service._conn = mock_conn
+
+        memory = make_memory()
+        embedding = make_embedding()
+
+        with pytest.raises(MemoryIndexError) as exc_info:
+            index_service.insert(memory, embedding)
+
+        assert "Failed to insert memory" in str(exc_info.value)
+
+    def test_delete_sqlite_error(self, index_service):
+        """Test SQLite error during delete."""
+        import sqlite3
+        from unittest.mock import MagicMock
+
+        index_service.initialize()
+
+        # Insert a memory first (with real connection)
+        memory = make_memory()
+        embedding = make_embedding()
+        index_service.insert(memory, embedding)
+
+        # Now mock the connection to raise error on delete
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = (1,)  # rowid exists
+
+        mock_conn = MagicMock()
+        mock_conn.execute.side_effect = [mock_cursor, sqlite3.Error("delete failed")]
+        index_service._conn = mock_conn
+
+        with pytest.raises(MemoryIndexError) as exc_info:
+            index_service.delete(memory.id)
+
+        assert "Failed to delete memory" in str(exc_info.value)
+
+    def test_update_sqlite_error(self, index_service):
+        """Test SQLite error during update."""
+        import sqlite3
+        from unittest.mock import MagicMock
+
+        index_service.initialize()
+
+        mock_conn = MagicMock()
+        mock_conn.execute.side_effect = sqlite3.Error("update failed")
+        index_service._conn = mock_conn
+
+        memory = make_memory()
+
+        with pytest.raises(MemoryIndexError) as exc_info:
+            index_service.update(memory)
+
+        assert "Failed to update memory" in str(exc_info.value)
+
+    def test_search_vector_error(self, index_service):
+        """Test SQLite error during vector search."""
+        import sqlite3
+        from unittest.mock import MagicMock
+
+        index_service.initialize()
+
+        mock_conn = MagicMock()
+        mock_conn.execute.side_effect = sqlite3.Error("search failed")
+        index_service._conn = mock_conn
+
+        embedding = make_embedding()
+
+        with pytest.raises(MemoryIndexError) as exc_info:
+            index_service.search_vector(embedding)
+
+        assert "Vector search failed" in str(exc_info.value)
+
+    def test_clear_sqlite_error(self, index_service):
+        """Test SQLite error during clear."""
+        import sqlite3
+        from unittest.mock import MagicMock
+
+        index_service.initialize()
+
+        mock_conn = MagicMock()
+        mock_conn.execute.side_effect = sqlite3.Error("clear failed")
+        index_service._conn = mock_conn
+
+        with pytest.raises(MemoryIndexError) as exc_info:
+            index_service.clear()
+
+        assert "Failed to clear index" in str(exc_info.value)
+
+    def test_get_stats_oserror_on_size(self, index_service):
+        """Test get_stats handles OSError when getting file size."""
+        index_service.initialize()
+
+        # Mock Path.stat at the class level
+        with patch("pathlib.Path.stat") as mock_stat:
+            mock_stat.side_effect = OSError("permission denied")
+
+            stats = index_service.get_stats()
+
+            # Should return 0 for size but not raise
+            assert stats.index_size_bytes == 0
