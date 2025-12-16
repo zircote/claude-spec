@@ -138,27 +138,69 @@ Each exception includes:
 ### CaptureService
 
 ```python
-from memory.capture import CaptureService
+from memory.capture import CaptureService, is_auto_capture_enabled
 
 capture = CaptureService()
 
-# Capture a memory
-result = capture.capture(
-    namespace="decisions",
-    summary="Chose PostgreSQL for ACID compliance",
-    content="Full markdown content...",
-    spec="auth-feature",
-    tags=["database", "architecture"],
-)
-# result.memory.id: "decisions:abc123d:1702560000000"
+# Check if auto-capture is enabled
+if is_auto_capture_enabled():
+    # Capture a memory
+    result = capture.capture(
+        namespace="decisions",
+        summary="Chose PostgreSQL for ACID compliance",
+        content="Full markdown content...",
+        spec="auth-feature",
+        tags=["database", "architecture"],
+    )
+    # result.memory.id: "decisions:abc123d:1702560000000"
 
-# Specialized methods
+# Specialized methods for different memory types
 capture.capture_decision(spec, summary, context, rationale, alternatives, tags)
 capture.capture_learning(spec, summary, insight, applicability, tags)
 capture.capture_blocker(spec, summary, problem, tags)
 capture.capture_progress(spec, summary, task_id, details)
 capture.resolve_blocker(memory_id, resolution)
+
+# New specialized methods for auto-capture
+capture.capture_review(
+    summary="Security: SQL injection vulnerability",
+    category="security",      # security|performance|architecture|quality|tests|documentation
+    severity="critical",       # critical|high|medium|low
+    file_path="src/auth/login.py",
+    line=42,
+    description="User input not sanitized before SQL query",
+    spec="auth-feature",
+    suggested_fix="Use parameterized queries",
+    impact="Allows arbitrary SQL execution",
+)
+
+capture.capture_retrospective(
+    summary="Retrospective: auth-feature",
+    outcome="success",         # success|partial|failed|abandoned
+    what_went_well=["Early performance testing", "Good code reviews"],
+    what_to_improve=["Documentation timing", "Test coverage"],
+    key_learnings=["Connection pooling critical for >100 users"],
+    spec="auth-feature",
+    metrics={"duration_days": 14, "effort_hours": 40},
+)
+
+capture.capture_pattern(
+    summary="Success: Early performance testing",
+    pattern_type="success",    # success|anti-pattern|deviation
+    description="Running load tests before feature freeze",
+    context="auth-feature project",
+    applicability="Apply when feature has >10 concurrent users",
+    spec="auth-feature",
+    evidence="Caught 3 performance issues before release",
+)
 ```
+
+**Auto-capture Configuration**: Control auto-capture via environment variable:
+```bash
+export CS_AUTO_CAPTURE_ENABLED=false  # Disable auto-capture
+```
+
+The `is_auto_capture_enabled()` function checks this variable (default: `true`).
 
 **Auto-sync Configuration**: On first capture, `CaptureService` automatically configures git for notes sync:
 - Push refspec: `refs/notes/cs/*:refs/notes/cs/*`
@@ -167,6 +209,66 @@ capture.resolve_blocker(memory_id, resolution)
 - Merge strategy: `cat_sort_uniq`
 
 This is idempotent - subsequent captures skip reconfiguration.
+
+### CaptureAccumulator
+
+Track multiple captures during command execution:
+
+```python
+from memory.models import CaptureAccumulator
+from memory.capture import CaptureService, is_auto_capture_enabled
+
+accumulator = CaptureAccumulator()
+capture = CaptureService()
+
+# During command execution, wrap each capture in try/except (fail-open design)
+if is_auto_capture_enabled():
+    try:
+        result = capture.capture_decision(...)
+        accumulator.add(result)
+    except Exception:
+        pass  # Log warning but don't block command
+
+    try:
+        result = capture.capture_learning(...)
+        accumulator.add(result)
+    except Exception:
+        pass
+
+# At end of command, display summary
+print(accumulator.summary())
+# Output:
+# ────────────────────────────────────────────────────────────────
+# Memory Capture Summary
+# ────────────────────────────────────────────────────────────────
+# Captured: 2 memories (0.5s)
+#   ✓ decisions:abc123d:1702560000000 - Chose PostgreSQL
+#   ✓ learnings:def456a:1702563600000 - Connection pooling
+# ────────────────────────────────────────────────────────────────
+
+# Access counts
+print(accumulator.count)          # 2
+print(accumulator.by_namespace)   # {"decisions": 1, "learnings": 1}
+```
+
+### Validation Helpers
+
+```python
+from memory.capture import validate_auto_capture_namespace
+from memory.config import AUTO_CAPTURE_NAMESPACES
+
+# Check if namespace is valid and enabled for auto-capture
+try:
+    is_enabled = validate_auto_capture_namespace("decisions")
+    # Returns True if in AUTO_CAPTURE_NAMESPACES, False otherwise
+except CaptureError:
+    # Raised if namespace is not in NAMESPACES at all
+    pass
+
+# Currently enabled namespaces
+print(AUTO_CAPTURE_NAMESPACES)
+# frozenset({'decisions', 'learnings', 'blockers', 'progress', 'reviews', 'retrospective', 'patterns'})
+```
 
 ### RecallService
 

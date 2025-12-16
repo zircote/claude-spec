@@ -6,7 +6,7 @@ All models are immutable (frozen) to ensure thread-safety and prevent accidental
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -241,3 +241,63 @@ class ReviewFinding:
     details: str
     status: str = "open"
     resolution: str | None = None
+
+
+@dataclass
+class CaptureAccumulator:
+    """
+    Tracks captures during a command execution for summary display.
+
+    This is a mutable container (NOT frozen) that accumulates CaptureResults
+    as they are captured during a command session.
+
+    Attributes:
+        captures: List of CaptureResult objects from this session
+        start_time: When the accumulator was created
+    """
+
+    captures: list[CaptureResult] = field(default_factory=list)
+    start_time: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+    def add(self, result: CaptureResult) -> None:
+        """Add a capture result to the accumulator."""
+        self.captures.append(result)
+
+    @property
+    def count(self) -> int:
+        """Return the number of captures."""
+        return len(self.captures)
+
+    @property
+    def by_namespace(self) -> dict[str, int]:
+        """Group capture counts by namespace."""
+        counts: dict[str, int] = {}
+        for capture in self.captures:
+            if capture.memory:
+                ns = capture.memory.namespace
+                counts[ns] = counts.get(ns, 0) + 1
+        return counts
+
+    def summary(self) -> str:
+        """Generate a summary string for display."""
+        if not self.captures:
+            return "No memories captured this session."
+
+        lines = [
+            "────────────────────────────────────────────────────────────────",
+            "Memory Capture Summary",
+            "────────────────────────────────────────────────────────────────",
+            f"Captured: {self.count} memories",
+        ]
+
+        for capture in self.captures:
+            if capture.memory:
+                status = "✓" if capture.success else "✗"
+                lines.append(
+                    f"  {status} {capture.memory.id} - {capture.memory.summary}"
+                )
+            elif capture.warning:
+                lines.append(f"  ⚠ {capture.warning}")
+
+        lines.append("────────────────────────────────────────────────────────────────")
+        return "\n".join(lines)

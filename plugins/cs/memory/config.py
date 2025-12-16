@@ -81,5 +81,51 @@ AUTO_CAPTURE_NAMESPACES = frozenset(
     }
 )
 
+# Review finding categories (FR-001)
+REVIEW_CATEGORIES = frozenset(
+    {
+        "security",
+        "performance",
+        "architecture",
+        "quality",
+        "tests",
+        "documentation",
+    }
+)
+
+# Review finding severities (FR-001)
+REVIEW_SEVERITIES = frozenset(
+    {
+        "critical",
+        "high",
+        "medium",
+        "low",
+    }
+)
+
+# Retrospective outcome values (FR-002)
+RETROSPECTIVE_OUTCOMES = frozenset(
+    {
+        "success",
+        "partial",
+        "failed",
+        "abandoned",
+    }
+)
+
+# Pattern type values (FR-003)
+PATTERN_TYPES = frozenset(
+    {
+        "success",
+        "anti-pattern",
+        "deviation",
+    }
+)
+
 # Proactive recall settings (US-016, NFR-013)
 MAX_PROACTIVE_SUGGESTIONS = 3
+
+# Auto-capture configuration (Task 3.3)
+# Environment variable to disable auto-capture (default: enabled)
+AUTO_CAPTURE_ENV_VAR = "CS_AUTO_CAPTURE_ENABLED"
+AUTO_CAPTURE_DEFAULT = True

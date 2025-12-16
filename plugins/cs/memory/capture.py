@@ -6,12 +6,25 @@ Includes concurrency safety via file locking per FR-022.
 """
 
 import fcntl
+import os
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
-from .config import LOCK_FILE, MAX_CONTENT_LENGTH, NAMESPACES
+from .config import (
+    AUTO_CAPTURE_DEFAULT,
+    AUTO_CAPTURE_ENV_VAR,
+    AUTO_CAPTURE_NAMESPACES,
+    LOCK_FILE,
+    MAX_CONTENT_LENGTH,
+    NAMESPACES,
+    PATTERN_TYPES,
+    RETROSPECTIVE_OUTCOMES,
+    REVIEW_CATEGORIES,
+    REVIEW_SEVERITIES,
+)
 from .embedding import EmbeddingService
 from .exceptions import CaptureError
 from .git_ops import GitOps
@@ -50,6 +63,43 @@ def capture_lock(lock_path: Path = LOCK_FILE) -> Generator[None, None, None]:
             ) from err
         finally:
             fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
+
+
+def validate_auto_capture_namespace(namespace: str) -> bool:
+    """
+    Check if namespace is valid and enabled for auto-capture.
+
+    Args:
+        namespace: The namespace to validate
+
+    Returns:
+        True if namespace is enabled for auto-capture
+
+    Raises:
+        CaptureError: If namespace is not a valid NAMESPACES value
+    """
+    if namespace not in NAMESPACES:
+        raise CaptureError(
+            f"Invalid namespace: {namespace}",
+            f"Use one of: {', '.join(sorted(NAMESPACES))}",
+        )
+    return namespace in AUTO_CAPTURE_NAMESPACES
+
+
+def is_auto_capture_enabled() -> bool:
+    """
+    Check if auto-capture is enabled via environment variable.
+
+    Auto-capture can be disabled by setting CS_AUTO_CAPTURE_ENABLED=false.
+    Default is enabled (true) if not set.
+
+    Returns:
+        True if auto-capture is enabled
+    """
+    env_value = os.environ.get(AUTO_CAPTURE_ENV_VAR, "").lower()
+    if not env_value:
+        return AUTO_CAPTURE_DEFAULT
+    return env_value in ("true", "1", "yes", "on")
 
 
 class CaptureService:
@@ -438,4 +488,252 @@ class CaptureService:
             spec=spec,
             commit=commit,
             phase="implementation",
+        )
+
+    def capture_retrospective(
+        self,
+        spec: str,
+        summary: str,
+        outcome: str,
+        what_went_well: list[str],
+        what_to_improve: list[str],
+        key_learnings: list[str],
+        recommendations: list[str] | None = None,
+        metrics: dict[str, Any] | None = None,
+        commit: str = "HEAD",
+        tags: list[str] | None = None,
+    ) -> CaptureResult:
+        """
+        Capture a project retrospective summary.
+
+        Called during /cs:c close-out to preserve project learnings.
+
+        Args:
+            spec: Specification slug (required for retrospectives)
+            summary: One-line summary (e.g., "Retrospective: project-name")
+            outcome: Project outcome (success, partial, failed, abandoned)
+            what_went_well: List of things that went well
+            what_to_improve: List of things to improve
+            key_learnings: List of key learnings
+            recommendations: List of recommendations for future projects (optional)
+            metrics: Dict of metrics (duration, effort, scope variance) (optional)
+            commit: Commit to attach note to
+            tags: Additional tags
+
+        Returns:
+            CaptureResult
+
+        Raises:
+            CaptureError: If outcome is invalid
+        """
+        if outcome not in RETROSPECTIVE_OUTCOMES:
+            raise CaptureError(
+                f"Invalid retrospective outcome: {outcome}",
+                f"Use one of: {', '.join(sorted(RETROSPECTIVE_OUTCOMES))}",
+            )
+
+        # Build structured content
+        body_parts = [
+            "## Outcome",
+            outcome,
+            "",
+            "## What Went Well",
+        ]
+        for item in what_went_well:
+            body_parts.append(f"- {item}")
+
+        body_parts.extend(["", "## What Could Be Improved"])
+        for item in what_to_improve:
+            body_parts.append(f"- {item}")
+
+        body_parts.extend(["", "## Key Learnings"])
+        for item in key_learnings:
+            body_parts.append(f"- {item}")
+
+        if recommendations:
+            body_parts.extend(["", "## Recommendations"])
+            for item in recommendations:
+                body_parts.append(f"- {item}")
+
+        if metrics:
+            body_parts.extend(["", "## Metrics"])
+            for key, value in metrics.items():
+                body_parts.append(f"- **{key}**: {value}")
+
+        content = "\n".join(body_parts)
+
+        # Build tags
+        all_tags = ["retrospective", outcome]
+        if tags:
+            all_tags.extend(tags)
+
+        return self.capture(
+            namespace="retrospective",
+            summary=summary,
+            content=content,
+            spec=spec,
+            commit=commit,
+            tags=all_tags,
+            phase="close-out",
+        )
+
+    def capture_pattern(
+        self,
+        spec: str | None,
+        summary: str,
+        pattern_type: str,
+        description: str,
+        context: str,
+        applicability: str,
+        evidence: str | None = None,
+        commit: str = "HEAD",
+        tags: list[str] | None = None,
+    ) -> CaptureResult:
+        """
+        Capture a reusable pattern or anti-pattern.
+
+        Patterns are cross-spec generalizations extracted from retrospectives
+        and deviations encountered during implementation.
+
+        Args:
+            spec: Specification slug (None for global patterns)
+            summary: One-line summary of the pattern
+            pattern_type: Type of pattern (success, anti-pattern, deviation)
+            description: What the pattern is
+            context: When/why this pattern applies
+            applicability: Where/when to apply this pattern
+            evidence: Evidence supporting the pattern (optional)
+            commit: Commit to attach note to
+            tags: Additional tags
+
+        Returns:
+            CaptureResult
+
+        Raises:
+            CaptureError: If pattern_type is invalid
+        """
+        if pattern_type not in PATTERN_TYPES:
+            raise CaptureError(
+                f"Invalid pattern type: {pattern_type}",
+                f"Use one of: {', '.join(sorted(PATTERN_TYPES))}",
+            )
+
+        # Build structured content
+        body_parts = [
+            "## Pattern Type",
+            pattern_type,
+            "",
+            "## Description",
+            description,
+            "",
+            "## Context",
+            context,
+            "",
+            "## Applicability",
+            applicability,
+        ]
+
+        if evidence:
+            body_parts.extend(["", "## Evidence", evidence])
+
+        content = "\n".join(body_parts)
+
+        # Build tags
+        all_tags = ["pattern", pattern_type]
+        if tags:
+            all_tags.extend(tags)
+
+        return self.capture(
+            namespace="patterns",
+            summary=summary,
+            content=content,
+            spec=spec,
+            commit=commit,
+            tags=all_tags,
+        )
+
+    def capture_review(
+        self,
+        spec: str | None,
+        summary: str,
+        category: str,
+        severity: str,
+        file_path: str,
+        line: int,
+        description: str,
+        suggested_fix: str | None = None,
+        impact: str | None = None,
+        commit: str = "HEAD",
+        tags: list[str] | None = None,
+    ) -> CaptureResult:
+        """
+        Capture a code review finding.
+
+        Args:
+            spec: Specification slug (None for global findings)
+            summary: One-line summary of the finding
+            category: Finding category (security, performance, architecture, quality, tests, documentation)
+            severity: Finding severity (critical, high, medium, low)
+            file_path: File path where the issue was found
+            line: Line number in the file
+            description: Detailed description of the finding
+            suggested_fix: How to fix the issue (optional)
+            impact: Impact of the issue (optional)
+            commit: Commit to attach note to
+            tags: Additional tags
+
+        Returns:
+            CaptureResult
+
+        Raises:
+            CaptureError: If category or severity is invalid
+        """
+        if category not in REVIEW_CATEGORIES:
+            raise CaptureError(
+                f"Invalid review category: {category}",
+                f"Use one of: {', '.join(sorted(REVIEW_CATEGORIES))}",
+            )
+
+        if severity not in REVIEW_SEVERITIES:
+            raise CaptureError(
+                f"Invalid review severity: {severity}",
+                f"Use one of: {', '.join(sorted(REVIEW_SEVERITIES))}",
+            )
+
+        # Build structured content
+        body_parts = [
+            "## Category",
+            category,
+            "",
+            "## Severity",
+            severity,
+            "",
+            "## Location",
+            f"{file_path}:{line}",
+            "",
+            "## Description",
+            description,
+        ]
+
+        if impact:
+            body_parts.extend(["", "## Impact", impact])
+
+        if suggested_fix:
+            body_parts.extend(["", "## Suggested Fix", suggested_fix])
+
+        content = "\n".join(body_parts)
+
+        # Build tags
+        all_tags = [category, severity, "code-review"]
+        if tags:
+            all_tags.extend(tags)
+
+        return self.capture(
+            namespace="reviews",
+            summary=summary,
+            content=content,
+            spec=spec,
+            commit=commit,
+            tags=all_tags,
+            status="open",
         )
