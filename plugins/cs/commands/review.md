@@ -100,7 +100,7 @@ ${END FOR}
 REVIEW PATTERNS
 ──────────────────────────────────────────────────────────────────
 ${FOR EACH pattern}
-⚠️ ${PATTERN_NAME}
+Warning: ${PATTERN_NAME}
    Frequency: ${OCCURRENCE_COUNT} times
    Last seen: ${LAST_SEEN}
 ${END FOR}
@@ -108,7 +108,7 @@ ${END FOR}
 LEARNINGS FROM PAST REVIEWS
 ──────────────────────────────────────────────────────────────────
 ${FOR EACH learning}
-💡 ${LEARNING_SUMMARY}
+Tip: ${LEARNING_SUMMARY}
    Applied in: ${SPECS_WHERE_APPLIED}
 ${END FOR}
 
@@ -288,10 +288,10 @@ TARGET: ${TARGET}
 FINDINGS: ${FINDING_COUNT}
 
 BY SEVERITY:
-  🔴 Critical: ${CRITICAL_COUNT}
-  🟠 High:     ${HIGH_COUNT}
-  🟡 Medium:   ${MEDIUM_COUNT}
-  🟢 Low:      ${LOW_COUNT}
+  Critical: ${CRITICAL_COUNT}
+  High:     ${HIGH_COUNT}
+  Medium:   ${MEDIUM_COUNT}
+  Low:      ${LOW_COUNT}
 
 BY CATEGORY:
   ${CATEGORY_BREAKDOWN}
@@ -345,40 +345,93 @@ When these patterns are detected multiple times across reviews, they're captured
 </review_patterns>
 
 <memory_integration>
-## Memory System Integration
+## Auto-Capture Instructions
 
-### Auto-Capture Triggers
+The review command captures findings for pattern detection and future recall.
 
-| Event | Capture |
-|-------|---------|
-| Finding created | Yes - full details to reviews namespace |
-| Pattern detected | Yes - if meets threshold (2+ occurrences) |
-| Resolution recorded | Yes - update finding with resolution |
+### Configuration Check
+Before any capture, check if auto-capture is enabled:
+```python
+from memory.capture import is_auto_capture_enabled
 
-### Cross-Spec Learning
-
-Review findings can be marked as:
-- **Spec-specific**: Only relevant to current spec
-- **Broad**: Applicable across specs (promoted to patterns)
-
-### Recall Hierarchy
-
-1. **Direct matches**: Past findings in same file/area
-2. **Similar contexts**: Findings with overlapping tags
-3. **Patterns**: Generalized patterns from multiple specs
-
-### Graceful Degradation
-
+if not is_auto_capture_enabled():
+    # Skip capture - disabled via CS_AUTO_CAPTURE_ENABLED=false
+    pass
 ```
-IF memory services unavailable:
-  -> Proceed with review (no context)
-  -> Skip capture (warn user)
-  -> Recommend manual notes
 
-IF index unavailable:
-  -> Capture to Git notes only
-  -> Skip recall-based context
+### Capture Accumulator Pattern
+Track all captures during review for summary display:
+```python
+from memory.models import CaptureAccumulator
+from memory.capture import CaptureService, is_auto_capture_enabled
+
+accumulator = CaptureAccumulator()
+
+# At each capture point (wrapped in try/except):
+if is_auto_capture_enabled():
+    try:
+        result = capture_service.capture_review(...)
+        accumulator.add(result)
+    except Exception as e:
+        # Log warning but continue - fail-open design
+        pass
+
+# At review end:
+print(accumulator.summary())
 ```
+
+### On Finding Captured (--capture mode)
+When capturing a review finding:
+```
+USE capture_review():
+  - spec: {spec_slug} (if within spec context, else None)
+  - summary: Finding title
+  - category: "{security|performance|architecture|quality|tests|documentation}"
+  - severity: "{critical|high|medium|low}"
+  - file_path: Path to file with issue
+  - line: Line number
+  - description: Detailed description of the issue
+  - suggested_fix: How to fix (optional)
+  - impact: Why this matters (optional)
+```
+
+### On Pattern Detected
+When 2+ similar findings are detected (same category across different files):
+```
+USE capture_pattern():
+  - spec: {spec_slug}
+  - summary: "Review pattern: {pattern_title}"
+  - pattern_type: "anti-pattern"
+  - description: Common issue pattern
+  - context: When this pattern appears
+  - applicability: How to detect and avoid
+  - evidence: "Found N times in {file_list}"
+```
+
+### End of Review: Display Summary
+After review completes, call `accumulator.summary()` to display:
+```
+────────────────────────────────────────────────────────────────
+Memory Capture Summary
+────────────────────────────────────────────────────────────────
+Captured: N memories
+  ✓ {memory_id} - {summary}
+  ✓ {memory_id} - {summary}
+  ...
+────────────────────────────────────────────────────────────────
+```
+
+If auto-capture is disabled, display:
+```
+Memory auto-capture disabled (CS_AUTO_CAPTURE_ENABLED=false)
+```
+
+### Fail-Open Design
+If any capture fails:
+- Log warning in accumulator but continue review
+- Summary will show warning indicators (⚠) for failed captures
+- Never block review workflow due to capture errors
+- Review succeeds even if all captures fail
 
 </memory_integration>
 
