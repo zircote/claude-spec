@@ -572,3 +572,142 @@ class TestCleanupSessionStateEdgeCases:
         finally:
             # Restore permissions for cleanup
             subdir.chmod(0o755)
+
+
+class TestFallbackPaths:
+    """Tests for fallback I/O paths."""
+
+    def test_run_post_steps_without_config(self, tmp_path, monkeypatch, capsys):
+        """Test run_post_steps when CONFIG_AVAILABLE is False."""
+        from hooks import post_command
+
+        # Patch CONFIG_AVAILABLE to False
+        monkeypatch.setattr(post_command, "CONFIG_AVAILABLE", False)
+
+        # Should return early without error
+        run_post_steps(str(tmp_path), "cs:c")
+
+        # No steps should be executed
+        captured = capsys.readouterr()
+        assert "error" not in captured.err.lower()
+
+    def test_run_post_steps_without_io(self, tmp_path, monkeypatch, capsys):
+        """Test run_post_steps when IO_AVAILABLE is False but CONFIG is available."""
+        from hooks import post_command
+
+        # Create mock config
+        mock_steps = [{"name": "test-step", "enabled": True}]
+
+        monkeypatch.setattr(post_command, "CONFIG_AVAILABLE", True)
+        monkeypatch.setattr(post_command, "IO_AVAILABLE", False)
+        monkeypatch.setattr(
+            post_command, "get_enabled_steps", lambda cmd, phase: mock_steps
+        )
+
+        run_post_steps(str(tmp_path), "cs:c")
+
+        captured = capsys.readouterr()
+        # When IO_AVAILABLE is False, steps are skipped (libs not available)
+        assert "skipped" in captured.err or "not available" in captured.err or "Could not import" in captured.err
+
+    def test_main_with_fallback_io(self, tmp_path, monkeypatch, capsys):
+        """Test main when IO_AVAILABLE is False but FALLBACK_AVAILABLE is True."""
+        from hooks import post_command
+
+        # Create state file
+        state_file = tmp_path / SESSION_STATE_FILE
+        state_file.write_text(json.dumps({"command": "cs:c"}))
+
+        input_data = {"hook_event_name": "Stop", "cwd": str(tmp_path)}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        monkeypatch.setattr(post_command, "IO_AVAILABLE", False)
+        monkeypatch.setattr(post_command, "FALLBACK_AVAILABLE", True)
+
+        main()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"continue": False}
+
+        # State file should be cleaned up
+        assert not state_file.exists()
+
+    def test_main_with_inline_fallback(self, tmp_path, monkeypatch, capsys):
+        """Test main when both IO_AVAILABLE and FALLBACK_AVAILABLE are False."""
+        from hooks import post_command
+
+        # Create state file
+        state_file = tmp_path / SESSION_STATE_FILE
+        state_file.write_text(json.dumps({"command": "cs:c"}))
+
+        input_data = {"hook_event_name": "Stop", "cwd": str(tmp_path)}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        monkeypatch.setattr(post_command, "IO_AVAILABLE", False)
+        monkeypatch.setattr(post_command, "FALLBACK_AVAILABLE", False)
+
+        main()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"continue": False}
+
+    def test_inline_fallback_malformed_input(self, monkeypatch, capsys):
+        """Test inline fallback with malformed input."""
+        from hooks import post_command
+
+        monkeypatch.setattr("sys.stdin", io.StringIO("not json"))
+        monkeypatch.setattr(post_command, "IO_AVAILABLE", False)
+        monkeypatch.setattr(post_command, "FALLBACK_AVAILABLE", False)
+
+        main()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"continue": False}
+
+    def test_inline_fallback_read_input_error(self, monkeypatch, capsys):
+        """Test inline fallback read input error handling."""
+        from hooks import post_command
+
+        # Simulate read error - stdin.read takes max_size argument
+        def raise_error(*args, **kwargs):
+            raise Exception("Read error")
+
+        # Use StringIO but mock the stdin attribute more directly
+        monkeypatch.setattr("sys.stdin", io.StringIO(""))
+
+        # json.load on empty input raises JSONDecodeError, which triggers fallback
+        monkeypatch.setattr(post_command, "IO_AVAILABLE", False)
+        monkeypatch.setattr(post_command, "FALLBACK_AVAILABLE", False)
+
+        main()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"continue": False}
+
+
+class TestFallbackIOFunctions:
+    """Tests for _fallback_io functions."""
+
+    def test_fallback_io_read_input(self, monkeypatch):
+        """Test _fallback_io_read_input wrapper."""
+        from hooks.post_command import _fallback_io_read_input
+
+        input_data = {"hook_event_name": "Stop", "cwd": "/test"}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        result = _fallback_io_read_input()
+        assert result == input_data
+
+    def test_fallback_io_write_output(self, capsys):
+        """Test _fallback_io_write_output wrapper."""
+        from hooks.post_command import _fallback_io_write_output
+
+        _fallback_io_write_output({"continue": False})
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"continue": False}

@@ -547,3 +547,129 @@ class TestRunStepModuleNoRunFunction:
         assert result is False
         captured = capsys.readouterr()
         assert "has no run function" in captured.err
+
+
+class TestInlineFallbackPaths:
+    """Tests for inline fallback I/O when both IO and FALLBACK are unavailable."""
+
+    def test_main_with_inline_fallback(self, tmp_path, monkeypatch, capsys):
+        """Test main uses inline fallback when both IO and FALLBACK unavailable."""
+        import command_detector
+
+        original_io = command_detector.IO_AVAILABLE
+        original_fb = command_detector.FALLBACK_AVAILABLE
+
+        command_detector.IO_AVAILABLE = False
+        command_detector.FALLBACK_AVAILABLE = False
+
+        input_data = {
+            "prompt": "/cs:p test",
+            "cwd": str(tmp_path),
+            "session_id": "test123",
+        }
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        main()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"decision": "approve"}
+
+        command_detector.IO_AVAILABLE = original_io
+        command_detector.FALLBACK_AVAILABLE = original_fb
+
+    def test_inline_fallback_with_malformed_input(self, monkeypatch, capsys):
+        """Test inline fallback handles malformed input."""
+        import command_detector
+
+        original_io = command_detector.IO_AVAILABLE
+        original_fb = command_detector.FALLBACK_AVAILABLE
+
+        command_detector.IO_AVAILABLE = False
+        command_detector.FALLBACK_AVAILABLE = False
+
+        monkeypatch.setattr("sys.stdin", io.StringIO("not json"))
+
+        main()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"decision": "approve"}
+
+        command_detector.IO_AVAILABLE = original_io
+        command_detector.FALLBACK_AVAILABLE = original_fb
+
+    def test_inline_fallback_pass_through(self, tmp_path, monkeypatch, capsys):
+        """Test inline fallback pass_through function."""
+        import command_detector
+
+        original_io = command_detector.IO_AVAILABLE
+        original_fb = command_detector.FALLBACK_AVAILABLE
+
+        command_detector.IO_AVAILABLE = False
+        command_detector.FALLBACK_AVAILABLE = False
+
+        # Empty input triggers pass_through
+        input_data = {"prompt": "", "cwd": "", "session_id": ""}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        main()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"decision": "approve"}
+
+        command_detector.IO_AVAILABLE = original_io
+        command_detector.FALLBACK_AVAILABLE = original_fb
+
+
+class TestRunPreStepsIOUnavailable:
+    """Tests for run_pre_steps when IO_AVAILABLE is False."""
+
+    def test_skips_steps_when_io_unavailable(self, tmp_path, monkeypatch, capsys):
+        """Test that steps are skipped when IO_AVAILABLE is False."""
+        import command_detector
+
+        original_io = command_detector.IO_AVAILABLE
+        original_config = command_detector.CONFIG_AVAILABLE
+
+        # Mock get_enabled_steps to return a step
+        mock_steps = [{"name": "test-step", "enabled": True}]
+        monkeypatch.setattr(
+            command_detector, "get_enabled_steps", lambda cmd, phase: mock_steps
+        )
+
+        command_detector.IO_AVAILABLE = False
+        command_detector.CONFIG_AVAILABLE = True
+
+        run_pre_steps(str(tmp_path), "cs:c")
+
+        captured = capsys.readouterr()
+        assert "skipped" in captured.err or "not available" in captured.err
+
+        command_detector.IO_AVAILABLE = original_io
+        command_detector.CONFIG_AVAILABLE = original_config
+
+
+class TestFallbackIOFunctions:
+    """Tests for _fallback_io wrapper functions."""
+
+    def test_fallback_io_read_input(self, monkeypatch):
+        """Test _fallback_io_read_input wrapper."""
+        from command_detector import _fallback_io_read_input
+
+        input_data = {"prompt": "/cs:p", "cwd": "/test"}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        result = _fallback_io_read_input()
+        assert result == input_data
+
+    def test_fallback_io_write_output(self, capsys):
+        """Test _fallback_io_write_output wrapper."""
+        from command_detector import _fallback_io_write_output
+
+        _fallback_io_write_output({"decision": "approve"})
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output == {"decision": "approve"}

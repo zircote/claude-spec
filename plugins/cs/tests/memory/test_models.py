@@ -10,6 +10,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from memory.models import (
+    CaptureAccumulator,
     CaptureResult,
     HydratedMemory,
     HydrationLevel,
@@ -364,3 +365,190 @@ class TestReviewFinding:
 
         assert finding.status == "resolved"
         assert finding.resolution == "Used parameterized queries."
+
+
+class TestCaptureAccumulator:
+    """Tests for CaptureAccumulator dataclass."""
+
+    def _make_memory(
+        self, id: str = "test:123", namespace: str = "decisions", summary: str = "Test"
+    ) -> Memory:
+        """Create a mock Memory object for testing."""
+        return Memory(
+            id=id,
+            commit_sha=id.split(":")[1] if ":" in id else "123",
+            namespace=namespace,
+            summary=summary,
+            content="Test content",
+            timestamp=datetime.now(UTC),
+        )
+
+    def test_init_empty(self):
+        """Verify initialization with empty captures list."""
+        accumulator = CaptureAccumulator()
+
+        assert accumulator.captures == []
+        assert accumulator.start_time is not None
+        assert isinstance(accumulator.start_time, datetime)
+
+    def test_add_capture(self):
+        """Verify add() method appends CaptureResult."""
+        accumulator = CaptureAccumulator()
+        memory = self._make_memory()
+        result = CaptureResult(success=True, memory=memory, indexed=True)
+
+        accumulator.add(result)
+
+        assert len(accumulator.captures) == 1
+        assert accumulator.captures[0] == result
+
+        # Add another
+        memory2 = self._make_memory(id="test:456", summary="Second test")
+        result2 = CaptureResult(success=True, memory=memory2, indexed=True)
+        accumulator.add(result2)
+
+        assert len(accumulator.captures) == 2
+        assert accumulator.captures[1] == result2
+
+    def test_count_property(self):
+        """Verify count returns number of captures."""
+        accumulator = CaptureAccumulator()
+
+        assert accumulator.count == 0
+
+        # Add captures
+        for i in range(5):
+            memory = self._make_memory(id=f"test:{i}", summary=f"Test {i}")
+            result = CaptureResult(success=True, memory=memory, indexed=True)
+            accumulator.add(result)
+
+        assert accumulator.count == 5
+
+    def test_by_namespace_empty(self):
+        """Verify by_namespace returns {} when empty."""
+        accumulator = CaptureAccumulator()
+
+        assert accumulator.by_namespace == {}
+
+    def test_by_namespace_with_captures(self):
+        """Verify by_namespace groups counts correctly."""
+        accumulator = CaptureAccumulator()
+
+        # Add 3 decisions
+        for i in range(3):
+            memory = self._make_memory(
+                id=f"decisions:{i}", namespace="decisions", summary=f"Decision {i}"
+            )
+            result = CaptureResult(success=True, memory=memory, indexed=True)
+            accumulator.add(result)
+
+        # Add 2 learnings
+        for i in range(2):
+            memory = self._make_memory(
+                id=f"learnings:{i}", namespace="learnings", summary=f"Learning {i}"
+            )
+            result = CaptureResult(success=True, memory=memory, indexed=True)
+            accumulator.add(result)
+
+        # Add 1 blocker
+        memory = self._make_memory(
+            id="blockers:0", namespace="blockers", summary="Blocker"
+        )
+        result = CaptureResult(success=True, memory=memory, indexed=True)
+        accumulator.add(result)
+
+        by_ns = accumulator.by_namespace
+
+        assert by_ns["decisions"] == 3
+        assert by_ns["learnings"] == 2
+        assert by_ns["blockers"] == 1
+        assert len(by_ns) == 3
+
+    def test_summary_empty(self):
+        """Verify summary() returns 'No memories captured' when empty."""
+        accumulator = CaptureAccumulator()
+
+        summary = accumulator.summary()
+
+        assert summary == "No memories captured this session."
+
+    def test_summary_with_captures(self):
+        """Verify summary() formats correctly with captures."""
+        accumulator = CaptureAccumulator()
+
+        memory1 = self._make_memory(
+            id="decisions:abc123",
+            namespace="decisions",
+            summary="Chose REST over GraphQL",
+        )
+        result1 = CaptureResult(success=True, memory=memory1, indexed=True)
+        accumulator.add(result1)
+
+        memory2 = self._make_memory(
+            id="learnings:def456",
+            namespace="learnings",
+            summary="Pytest fixtures are powerful",
+        )
+        result2 = CaptureResult(success=True, memory=memory2, indexed=True)
+        accumulator.add(result2)
+
+        summary = accumulator.summary()
+
+        # Verify structure
+        assert "Memory Capture Summary" in summary
+        assert "Captured: 2 memories" in summary
+        assert "decisions:abc123" in summary
+        assert "Chose REST over GraphQL" in summary
+        assert "learnings:def456" in summary
+        assert "Pytest fixtures are powerful" in summary
+        # Check for success markers
+        lines = summary.split("\n")
+        capture_lines = [
+            line for line in lines if "decisions:" in line or "learnings:" in line
+        ]
+        for line in capture_lines:
+            assert line.strip().startswith("✓")
+
+    def test_summary_with_warnings(self):
+        """Verify summary() includes warnings for failed captures."""
+        accumulator = CaptureAccumulator()
+
+        # Add a successful capture
+        memory1 = self._make_memory(
+            id="decisions:abc123", namespace="decisions", summary="Good decision"
+        )
+        result1 = CaptureResult(success=True, memory=memory1, indexed=True)
+        accumulator.add(result1)
+
+        # Add a failed capture with warning (no memory)
+        result2 = CaptureResult(
+            success=False,
+            memory=None,
+            indexed=False,
+            warning="Git notes failed: permission denied",
+        )
+        accumulator.add(result2)
+
+        # Add a capture with warning but still has memory (degraded mode)
+        memory3 = self._make_memory(
+            id="learnings:ghi789", namespace="learnings", summary="Partial success"
+        )
+        result3 = CaptureResult(
+            success=True,
+            memory=memory3,
+            indexed=False,
+            warning="Embedding failed, memory saved to git only.",
+        )
+        accumulator.add(result3)
+
+        summary = accumulator.summary()
+
+        # Verify all entries present
+        assert "Captured: 3 memories" in summary
+        assert "decisions:abc123" in summary
+        assert "Good decision" in summary
+        assert "Git notes failed: permission denied" in summary
+        assert "learnings:ghi789" in summary
+        assert "Partial success" in summary
+        # Check warning marker present
+        assert "⚠" in summary

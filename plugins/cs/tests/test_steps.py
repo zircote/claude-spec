@@ -732,3 +732,508 @@ class TestLogArchiverStepModuleLevelRun:
 
         result = run(str(tmp_path), {"some": "config"})
         assert result.success is True
+
+
+class TestSecurityReviewerStepModuleLevelRun:
+    """Tests for security_reviewer module-level run function."""
+
+    def test_module_run_function(self, tmp_path):
+        """Test module-level run() function."""
+        from steps.security_reviewer import run
+
+        result = run(str(tmp_path), None)
+        assert result.success is True
+
+    def test_module_run_with_config(self, tmp_path):
+        """Test module-level run() function with config."""
+        from steps.security_reviewer import run
+
+        result = run(str(tmp_path), {"timeout": 30})
+        assert result.success is True
+
+
+class TestSecurityReviewerStepExceptionHandling:
+    """Tests for SecurityReviewerStep exception handling paths."""
+
+    def test_bandit_timeout_expired_on_version_check(self, tmp_path, monkeypatch):
+        """Test handling when bandit --version times out."""
+        import subprocess
+
+        step = SecurityReviewerStep(str(tmp_path))
+
+        # Mock _run_bandit to return empty (simulating bandit unavailable)
+        def mock_run_bandit(timeout):
+            return ([], False)
+
+        monkeypatch.setattr(step, "_run_bandit", mock_run_bandit)
+
+        # Mock subprocess.run to raise TimeoutExpired on bandit --version
+        def mock_subprocess_run(cmd, *args, **kwargs):
+            if "bandit" in cmd:
+                raise subprocess.TimeoutExpired(cmd, 5)
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
+
+        result = step.execute()
+
+        assert result.success is True
+        assert "skipped" in result.message.lower()
+        assert any("install bandit" in w.lower() for w in result.warnings)
+
+    def test_bandit_called_process_error_on_version_check(
+        self, tmp_path, monkeypatch
+    ):
+        """Test handling when bandit --version returns non-zero exit."""
+        import subprocess
+
+        step = SecurityReviewerStep(str(tmp_path))
+
+        # Mock _run_bandit to return empty
+        def mock_run_bandit(timeout):
+            return ([], False)
+
+        monkeypatch.setattr(step, "_run_bandit", mock_run_bandit)
+
+        # Mock subprocess.run to raise CalledProcessError
+        def mock_subprocess_run(cmd, *args, **kwargs):
+            if "bandit" in cmd:
+                raise subprocess.CalledProcessError(1, cmd)
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
+
+        result = step.execute()
+
+        assert result.success is True
+        assert "skipped" in result.message.lower()
+
+    def test_many_findings_truncates_output(self, tmp_path, monkeypatch, capsys):
+        """Test output is truncated when more than 10 findings."""
+        step = SecurityReviewerStep(str(tmp_path))
+
+        # Mock _run_bandit to return many findings
+        def mock_run_bandit(timeout):
+            findings = [f"[HIGH/HIGH] file.py:{i} - Issue {i}" for i in range(15)]
+            return (findings, True)
+
+        monkeypatch.setattr(step, "_run_bandit", mock_run_bandit)
+
+        result = step.execute()
+
+        captured = capsys.readouterr()
+        assert "... and 5 more" in captured.err
+        assert result.data["findings_count"] == 15
+
+
+class TestSecurityReviewerStepRunBanditErrors:
+    """Tests for _run_bandit error handling paths."""
+
+    def test_run_bandit_timeout_on_version(self, tmp_path, monkeypatch):
+        """Test _run_bandit returns empty when version check times out."""
+        import subprocess
+
+        step = SecurityReviewerStep(str(tmp_path))
+
+        def mock_subprocess_run(cmd, *args, **kwargs):
+            raise subprocess.TimeoutExpired(cmd, 5)
+
+        monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
+
+        findings, complete = step._run_bandit(5)
+
+        assert findings == []
+        assert complete is False
+
+    def test_run_bandit_file_not_found(self, tmp_path, monkeypatch):
+        """Test _run_bandit returns empty when bandit not found."""
+        import subprocess
+
+        step = SecurityReviewerStep(str(tmp_path))
+
+        def mock_subprocess_run(cmd, *args, **kwargs):
+            raise FileNotFoundError("bandit not found")
+
+        monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
+
+        findings, complete = step._run_bandit(5)
+
+        assert findings == []
+        assert complete is False
+
+    def test_run_bandit_scan_timeout(self, tmp_path, monkeypatch, capsys):
+        """Test _run_bandit handles scan timeout."""
+        import subprocess
+
+        step = SecurityReviewerStep(str(tmp_path))
+        call_count = [0]
+
+        def mock_subprocess_run(cmd, *args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                # First call is version check - success
+                return subprocess.CompletedProcess(cmd, 0, "bandit 1.7.0", "")
+            # Second call is actual scan - timeout
+            raise subprocess.TimeoutExpired(cmd, 120)
+
+        monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
+
+        findings, complete = step._run_bandit(120)
+
+        assert findings == []
+        assert complete is False
+
+        captured = capsys.readouterr()
+        assert "timed out" in captured.err
+
+    def test_run_bandit_generic_exception(self, tmp_path, monkeypatch, capsys):
+        """Test _run_bandit handles generic exceptions."""
+        import subprocess
+
+        step = SecurityReviewerStep(str(tmp_path))
+        call_count = [0]
+
+        def mock_subprocess_run(cmd, *args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                # First call is version check - success
+                return subprocess.CompletedProcess(cmd, 0, "bandit 1.7.0", "")
+            # Second call - generic error
+            raise RuntimeError("Something went wrong")
+
+        monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
+
+        findings, complete = step._run_bandit(120)
+
+        assert findings == []
+        assert complete is False
+
+        captured = capsys.readouterr()
+        assert "error" in captured.err.lower()
+
+    def test_run_bandit_json_parse_error(self, tmp_path, monkeypatch, capsys):
+        """Test _run_bandit handles JSON parse errors."""
+        import subprocess
+
+        step = SecurityReviewerStep(str(tmp_path))
+        call_count = [0]
+
+        def mock_subprocess_run(cmd, *args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                # Version check - success
+                return subprocess.CompletedProcess(cmd, 0, "bandit 1.7.0", "")
+            # Scan returns invalid JSON
+            return subprocess.CompletedProcess(cmd, 0, "not valid json {{{", "")
+
+        monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
+
+        findings, complete = step._run_bandit(120)
+
+        assert findings == []
+        assert complete is False
+
+        captured = capsys.readouterr()
+        assert "Failed to parse" in captured.err
+
+    def test_run_bandit_parses_results(self, tmp_path, monkeypatch):
+        """Test _run_bandit correctly parses bandit JSON output."""
+        import subprocess
+
+        step = SecurityReviewerStep(str(tmp_path))
+        call_count = [0]
+
+        bandit_output = json.dumps({
+            "results": [
+                {
+                    "issue_severity": "HIGH",
+                    "issue_confidence": "MEDIUM",
+                    "issue_text": "Hardcoded password",
+                    "filename": "app.py",
+                    "line_number": 42,
+                },
+                {
+                    "issue_severity": "MEDIUM",
+                    "issue_confidence": "HIGH",
+                    "issue_text": "Use of shell=True",
+                    "filename": "utils.py",
+                    "line_number": 10,
+                },
+            ]
+        })
+
+        def mock_subprocess_run(cmd, *args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return subprocess.CompletedProcess(cmd, 0, "bandit 1.7.0", "")
+            return subprocess.CompletedProcess(cmd, 0, bandit_output, "")
+
+        monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
+
+        findings, complete = step._run_bandit(120)
+
+        assert len(findings) == 2
+        assert complete is True
+        assert "HIGH/MEDIUM" in findings[0]
+        assert "app.py:42" in findings[0]
+        assert "Hardcoded password" in findings[0]
+
+
+class TestRetrospectiveGeneratorStepErrorPaths:
+    """Tests for RetrospectiveGeneratorStep error handling paths."""
+
+    def test_multiple_project_dirs_sorted_by_mtime(self, tmp_path):
+        """Test that multiple project directories are sorted by modification time.
+
+        This exercises the safe_mtime helper function indirectly. The error
+        handling path (lines 56-58) is defensive code that's hard to trigger
+        in normal operation since is_dir() filters out problematic entries first.
+        """
+        import time
+
+        # Create completed project structure
+        completed = tmp_path / "docs" / "spec" / "completed"
+        completed.mkdir(parents=True)
+
+        # Create older project
+        older_project = completed / "older-project"
+        older_project.mkdir()
+        (older_project / "README.md").write_text("# Older Project")
+        time.sleep(0.02)
+
+        # Create newer project
+        newer_project = completed / "newer-project"
+        newer_project.mkdir()
+        (newer_project / "README.md").write_text("# Newer Project")
+
+        step = RetrospectiveGeneratorStep(str(tmp_path))
+        result = step.run()
+
+        # Should succeed and write to the newer project
+        assert result.success is True
+        assert result.data.get("generated") is True
+        assert "newer-project" in result.data.get("path", "")
+
+    def test_write_file_error(self, tmp_path, monkeypatch, capsys):
+        """Test handling when writing RETROSPECTIVE.md fails."""
+        # Create completed project
+        project = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        project.mkdir(parents=True)
+        (project / "README.md").write_text("# Test")
+
+        step = RetrospectiveGeneratorStep(str(tmp_path))
+
+        # Mock Path.write_text to raise exception
+        original_write_text = Path.write_text
+
+        def mock_write_text(self, *args, **kwargs):
+            if "RETROSPECTIVE.md" in str(self):
+                raise PermissionError("Permission denied")
+            return original_write_text(self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", mock_write_text)
+
+        result = step.run()
+
+        assert result.success is False
+        assert "Failed" in result.message
+
+    def test_analyze_log_json_array_parse_error(self, tmp_path, capsys):
+        """Test log analysis handles malformed JSON array gracefully."""
+        # Create completed project
+        project = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        project.mkdir(parents=True)
+        (project / "README.md").write_text("# Test")
+
+        # Create malformed JSON array that starts with [ but is invalid
+        (tmp_path / ".prompt-log.json").write_text("[{invalid json")
+
+        step = RetrospectiveGeneratorStep(str(tmp_path))
+        result = step.run()
+
+        # Should still succeed - falls back to NDJSON parsing which will skip invalid lines
+        assert result.success is True
+
+    def test_analyze_log_ndjson_format(self, tmp_path):
+        """Test log analysis parses NDJSON format (production format)."""
+        # Create completed project
+        project = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        project.mkdir(parents=True)
+        (project / "README.md").write_text("# Test")
+
+        # Create NDJSON format log (one JSON object per line)
+        ndjson_content = (
+            '{"timestamp": "2025-01-01T00:00:00Z", "command": "/cs:p"}\n'
+            '{"timestamp": "2025-01-01T01:00:00Z", "command": "/cs:i"}\n'
+            '{"timestamp": "2025-01-01T02:00:00Z", "command": "/cs:c"}\n'
+        )
+        (tmp_path / ".prompt-log.json").write_text(ndjson_content)
+
+        step = RetrospectiveGeneratorStep(str(tmp_path))
+        result = step.run()
+
+        assert result.success is True
+
+        # Check retrospective includes command stats
+        retro = project / "RETROSPECTIVE.md"
+        content = retro.read_text()
+        assert "Commands Used" in content or "Total Prompts" in content
+
+    def test_analyze_log_ndjson_with_malformed_lines(self, tmp_path):
+        """Test log analysis skips malformed NDJSON lines."""
+        # Create completed project
+        project = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        project.mkdir(parents=True)
+        (project / "README.md").write_text("# Test")
+
+        # Create NDJSON format with some malformed lines
+        ndjson_content = (
+            '{"timestamp": "2025-01-01T00:00:00Z", "command": "/cs:p"}\n'
+            'malformed line\n'
+            '{"timestamp": "2025-01-01T01:00:00Z", "command": "/cs:i"}\n'
+            '\n'  # Empty line
+            'another bad line {{\n'
+            '{"timestamp": "2025-01-01T02:00:00Z", "command": "/cs:c"}\n'
+        )
+        (tmp_path / ".prompt-log.json").write_text(ndjson_content)
+
+        step = RetrospectiveGeneratorStep(str(tmp_path))
+        result = step.run()
+
+        assert result.success is True
+
+        # Should have parsed the 3 valid entries
+        retro = project / "RETROSPECTIVE.md"
+        content = retro.read_text()
+        assert "Total Prompts" in content
+
+    def test_analyze_log_empty_entries(self, tmp_path):
+        """Test log analysis returns None when no valid entries found."""
+        # Create completed project
+        project = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        project.mkdir(parents=True)
+        (project / "README.md").write_text("# Test")
+
+        # Create log with only invalid content
+        (tmp_path / ".prompt-log.json").write_text("not json at all\nanother bad line")
+
+        step = RetrospectiveGeneratorStep(str(tmp_path))
+        result = step.run()
+
+        # Should still succeed - just won't have log analysis
+        assert result.success is True
+
+        # Retrospective should not have Commands Used section
+        retro = project / "RETROSPECTIVE.md"
+        content = retro.read_text()
+        assert "Commands Used" not in content
+
+    def test_analyze_log_duration_calculation_error(self, tmp_path, capsys):
+        """Test duration calculation handles invalid timestamp format."""
+        # Create completed project
+        project = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        project.mkdir(parents=True)
+        (project / "README.md").write_text("# Test")
+
+        # Create log with invalid timestamp format
+        log = [
+            {"timestamp": "invalid-timestamp", "command": "/cs:p"},
+            {"timestamp": "also-invalid", "command": "/cs:c"},
+        ]
+        (tmp_path / ".prompt-log.json").write_text(json.dumps(log))
+
+        step = RetrospectiveGeneratorStep(str(tmp_path))
+        result = step.run()
+
+        assert result.success is True
+
+        # Should have logged the error
+        captured = capsys.readouterr()
+        assert "Failed to calculate duration" in captured.err
+
+    def test_analyze_log_generic_exception(self, tmp_path, monkeypatch, capsys):
+        """Test log analysis handles generic exceptions."""
+        # Create completed project
+        project = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        project.mkdir(parents=True)
+        (project / "README.md").write_text("# Test")
+
+        # Create valid log file
+        (tmp_path / ".prompt-log.json").write_text('{"timestamp": "2025-01-01T00:00:00Z"}')
+
+        step = RetrospectiveGeneratorStep(str(tmp_path))
+
+        # Mock Path.read_text to raise exception for log file
+        original_read_text = Path.read_text
+
+        def mock_read_text(self, *args, **kwargs):
+            if ".prompt-log.json" in str(self):
+                raise RuntimeError("Unexpected read error")
+            return original_read_text(self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "read_text", mock_read_text)
+
+        result = step.run()
+
+        assert result.success is True
+
+        # Should have logged the error
+        captured = capsys.readouterr()
+        assert "Log analysis error" in captured.err
+
+    def test_readme_read_error(self, tmp_path, monkeypatch, capsys):
+        """Test handling when README.md cannot be read."""
+        # Create completed project without README
+        project = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        project.mkdir(parents=True)
+        readme_path = project / "README.md"
+        readme_path.write_text("# Test Project")
+
+        step = RetrospectiveGeneratorStep(str(tmp_path))
+
+        # Mock Path.read_text to raise exception for README
+        original_read_text = Path.read_text
+
+        def mock_read_text(self, *args, **kwargs):
+            if "README.md" in str(self):
+                raise PermissionError("Permission denied")
+            return original_read_text(self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "read_text", mock_read_text)
+
+        result = step.run()
+
+        assert result.success is True
+
+        # Should have logged the error
+        captured = capsys.readouterr()
+        assert "Failed to read" in captured.err
+
+        # Retrospective should use fallback summary
+        retro = project / "RETROSPECTIVE.md"
+        content = retro.read_text()
+        assert "No summary available" in content
+
+
+class TestRetrospectiveGeneratorStepModuleLevelRun:
+    """Tests for retrospective_gen module-level run function."""
+
+    def test_module_run_function(self, tmp_path):
+        """Test module-level run() function."""
+        from steps.retrospective_gen import run
+
+        result = run(str(tmp_path), None)
+        assert result.success is True
+
+    def test_module_run_with_config(self, tmp_path):
+        """Test module-level run() function with config."""
+        from steps.retrospective_gen import run
+
+        # Create completed project
+        project = tmp_path / "docs" / "spec" / "completed" / "test-project"
+        project.mkdir(parents=True)
+        (project / "README.md").write_text("# Test")
+
+        result = run(str(tmp_path), {"some": "config"})
+        assert result.success is True
+        assert result.data.get("generated") is True
