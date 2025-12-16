@@ -698,6 +698,167 @@ Documentation gate passed. Proceeding to project completion.
 ```
 </documentation_gate>
 
+<artifact_verification>
+### 🚨 Artifact Verification Gate (CRITICAL)
+
+**NEVER TRUST CLAIMS. ALWAYS VERIFY.**
+
+When a subagent reports work complete, you MUST verify artifacts exist before accepting the claim. Subagents can hallucinate completion - this gate catches those failures.
+
+#### Trigger: After ANY Subagent Returns
+
+```
+EVERY TIME a Task tool returns with claimed work:
+  -> Immediately verify claimed artifacts
+  -> DO NOT proceed until verification passes
+  -> RED ALERT if artifacts missing
+```
+
+#### Step 1: Extract Claimed Artifacts
+
+From subagent response, identify:
+- Files claimed to be created
+- Files claimed to be modified
+- Tests claimed to be written
+- Documentation claimed to be updated
+
+#### Step 2: Verify Existence (MANDATORY)
+
+```bash
+# For each claimed file, verify it exists
+for file in ${CLAIMED_FILES}; do
+  if [ ! -f "$file" ]; then
+    echo "🚨 RED ALERT: Claimed file does not exist: $file"
+    VERIFICATION_FAILED=true
+  fi
+done
+```
+
+#### Step 3: Verify Content (Not Empty/Stub)
+
+```bash
+# Check file is not empty
+if [ ! -s "$file" ]; then
+  echo "🚨 RED ALERT: File exists but is empty: $file"
+  VERIFICATION_FAILED=true
+fi
+
+# Check for stub/placeholder content
+if grep -q "TODO\|PLACEHOLDER\|NotImplemented\|pass$" "$file"; then
+  echo "⚠️ WARNING: File contains stub content: $file"
+fi
+```
+
+#### Step 4: Verify Claimed Modifications
+
+```bash
+# If file claimed to be modified, verify it has uncommitted changes
+git diff --name-only | grep -q "$file"
+if [ $? -ne 0 ]; then
+  echo "🚨 RED ALERT: File claimed modified but no changes: $file"
+  VERIFICATION_FAILED=true
+fi
+```
+
+#### Step 5: Verify Tests Run
+
+```bash
+# If tests claimed to be written, verify they execute
+if [[ "$file" == *test* ]]; then
+  # Run the specific test file
+  pytest "$file" --collect-only 2>/dev/null
+  if [ $? -ne 0 ]; then
+    echo "🚨 RED ALERT: Test file does not run: $file"
+    VERIFICATION_FAILED=true
+  fi
+fi
+```
+
+#### Step 6: Handle Verification Failure
+
+```
+IF VERIFICATION_FAILED:
+  -> DO NOT mark task complete
+  -> DO NOT trust subagent claim
+  -> Log the discrepancy
+  -> Either:
+     a) Re-run the subagent with explicit instructions
+     b) Perform the work directly
+     c) Flag for manual intervention
+  -> Re-verify after remediation
+
+IF VERIFICATION_PASSES:
+  -> Proceed to quality gate
+```
+
+#### Red Alert Response Protocol
+
+When artifacts are missing but claimed complete:
+
+```
+🚨 RED ALERT: ARTIFACT VERIFICATION FAILED
+
+Subagent claimed completion but artifacts do not exist:
+  - Missing: src/components/NewFeature.tsx
+  - Missing: tests/test_new_feature.py
+  - Empty: docs/new_feature.md
+
+This indicates subagent hallucination. Taking corrective action:
+  1. Discarding subagent claim
+  2. Re-implementing directly
+  3. Re-verifying after completion
+```
+
+**NEVER mark a task complete based on a claim. ONLY mark complete after verification.**
+
+#### Verification Checklist
+
+Before accepting ANY subagent work:
+
+```
+[ ] All claimed files exist (ls/stat confirms)
+[ ] Files are not empty (size > 0)
+[ ] Files contain real implementation (no stubs)
+[ ] Modified files show in git diff
+[ ] Test files actually run
+[ ] Documentation files have content
+```
+
+#### Example: Catching Hallucinated Work
+
+```
+[Subagent returns]
+"I have created the following files:
+ - src/auth/handler.py (new authentication handler)
+ - tests/test_auth.py (comprehensive tests)
+ - docs/auth.md (usage documentation)"
+
+[Verification gate runs]
+Verifying claimed artifacts...
+  ✓ src/auth/handler.py exists (245 lines)
+  🚨 tests/test_auth.py DOES NOT EXIST
+  ✓ docs/auth.md exists (but only 2 lines - stub)
+
+RED ALERT: Verification failed
+  - tests/test_auth.py: File does not exist
+  - docs/auth.md: Stub content only
+
+Rejecting subagent claim. Re-implementing missing artifacts...
+
+[Direct implementation]
+Created tests/test_auth.py (78 lines, 12 test cases)
+Updated docs/auth.md (45 lines, full documentation)
+
+[Re-verification]
+  ✓ src/auth/handler.py exists (245 lines)
+  ✓ tests/test_auth.py exists (78 lines)
+  ✓ docs/auth.md exists (45 lines)
+  ✓ pytest tests/test_auth.py: 12 passed
+
+Verification passed. Proceeding to quality gate.
+```
+</artifact_verification>
+
 ### Marking Tasks In-Progress
 
 When starting work on a task:
