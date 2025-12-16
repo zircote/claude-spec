@@ -781,9 +781,7 @@ class TestSecurityReviewerStepExceptionHandling:
         assert "skipped" in result.message.lower()
         assert any("install bandit" in w.lower() for w in result.warnings)
 
-    def test_bandit_called_process_error_on_version_check(
-        self, tmp_path, monkeypatch
-    ):
+    def test_bandit_called_process_error_on_version_check(self, tmp_path, monkeypatch):
         """Test handling when bandit --version returns non-zero exit."""
         import subprocess
 
@@ -943,24 +941,26 @@ class TestSecurityReviewerStepRunBanditErrors:
         step = SecurityReviewerStep(str(tmp_path))
         call_count = [0]
 
-        bandit_output = json.dumps({
-            "results": [
-                {
-                    "issue_severity": "HIGH",
-                    "issue_confidence": "MEDIUM",
-                    "issue_text": "Hardcoded password",
-                    "filename": "app.py",
-                    "line_number": 42,
-                },
-                {
-                    "issue_severity": "MEDIUM",
-                    "issue_confidence": "HIGH",
-                    "issue_text": "Use of shell=True",
-                    "filename": "utils.py",
-                    "line_number": 10,
-                },
-            ]
-        })
+        bandit_output = json.dumps(
+            {
+                "results": [
+                    {
+                        "issue_severity": "HIGH",
+                        "issue_confidence": "MEDIUM",
+                        "issue_text": "Hardcoded password",
+                        "filename": "app.py",
+                        "line_number": 42,
+                    },
+                    {
+                        "issue_severity": "MEDIUM",
+                        "issue_confidence": "HIGH",
+                        "issue_text": "Use of shell=True",
+                        "filename": "utils.py",
+                        "line_number": 10,
+                    },
+                ]
+            }
+        )
 
         def mock_subprocess_run(cmd, *args, **kwargs):
             call_count[0] += 1
@@ -1089,10 +1089,10 @@ class TestRetrospectiveGeneratorStepErrorPaths:
         # Create NDJSON format with some malformed lines
         ndjson_content = (
             '{"timestamp": "2025-01-01T00:00:00Z", "command": "/cs:p"}\n'
-            'malformed line\n'
+            "malformed line\n"
             '{"timestamp": "2025-01-01T01:00:00Z", "command": "/cs:i"}\n'
-            '\n'  # Empty line
-            'another bad line {{\n'
+            "\n"  # Empty line
+            "another bad line {{\n"
             '{"timestamp": "2025-01-01T02:00:00Z", "command": "/cs:c"}\n'
         )
         (tmp_path / ".prompt-log.json").write_text(ndjson_content)
@@ -1159,7 +1159,9 @@ class TestRetrospectiveGeneratorStepErrorPaths:
         (project / "README.md").write_text("# Test")
 
         # Create valid log file
-        (tmp_path / ".prompt-log.json").write_text('{"timestamp": "2025-01-01T00:00:00Z"}')
+        (tmp_path / ".prompt-log.json").write_text(
+            '{"timestamp": "2025-01-01T00:00:00Z"}'
+        )
 
         step = RetrospectiveGeneratorStep(str(tmp_path))
 

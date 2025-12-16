@@ -608,7 +608,11 @@ class TestFallbackPaths:
 
         captured = capsys.readouterr()
         # When IO_AVAILABLE is False, steps are skipped (libs not available)
-        assert "skipped" in captured.err or "not available" in captured.err or "Could not import" in captured.err
+        assert (
+            "skipped" in captured.err
+            or "not available" in captured.err
+            or "Could not import" in captured.err
+        )
 
     def test_main_with_fallback_io(self, tmp_path, monkeypatch, capsys):
         """Test main when IO_AVAILABLE is False but FALLBACK_AVAILABLE is True."""

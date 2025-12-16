@@ -5,8 +5,6 @@ import json
 import os
 import sys
 
-import pytest
-
 # Add parent directories for imports
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 TESTS_DIR = os.path.dirname(SCRIPT_DIR)
@@ -75,6 +73,7 @@ class TestFallbackWriteOutput:
 
     def test_non_serializable_uses_fallback(self, capsys):
         """Test that non-serializable data uses fallback response."""
+
         # Create an object that can't be JSON serialized
         class NonSerializable:
             pass

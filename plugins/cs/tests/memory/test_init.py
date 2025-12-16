@@ -1,7 +1,5 @@
 """Tests for memory/__init__.py lazy imports."""
 
-import pytest
-
 
 class TestLazyImports:
     """Tests for lazy service factory functions."""
