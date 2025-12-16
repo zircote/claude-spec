@@ -30,18 +30,11 @@ Before ANY implementation work, you MUST:
    - README.md status should be `approved` or `in-review` or `in-progress`
    - Reject if status is `draft` (spec not ready)
 
-3. **Confirm with user**:
-   - Use AskUserQuestion tool
-   - Question: "Ready to begin implementation of {project-name}?"
-   - Options: "Yes, begin implementation" / "No, let me review the spec first"
+**Note**: Running `/cs:i` IS the explicit intent to implement. Do not ask for additional confirmation.
 
 ### Gate Enforcement
 
 ```
-IF user did NOT explicitly run /cs:i:
-  -> REFUSE to implement
-  -> Say: "Implementation requires explicit /cs:i command"
-
 IF spec does not exist:
   -> REFUSE to implement
   -> Say: "No spec found. Run /cs:p first to create a specification."
@@ -49,29 +42,35 @@ IF spec does not exist:
 IF spec status is draft:
   -> REFUSE to implement
   -> Say: "Spec is still in draft. Please complete and approve via /cs:p first."
-
-IF user confirms "No":
-  -> HALT implementation
-  -> Offer to display spec for review
 ```
 
-Only after ALL gates pass AND user explicitly confirms, proceed with implementation.
+Once gates pass, proceed directly to implementation. The user's invocation of `/cs:i` is their confirmation.
 </implementation_gate>
 
 <interaction_directive>
 ## User Interaction Requirements
 
-**MANDATORY**: Use the `AskUserQuestion` tool for ALL structured decision points. Do NOT ask questions in plain text when options can be enumerated.
+**MANDATORY**: Use the `AskUserQuestion` tool for ALL user interactions where possible. Do NOT ask questions in plain text when options can be enumerated.
 
 ### When to Use AskUserQuestion
 
-| Scenario | Use AskUserQuestion |
-|----------|---------------------|
-| Project selection (multiple/none found) | Yes - list projects as options |
-| Divergence handling | Yes - approve/revert/flag options |
-| Manual edit detection | Yes - confirm/skip options |
-| Work selection (what to do next) | Yes - list pending tasks as options |
-| Open-ended clarification | No - use plain text for exploratory questions |
+| Scenario | Use AskUserQuestion | Notes |
+|----------|---------------------|-------|
+| Project selection (multiple/none found) | Yes - list projects as options | Structured decision |
+| Divergence handling | Yes - approve/revert/flag options | Structured decision |
+| Manual edit detection | Yes - confirm/skip options | Structured decision |
+| Work selection (what to do next) | Yes - list pending tasks as options | Structured decision |
+| Blocker identification | Yes - categorize blocker type | Guide user through options |
+| Task status updates | Yes - confirm completion/skip | Structured decision |
+
+### Plain Text ONLY When
+
+Plain text is appropriate ONLY for:
+1. Summarizing progress (status updates, not questions)
+2. Acknowledging user responses before next AskUserQuestion
+3. Requesting specific numeric values (e.g., "How many hours did this take?")
+
+Even then, prefer AskUserQuestion if the response could be enumerated.
 
 This ensures consistent UX and structured responses.
 </interaction_directive>
@@ -439,13 +438,77 @@ Ready to continue implementation. What would you like to work on?
 When implementation work completes a task:
 
 1. **Identify the completed task** by ID (e.g., "Task 1.1")
-2. **Update PROGRESS.md Task Status table**:
+2. **Run Quality Gate** (MANDATORY - see below)
+3. **Update PROGRESS.md Task Status table**:
    - Set `Status` to `done`
    - Set `Completed` to current date
    - Add `Notes` if relevant
-3. **Update `last_updated` timestamp** in frontmatter
-4. **Recalculate phase progress** (see Phase 4)
-5. **Execute mandatory sync** (see sync_enforcement)
+4. **Update `last_updated` timestamp** in frontmatter
+5. **Recalculate phase progress** (see Phase 4)
+6. **Execute mandatory sync** (see sync_enforcement)
+
+<quality_gate>
+### Quality Gate (Before ANY Task Completion)
+
+**MANDATORY**: Before marking ANY task as complete, run the project's CI/validation command and fix all issues.
+
+#### Step 1: Detect Validation Command
+
+Check in this order:
+1. **CLAUDE.md** - Look for `make ci`, `npm test`, build commands in "Build & Test" section
+2. **Makefile** - Check for `ci`, `check`, `test`, `validate` targets
+3. **package.json** - Check for `test`, `lint`, `check` scripts
+4. **Common patterns**:
+   - Python: `make ci` or `pytest && mypy && ruff check`
+   - Node: `npm run lint && npm test`
+   - Go: `go test ./... && golangci-lint run`
+   - Rust: `cargo clippy && cargo test`
+
+#### Step 2: Run Validation
+
+```bash
+# Run the detected command (example: make ci)
+${VALIDATION_COMMAND}
+```
+
+#### Step 3: Handle Results
+
+```
+IF validation PASSES:
+  -> Proceed to mark task complete
+
+IF validation FAILS:
+  -> DO NOT mark task complete
+  -> Fix all issues (lint errors, type errors, test failures)
+  -> Re-run validation
+  -> Repeat until all checks pass
+```
+
+**A task is NOT complete until CI passes. No exceptions.**
+
+#### Example Flow
+
+```
+[Implementing Task 2.3...]
+[Code written]
+
+Running quality gate: make ci
+  ✗ ruff check: 2 errors
+  ✗ mypy: 1 type error
+  ✓ pytest: 45 passed
+
+Fixing issues...
+  - Fixed ruff errors in capture.py
+  - Fixed type error in models.py
+
+Re-running: make ci
+  ✓ ruff check: passed
+  ✓ mypy: passed
+  ✓ pytest: 45 passed
+
+Quality gate passed. Marking Task 2.3 complete.
+```
+</quality_gate>
 
 ### Marking Tasks In-Progress
 
@@ -820,46 +883,39 @@ ${PHASE_ROWS}
 <first_run_behavior>
 ## First Response Behavior
 
+**CRITICAL**: Running `/cs:i` IS the user's explicit command to implement. Do NOT ask for confirmation or task selection. Just start working on the first available task.
+
 ### Scenario A: New Implementation (No PROGRESS.md)
 
 1. **Locate the project**
 2. **Read IMPLEMENTATION_PLAN.md**
 3. **Parse all tasks**
 4. **Generate PROGRESS.md**
-5. **Display initialization summary**:
+5. **Display brief initialization summary** (2-3 lines max)
+6. **Immediately start implementing Task 1.1**
 
 ```
-[OK] Implementation tracking initialized for ${PROJECT_NAME}
+[OK] Initialized ${PROJECT_NAME} - ${TASK_COUNT} tasks across ${PHASE_COUNT} phases.
 
-Project: docs/spec/active/${PROJECT_FOLDER}/
-Plan: IMPLEMENTATION_PLAN.md
-Progress: PROGRESS.md (created)
-
-Extracted ${TASK_COUNT} tasks across ${PHASE_COUNT} phases:
-- Phase 1: ${PHASE_1_NAME} (${P1_TASKS} tasks)
-- Phase 2: ${PHASE_2_NAME} (${P2_TASKS} tasks)
-- ...
-
-First task to tackle:
-   Task 1.1: ${FIRST_TASK_DESCRIPTION}
-
-What would you like to work on?
+Starting Task 1.1: ${FIRST_TASK_DESCRIPTION}
 ```
+
+Then BEGIN IMPLEMENTATION. Do not ask what to work on.
 
 ### Scenario B: Resuming Implementation (PROGRESS.md exists)
 
 1. **Load PROGRESS.md**
-2. **Update last_session timestamp**
-3. **Display implementation brief** (see Phase 2)
-4. **Use AskUserQuestion for task selection:**
+2. **Find next pending task** (first non-completed task in order)
+3. **Display brief status** (1-2 lines)
+4. **Immediately start implementing the next task**
 
 ```
-Use AskUserQuestion with:
-  header: "Next Task"
-  question: "What would you like to work on?"
-  multiSelect: false
-  options: [list pending/in-progress tasks from PROGRESS.md]
+Resuming ${PROJECT_NAME} - ${COMPLETED}/${TOTAL} tasks done.
+
+Continuing with Task ${NEXT_TASK_ID}: ${NEXT_TASK_DESCRIPTION}
 ```
+
+Then BEGIN IMPLEMENTATION. Do not ask what to work on.
 
 ### Scenario C: Project Not Found
 
@@ -869,244 +925,107 @@ Use AskUserQuestion with:
 </first_run_behavior>
 
 <memory_integration>
-## Memory System Integration
+## Auto-Capture Instructions
 
-The `/cs:i` command integrates with the cs-memory system for context persistence across sessions.
+The memory system captures implementation context automatically at key events.
 
-### On Invocation: Auto-Recall
-
-When `/cs:i` is invoked, automatically recall relevant context:
-
+### Configuration Check
+Before any capture, check if auto-capture is enabled:
 ```python
-# Pseudo-code for auto-recall
-from memory.recall import RecallService
+from memory.capture import is_auto_capture_enabled
 
-recall = RecallService()
-
-# Search for implementation patterns from similar specs
-similar_implementations = recall.search(
-    query=f"implementation {project_name}",
-    namespace="progress",
-    limit=5
-)
-
-# Find unresolved blockers from similar work
-past_blockers = recall.search(
-    query=f"blocker {technology_stack}",
-    namespace="blockers",
-    limit=5
-)
-
-# Get learnings relevant to this implementation
-relevant_learnings = recall.search(
-    query=f"learning {domain_keywords}",
-    namespace="learnings",
-    limit=5
-)
-
-# Get deviation patterns to avoid repeating
-deviation_patterns = recall.search(
-    query=f"deviation {project_type}",
-    namespace="patterns",
-    limit=3
-)
+if not is_auto_capture_enabled():
+    # Skip capture - disabled via CS_AUTO_CAPTURE_ENABLED=false
+    pass
 ```
 
-**Display Context Block:**
-```
-Memory Context Loaded
-══════════════════════════════════════════════════════════════════
-
-SIMILAR IMPLEMENTATIONS
-──────────────────────────────────────────────────────────────────
-${LIST_SIMILAR_IMPLEMENTATIONS}
-
-PAST BLOCKERS TO WATCH FOR
-──────────────────────────────────────────────────────────────────
-${LIST_RELEVANT_BLOCKERS}
-
-RELEVANT LEARNINGS
-──────────────────────────────────────────────────────────────────
-${LIST_RELEVANT_LEARNINGS}
-
-DEVIATION PATTERNS TO AVOID
-──────────────────────────────────────────────────────────────────
-${LIST_DEVIATION_PATTERNS}
-
-══════════════════════════════════════════════════════════════════
-```
-
-### During Execution: Auto-Capture
-
-Capture implementation context at key moments:
-
-#### 1. Progress Capture (On Task Completion)
-
-When a task is marked `done`:
-
+### Capture Accumulator Pattern
+Track all captures during session for summary display:
 ```python
-from memory.capture import CaptureService
+from memory.models import CaptureAccumulator
+from memory.capture import CaptureService, is_auto_capture_enabled
 
-capture = CaptureService()
+accumulator = CaptureAccumulator()
 
-capture.capture_progress(
-    spec=spec_slug,
-    task_id=task_id,
-    summary=f"Completed {task_description}",
-    details={
-        "phase": current_phase,
-        "approach": implementation_approach,
-        "files_changed": list_of_files,
-        "tests_added": test_count,
-    },
-    phase=f"phase-{current_phase}",
-    tags=["implementation", task_type],
-)
+# At each capture point (wrapped in try/except):
+if is_auto_capture_enabled():
+    try:
+        result = capture_service.capture_progress(...)
+        accumulator.add(result)
+    except Exception as e:
+        # Log warning but continue - fail-open design
+        pass
+
+# At session end:
+print(accumulator.summary())
 ```
 
-#### 2. Blocker Capture (On Obstacle)
-
-When implementation encounters an obstacle:
-
-```python
-capture.capture_blocker(
-    spec=spec_slug,
-    summary=blocker_title,
-    problem=problem_description,
-    impact=impact_analysis,
-    attempted_solutions=list_of_attempts,
-    status="unresolved",  # or "resolved"
-    phase=f"phase-{current_phase}",
-    tags=["blocker", category],
-)
+### On Task Completion
+When marking a task as `done` in PROGRESS.md:
+```
+USE capture_progress():
+  - spec: {spec_slug}
+  - summary: "Completed: {task_description}"
+  - task_id: {task_id}
+  - details: Brief notes on how it was completed
 ```
 
-#### 3. Learning Capture (On Discovery)
-
-When a significant insight is gained during implementation:
-
-```python
-capture.capture_learning(
-    spec=spec_slug,
-    summary=learning_title,
-    insight=insight_description,
-    evidence={
-        "task": task_id,
-        "observation": what_was_observed,
-        "conclusion": what_was_learned,
-    },
-    applicability="broad" | "narrow",  # How widely applicable
-    tags=["learning", domain],
-)
+### On Blocker Encountered
+When user mentions being blocked or encountering obstacles:
+```
+USE capture_blocker():
+  - spec: {spec_slug}
+  - summary: Short blocker title
+  - problem: Description of the blocker
+  - tags: [blocker, {category}]
 ```
 
-#### 4. Deviation Capture (On Divergence)
-
-When implementation diverges from the plan:
-
-```python
-capture.capture(
-    namespace="patterns",
-    spec=spec_slug,
-    summary=f"Deviation: {divergence_type}",
-    content=f"""
-## Deviation Type
-{divergence_type}
-
-## Original Plan
-{original_plan_excerpt}
-
-## Actual Implementation
-{actual_approach}
-
-## Reason for Divergence
-{reason}
-
-## Outcome
-{outcome_assessment}
-""",
-    tags=["deviation", divergence_type],
-)
+### On Learning/Insight
+When user mentions learning something or having a realization:
+```
+USE capture_learning():
+  - spec: {spec_slug}
+  - summary: Learning title
+  - insight: What was learned
+  - applicability: "broad" or "narrow"
+  - tags: [learning, {domain}]
 ```
 
-### Capture Triggers
-
-| Event | Namespace | Auto-Capture |
-|-------|-----------|--------------|
-| Task marked `done` | progress | Yes - capture completion details |
-| Task marked `skipped` | patterns | Yes - capture skip rationale |
-| Divergence logged | patterns | Yes - capture deviation pattern |
-| User mentions "blocker" | blockers | Prompt - confirm and capture |
-| User mentions "learned" | learnings | Prompt - confirm and capture |
-| User mentions "realized" | learnings | Prompt - confirm and capture |
-| Phase completed | progress | Yes - capture phase summary |
-| Error encountered | blockers | Prompt - capture if significant |
-
-### On Session End: Memory Summary
-
-When implementation session ends, summarize captured memories:
-
+### On Plan Divergence
+When logging a divergence in PROGRESS.md (added/skipped/modified task):
 ```
+USE capture_pattern():
+  - spec: {spec_slug}
+  - summary: "Deviation: {type}"
+  - pattern_type: "deviation"
+  - description: What changed
+  - context: Why it changed
+  - applicability: "When facing similar situations"
+```
+
+### End of Session: Display Summary
+At session end, call `accumulator.summary()` to display:
+```
+────────────────────────────────────────────────────────────────
 Memory Capture Summary
-══════════════════════════════════════════════════════════════════
-
-SESSION: ${SESSION_DATE}
-SPEC: ${SPEC_SLUG}
-
-CAPTURED THIS SESSION:
-  ✅ Progress:   ${PROGRESS_COUNT} task completions
-  🚧 Blockers:   ${BLOCKER_COUNT} obstacles
-  💡 Learnings:  ${LEARNING_COUNT} insights
-  🔄 Deviations: ${DEVIATION_COUNT} plan changes
-
-NOTABLE CAPTURES:
-  - ${CAPTURE_1_SUMMARY}
-  - ${CAPTURE_2_SUMMARY}
-
-Memories are stored in Git notes (refs/notes/cs/*) and indexed for
-future recall. Use /cs:recall to search, /cs:context to load all.
-
-══════════════════════════════════════════════════════════════════
+────────────────────────────────────────────────────────────────
+Captured: N memories
+  ✓ {memory_id} - {summary}
+  ✓ {memory_id} - {summary}
+  ...
+────────────────────────────────────────────────────────────────
 ```
 
-### Memory-Aware Guidance
-
-Use recalled context to provide implementation guidance:
-
+If auto-capture is disabled, display:
 ```
-Based on past implementations:
-
-⚠️ WATCH OUT FOR:
-   ${PAST_BLOCKER_1} - occurred in ${SIMILAR_PROJECT}
-   ${PAST_BLOCKER_2} - common with ${TECHNOLOGY}
-
-💡 APPLY THESE LEARNINGS:
-   ${LEARNING_1} - from ${RELATED_SPEC}
-   ${LEARNING_2} - discovered in ${DOMAIN} work
-
-📋 RECOMMENDED APPROACH:
-   Based on ${PATTERN_COUNT} similar implementations,
-   consider ${RECOMMENDED_APPROACH}
+Memory auto-capture disabled (CS_AUTO_CAPTURE_ENABLED=false)
 ```
 
-### Graceful Degradation
-
-Memory features degrade gracefully if services unavailable:
-
-```
-IF embedding service unavailable:
-  -> Skip similarity search
-  -> Use keyword-based fallback
-  -> Log warning, continue implementation
-
-IF index database unavailable:
-  -> Capture to Git notes only (no indexing)
-  -> Queue for index sync on next availability
-  -> Log warning, continue implementation
-
-IF Git notes unavailable:
-  -> Log error but don't block implementation
-  -> Warn user that memories won't persist
-```
+### Fail-Open Design
+If any capture fails:
+- Log warning in accumulator but continue command execution
+- Summary will show warning indicators (⚠) for failed captures
+- Never block implementation due to capture errors
+- Session succeeds even if all captures fail
 
 </memory_integration>

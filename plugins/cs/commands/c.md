@@ -338,309 +338,115 @@ Move to `completed/` (not deleted - we learn from failures too).
 </edge_cases>
 
 <memory_integration>
-## Memory System Integration
+## Auto-Capture Instructions
 
-The `/cs:c` command integrates with the cs-memory system for knowledge preservation.
+The close-out command captures retrospective data for future projects.
 
-### On Invocation: Comprehensive Recall
-
-When closing a project, load ALL memories for the spec to inform the retrospective:
-
+### Configuration Check
+Before any capture, check if auto-capture is enabled:
 ```python
-# Pseudo-code for comprehensive recall
-from memory.recall import RecallService
+from memory.capture import is_auto_capture_enabled
 
-recall = RecallService()
-
-# Load full context for this spec
-context = recall.context(spec_slug)
-
-# Get all decisions made during this spec
-all_decisions = recall.search(
-    query="*",
-    spec=spec_slug,
-    namespace="decisions",
-    limit=100
-)
-
-# Get all blockers (resolved and unresolved)
-all_blockers = recall.search(
-    query="*",
-    spec=spec_slug,
-    namespace="blockers",
-    limit=100
-)
-
-# Get all learnings captured during implementation
-all_learnings = recall.search(
-    query="*",
-    spec=spec_slug,
-    namespace="learnings",
-    limit=100
-)
-
-# Get progress notes
-all_progress = recall.search(
-    query="*",
-    spec=spec_slug,
-    namespace="progress",
-    limit=100
-)
-
-# Get any captured patterns/deviations
-all_patterns = recall.search(
-    query="*",
-    spec=spec_slug,
-    namespace="patterns",
-    limit=50
-)
+if not is_auto_capture_enabled():
+    # Skip capture - disabled via CS_AUTO_CAPTURE_ENABLED=false
+    pass
 ```
 
-**Display Memory Summary:**
-```
-Memory Context for Retrospective
-══════════════════════════════════════════════════════════════════
-
-SPEC: ${SPEC_SLUG}
-TOTAL MEMORIES: ${TOTAL_COUNT}
-
-BREAKDOWN:
-  📋 Decisions:     ${DECISIONS_COUNT}
-  💡 Learnings:     ${LEARNINGS_COUNT}
-  🚧 Blockers:      ${BLOCKERS_COUNT} (${RESOLVED_COUNT} resolved)
-  ✅ Progress:      ${PROGRESS_COUNT}
-  🔄 Patterns:      ${PATTERNS_COUNT}
-
-KEY DECISIONS MADE:
-──────────────────────────────────────────────────────────────────
-${LIST_KEY_DECISIONS}
-
-LEARNINGS CAPTURED:
-──────────────────────────────────────────────────────────────────
-${LIST_LEARNINGS}
-
-BLOCKERS ENCOUNTERED:
-──────────────────────────────────────────────────────────────────
-${LIST_BLOCKERS_WITH_RESOLUTION}
-
-══════════════════════════════════════════════════════════════════
-
-This context will inform the retrospective generation.
-```
-
-### On Retrospective Generation: Learning Extraction
-
-When generating the retrospective, capture key learnings for future recall:
-
-#### 1. Retrospective Memory Capture
-
-After generating RETROSPECTIVE.md:
-
+### Capture Accumulator Pattern
+Track all captures during close-out for summary display:
 ```python
-from memory.capture import CaptureService
+from memory.models import CaptureAccumulator
+from memory.capture import CaptureService, is_auto_capture_enabled
 
-capture = CaptureService()
+accumulator = CaptureAccumulator()
 
-# Capture retrospective summary
-capture.capture(
-    namespace="retrospective",
-    spec=spec_slug,
-    summary=f"Retrospective: {project_name}",
-    content=f"""
-## Project Outcome
-{outcome_summary}
+# At each capture point (wrapped in try/except):
+if is_auto_capture_enabled():
+    try:
+        result = capture_service.capture_retrospective(...)
+        accumulator.add(result)
+    except Exception as e:
+        # Log warning but continue - fail-open design
+        pass
 
-## What Went Well
-{what_went_well}
-
-## What Could Be Improved
-{what_to_improve}
-
-## Key Learnings
-{key_learnings}
-
-## Recommendations
-{recommendations}
-
-## Final Metrics
-- Duration: {actual_duration}
-- Effort: {actual_effort} (planned: {planned_effort})
-- Scope changes: {scope_change_summary}
-""",
-    tags=["retrospective", outcome, project_type],
-)
+# At command end:
+print(accumulator.summary())
 ```
 
-#### 2. Extract and Promote Key Learnings
-
-Learnings from the retrospective should be captured as standalone notes:
-
-```python
-for learning in key_learnings:
-    capture.capture_learning(
-        spec=spec_slug,
-        summary=learning.title,
-        insight=learning.description,
-        evidence={
-            "project": project_name,
-            "outcome": outcome,
-            "context": learning.context,
-        },
-        applicability=learning.applicability,  # "broad" or "narrow"
-        tags=["retrospective", learning.domain],
-    )
+### Step 4.5: After RETROSPECTIVE.md Generated
+After generating the retrospective document:
+```
+USE capture_retrospective():
+  - spec: {spec_slug}
+  - summary: "Retrospective: {project_name}"
+  - outcome: "{success|partial|failed|abandoned}"
+  - what_went_well: [List from retrospective]
+  - what_to_improve: [List from retrospective]
+  - key_learnings: [List from retrospective]
+  - recommendations: [List from retrospective]
+  - metrics: {duration, effort, scope_variance}
 ```
 
-#### 3. Pattern Extraction
-
-Capture reusable patterns from the project:
-
-```python
-# Positive patterns (what worked)
-for success in what_went_well:
-    capture.capture(
-        namespace="patterns",
-        spec=spec_slug,
-        summary=f"Pattern: {success.title}",
-        content=f"""
-## Pattern Type
-success
-
-## Description
-{success.description}
-
-## Context
-{project_context}
-
-## Applicability
-{when_to_apply}
-
-## Evidence
-This pattern contributed to {project_name} ({outcome})
-""",
-        tags=["pattern", "success", success.category],
-    )
-
-# Negative patterns (what to avoid)
-for improvement in what_to_improve:
-    capture.capture(
-        namespace="patterns",
-        spec=spec_slug,
-        summary=f"Anti-pattern: {improvement.title}",
-        content=f"""
-## Pattern Type
-anti-pattern
-
-## Description
-{improvement.description}
-
-## Impact
-{improvement.impact}
-
-## Better Approach
-{improvement.recommendation}
-
-## Evidence
-Identified during {project_name} ({outcome})
-""",
-        tags=["pattern", "anti-pattern", improvement.category],
-    )
+### Extract Key Learnings
+For each key learning in the retrospective:
+```
+USE capture_learning():
+  - spec: {spec_slug}
+  - summary: Learning title
+  - insight: Learning description
+  - applicability: "broad" if generally applicable, "narrow" if specific
+  - tags: [retrospective, {domain}]
 ```
 
-### Capture Integration with Retrospective Steps
-
-Integrate memory capture with the close-out protocol:
-
-| Step | Memory Action |
-|------|---------------|
-| Step 1: Locate project | - |
-| Step 2: Gather metrics | - |
-| Step 3: Analyze logs | - |
-| Step 4: Generate RETROSPECTIVE | **Recall all spec memories** for context |
-| Step 4.5: Extract learnings | **Capture** retrospective, learnings, patterns |
-| Step 5: Update metadata | - |
-| Step 6: CHANGELOG entry | - |
-| Step 7: Move to completed | - |
-| Step 8: Update CLAUDE.md | - |
-| Step 9: Generate summary | **Include memory capture summary** |
-
-### Memory Capture Summary (Add to Step 9)
-
-Include in the final summary:
-
+### Extract Success Patterns
+For each "what went well" item:
 ```
-Memory Capture Complete
-══════════════════════════════════════════════════════════════════
-
-MEMORIES CAPTURED:
-  📊 Retrospective:  1 summary captured
-  💡 Learnings:      ${EXTRACTED_LEARNINGS_COUNT} promoted
-  🔄 Patterns:       ${PATTERNS_COUNT} (${POSITIVE} success, ${NEGATIVE} anti-pattern)
-
-MEMORIES PRESERVED FROM IMPLEMENTATION:
-  📋 Decisions:      ${DECISIONS_COUNT} archived
-  🚧 Blockers:       ${BLOCKERS_COUNT} archived
-  ✅ Progress:       ${PROGRESS_COUNT} archived
-
-SEARCHABLE VIA:
-  /cs:recall "learning from ${spec_slug}"
-  /cs:recall "pattern ${domain}"
-  /cs:recall "decision ${topic}"
-
-══════════════════════════════════════════════════════════════════
+USE capture_pattern():
+  - spec: {spec_slug}
+  - summary: "Pattern: {success_title}"
+  - pattern_type: "success"
+  - description: What worked well
+  - context: Project context
+  - applicability: When to use this pattern
+  - evidence: "Contributed to {project_name} ({outcome})"
 ```
 
-### Cross-Project Learning Surfacing
-
-When generating the retrospective, surface related learnings from other projects:
-
-```python
-# Find similar retrospectives
-similar_projects = recall.search(
-    query=f"retrospective {project_type} {technology_stack}",
-    namespace="retrospective",
-    limit=5
-)
-
-# Find relevant patterns from other projects
-relevant_patterns = recall.search(
-    query=f"pattern {domain}",
-    namespace="patterns",
-    limit=10
-)
+### Extract Anti-Patterns
+For each "what to improve" item:
+```
+USE capture_pattern():
+  - spec: {spec_slug}
+  - summary: "Anti-pattern: {issue_title}"
+  - pattern_type: "anti-pattern"
+  - description: What didn't work
+  - context: Project context
+  - applicability: When to avoid this pattern
+  - evidence: "Identified in {project_name}"
 ```
 
-**Display Cross-Project Context:**
+### End of Command: Display Summary
+After all captures complete, call `accumulator.summary()` to display:
 ```
-Insights from Similar Projects
-══════════════════════════════════════════════════════════════════
-
-SIMILAR PROJECTS:
-──────────────────────────────────────────────────────────────────
-${LIST_SIMILAR_PROJECTS_WITH_OUTCOMES}
-
-RELEVANT PATTERNS TO CONSIDER:
-──────────────────────────────────────────────────────────────────
-${LIST_RELEVANT_PATTERNS}
-
-These insights may be helpful for the retrospective analysis.
-══════════════════════════════════════════════════════════════════
+────────────────────────────────────────────────────────────────
+Memory Capture Summary
+────────────────────────────────────────────────────────────────
+Captured: N memories
+  ✓ {memory_id} - {summary}
+  ✓ {memory_id} - {summary}
+  ...
+────────────────────────────────────────────────────────────────
 ```
 
-### Graceful Degradation
-
-Memory operations degrade gracefully:
-
+If auto-capture is disabled, display:
 ```
-IF memory services unavailable:
-  -> Proceed with standard close-out
-  -> Skip memory capture (warn user)
-  -> Recommend manual /cs:remember for key learnings
-
-IF index unavailable:
-  -> Capture to Git notes only
-  -> Skip recall-based context
-  -> Proceed with standard retrospective
+Memory auto-capture disabled (CS_AUTO_CAPTURE_ENABLED=false)
 ```
+
+### Fail-Open Design
+If any capture fails:
+- Log warning in accumulator but continue close-out
+- Summary will show warning indicators (⚠) for failed captures
+- Never block project completion due to capture errors
+- Close-out succeeds even if all captures fail
 
 </memory_integration>
