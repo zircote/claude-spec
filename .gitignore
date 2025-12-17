@@ -87,6 +87,12 @@ Desktop.ini
 # Plugin Runtime Files
 # -----------------------------------------------------------------------------
 
+# Memory index (local SQLite + embeddings cache)
+.cs-memory/
+
+# Learning queue (ephemeral, flushed on session end)
+.cs-learning-queue.json
+
 # Prompt logs (contain user interactions - sensitive)
 PROMPT_LOG.json
 .prompt-log.json
