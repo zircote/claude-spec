@@ -128,27 +128,28 @@ echo "[OK] Worktree configured"
 
 ## Step 6: Launch Claude Agent
 
-Use the plugin's launch script if available, otherwise use osascript:
+Use the plugin's terminal-aware launch script. It reads terminal preference from `~/.claude/worktree-manager.config.json`.
 
 ```bash
-# Check for plugin launch script
+# Use plugin's terminal-aware launcher
 LAUNCH_SCRIPT="${CLAUDE_PLUGIN_ROOT}/worktree/scripts/launch-agent.sh"
 
 if [ -x "$LAUNCH_SCRIPT" ]; then
-    # Use plugin script
-    "$LAUNCH_SCRIPT" "${WORKTREE_PATH}" "${INITIAL_PROMPT:-Spec worktree ready}"
+    "$LAUNCH_SCRIPT" "${WORKTREE_PATH}" "${INITIAL_PROMPT:-}"
 else
-    # Fallback: Launch new terminal with Claude Code
-    osascript <<EOF
-    tell application "Terminal"
-        activate
-        do script "cd '${WORKTREE_PATH}' && claude"
-    end tell
-EOF
+    echo "[ERROR] Launch script not found at: $LAUNCH_SCRIPT" >&2
+    echo "Run /cs:wt:setup to configure worktree manager" >&2
+    exit 1
 fi
-
-echo "[OK] Claude agent launched in new terminal"
 ```
+
+**Supported terminals** (configured via `/cs:wt:setup`):
+- `iterm2-tab` - Opens new tab in iTerm2 (recommended for macOS)
+- `iterm2-window` - Opens new window in iTerm2
+- `ghostty` - Opens in Ghostty terminal
+- `tmux` - Creates new tmux window/session
+- `terminal` - macOS Terminal.app
+- `wezterm`, `alacritty`, `kitty` - GPU-accelerated terminals
 
 ## Step 7: Display Completion Message
 
@@ -188,19 +189,11 @@ echo "[OK] Claude agent launched in new terminal"
 
 ## Handling --prompt Flag
 
-If `--prompt` is provided:
-
-1. **Store the prompt** for the new session
-2. **Launch agent with auto-execution**:
+If `--prompt` is provided, pass it to the launch script which handles terminal-specific command execution:
 
 ```bash
-# Launch with initial prompt
-osascript <<EOF
-tell application "Terminal"
-    activate
-    do script "cd '${WORKTREE_PATH}' && claude '${INITIAL_PROMPT}'"
-end tell
-EOF
+# The launch script accepts an optional second argument for the initial prompt
+"$LAUNCH_SCRIPT" "${WORKTREE_PATH}" "${INITIAL_PROMPT}"
 ```
 
 The initial prompt can use template variables:
@@ -210,14 +203,13 @@ The initial prompt can use template variables:
 
 Example:
 ```
-/cs/wt:create user-auth --prompt "/cs/p user authentication system"
+/cs:wt:create user-auth --prompt "/cs:p user authentication system"
 ```
 
 This will:
-1. Create worktree at `~/worktrees/repo/plan-user-auth`
-2. Open new terminal
-3. Start Claude Code
-4. Automatically run `/cs/p user authentication system`
+1. Create worktree at `~/worktrees/repo/user-auth`
+2. Open new terminal tab/window (based on your config)
+3. Start Claude Code with the specified prompt
 
 </with_initial_prompt>
 

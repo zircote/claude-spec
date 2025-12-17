@@ -42,15 +42,19 @@ Use the `AskUserQuestion` tool with these 4 questions in a single call.
       "options": [
         {
           "label": "iterm2-tab",
-          "description": "(Recommended) macOS terminal with excellent tab support"
+          "description": "(Recommended) macOS terminal - opens new tab"
         },
         {
           "label": "ghostty",
-          "description": "Fast, GPU-accelerated terminal"
+          "description": "Fast, GPU-accelerated terminal by Mitchell Hashimoto"
         },
         {
           "label": "tmux",
-          "description": "Terminal multiplexer (creates detached sessions)"
+          "description": "Terminal multiplexer (creates new window/session)"
+        },
+        {
+          "label": "terminal",
+          "description": "macOS Terminal.app - built-in, no extra install"
         }
       ]
     },
@@ -146,3 +150,4 @@ cat ~/.claude/worktree-manager.config.json
 - Registry location is fixed at `~/.claude/worktree-registry.json`
 - Default directories copied to worktrees: `.agents`, `.env.example`, `.env`
 - Run this command again anytime to change your settings
+- **Additional terminals**: Select "Other" and enter `wezterm`, `alacritty`, `kitty`, or `iterm2-window` for other supported terminals
