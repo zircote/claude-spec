@@ -75,6 +75,22 @@ try:
 except ImportError:
     FALLBACK_AVAILABLE = False
 
+# Import memory queue flusher
+try:
+    from file_queue import dequeue_all, get_queue_size
+
+    MEMORY_QUEUE_AVAILABLE = True
+except ImportError:
+    MEMORY_QUEUE_AVAILABLE = False
+
+# Import capture service for flushing
+try:
+    from memory.capture import CaptureService
+
+    CAPTURE_SERVICE_AVAILABLE = True
+except ImportError:
+    CAPTURE_SERVICE_AVAILABLE = False
+
 LOG_PREFIX = "post_command"
 
 # Session state file created by command_detector
@@ -213,6 +229,73 @@ def run_post_steps(cwd: str, command: str) -> None:
             sys.stderr.write(f"cs-post-step {step_name} error: {e}\n")
 
 
+def flush_memory_queue(cwd: str) -> None:
+    """Flush any pending learnings from the file-based queue to git notes.
+
+    This runs unconditionally on Stop to ensure learnings captured during
+    any tool use get persisted, not just during /cs:* commands.
+
+    Args:
+        cwd: Current working directory
+    """
+    if not MEMORY_QUEUE_AVAILABLE:
+        return
+
+    if not CAPTURE_SERVICE_AVAILABLE:
+        return
+
+    # Check if there's anything to flush
+    queue_size = get_queue_size(cwd)
+    if queue_size == 0:
+        return
+
+    sys.stderr.write(f"cs-{LOG_PREFIX}: Flushing {queue_size} queued learnings...\n")
+
+    # Dequeue and flush
+    items = dequeue_all(cwd)
+    if not items:
+        return
+
+    capture_service = CaptureService()
+    flushed = 0
+    errors = 0
+
+    for item in items:
+        try:
+            summary = item.get("summary", "")
+            content = item.get("content", "")
+            spec = item.get("spec")
+            tags = item.get("tags", [])
+
+            if not summary:
+                continue
+
+            result = capture_service.capture_learning(
+                spec=spec,
+                summary=summary,
+                insight=content,
+                applicability=None,
+                tags=tags,
+            )
+
+            if result.success:
+                flushed += 1
+            else:
+                errors += 1
+                if result.warning:
+                    sys.stderr.write(
+                        f"cs-{LOG_PREFIX}: Capture warning: {result.warning}\n"
+                    )
+
+        except Exception as e:
+            errors += 1
+            sys.stderr.write(f"cs-{LOG_PREFIX}: Flush error: {e}\n")
+
+    sys.stderr.write(
+        f"cs-{LOG_PREFIX}: Flushed {flushed} learnings ({errors} errors)\n"
+    )
+
+
 # I/O wrapper functions to avoid lambda expressions (E731)
 def _io_read_input() -> dict[str, Any] | None:
     """Read input using hook_io module."""
@@ -271,7 +354,14 @@ def main() -> None:
         _write_output(_stop_response())
         return
 
-    # Load session state
+    # Always try to flush memory queue regardless of command state
+    # This ensures learnings captured during any tool use get persisted
+    try:
+        flush_memory_queue(cwd)
+    except Exception as e:
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Error flushing memory queue: {e}\n")
+
+    # Load session state for command-specific post-steps
     state = load_session_state(cwd)
 
     if state:

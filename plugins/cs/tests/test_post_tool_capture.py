@@ -190,90 +190,51 @@ class TestDetectActiveSpec:
             assert result is None
 
 
-class TestGetSessionQueue:
-    """Tests for get_session_queue function."""
-
-    def test_creates_queue_when_memory_available(self):
-        """Test creates CaptureAccumulator when memory available."""
-        import hooks.post_tool_capture as module
-
-        # Reset global state
-        module._session_queue = None
-
-        with patch.object(module, "MEMORY_AVAILABLE", True):
-            queue = module.get_session_queue()
-            assert queue is not None
-
-    def test_returns_none_when_memory_unavailable(self):
-        """Test returns None when memory not available."""
-        import hooks.post_tool_capture as module
-
-        # Reset global state
-        module._session_queue = None
-
-        with patch.object(module, "MEMORY_AVAILABLE", False):
-            queue = module.get_session_queue()
-            assert queue is None
-
-    def test_returns_same_queue_on_subsequent_calls(self):
-        """Test returns same queue instance."""
-        import hooks.post_tool_capture as module
-
-        # Reset global state
-        module._session_queue = None
-
-        with patch.object(module, "MEMORY_AVAILABLE", True):
-            queue1 = module.get_session_queue()
-            queue2 = module.get_session_queue()
-            assert queue1 is queue2
-
-
 class TestQueueLearning:
-    """Tests for queue_learning function."""
+    """Tests for queue_learning function with file-based queue."""
 
-    def test_queue_not_available(self):
-        """Test returns False when queue not available."""
+    def test_queue_not_available(self, tmp_path):
+        """Test returns False when file queue not available."""
         import hooks.post_tool_capture as module
 
-        module._session_queue = None
-
-        with patch.object(module, "MEMORY_AVAILABLE", False):
+        with patch.object(module, "FILE_QUEUE_AVAILABLE", False):
             mock_learning = MagicMock()
-            result = module.queue_learning(mock_learning, "test-spec")
+            result = module.queue_learning(mock_learning, "test-spec", str(tmp_path))
             assert result is False
 
-    def test_successful_queue(self):
-        """Test successful learning queue."""
+    def test_successful_queue(self, tmp_path):
+        """Test successful learning queue to file."""
         import hooks.post_tool_capture as module
-        from memory.models import CaptureAccumulator
-
-        module._session_queue = CaptureAccumulator()
 
         mock_learning = MagicMock()
-        mock_learning.timestamp = datetime.now(UTC)
+        mock_learning.tool_name = "Bash"
         mock_learning.summary = "Test summary"
+        mock_learning.category = "error"
+        mock_learning.severity = "sev-1"
         mock_learning.to_memory_args.return_value = {
             "insight": "Test insight",
             "tags": ["test"],
         }
 
-        with patch.object(module, "MEMORY_AVAILABLE", True):
-            result = module.queue_learning(mock_learning, "test-spec")
-            assert result is True
-            assert module._session_queue.count == 1
+        with patch.object(module, "FILE_QUEUE_AVAILABLE", True):
+            with patch.object(
+                module, "enqueue_learning", return_value=True
+            ) as mock_enqueue:
+                result = module.queue_learning(
+                    mock_learning, "test-spec", str(tmp_path)
+                )
+                assert result is True
+                mock_enqueue.assert_called_once()
 
-    def test_queue_exception(self):
+    def test_queue_exception(self, tmp_path):
         """Test handles exception during queue."""
         import hooks.post_tool_capture as module
-        from memory.models import CaptureAccumulator
-
-        module._session_queue = CaptureAccumulator()
 
         mock_learning = MagicMock()
         mock_learning.to_memory_args.side_effect = Exception("fail")
 
-        with patch.object(module, "MEMORY_AVAILABLE", True):
-            result = module.queue_learning(mock_learning, "test-spec")
+        with patch.object(module, "FILE_QUEUE_AVAILABLE", True):
+            result = module.queue_learning(mock_learning, "test-spec", str(tmp_path))
             assert result is False
 
 
@@ -364,16 +325,15 @@ class TestProcessToolResponse:
             )
 
     def test_learning_detected_and_queued(self, tmp_path):
-        """Test learning is detected and queued."""
+        """Test learning is detected and queued to file."""
         import hooks.post_tool_capture as module
-        from memory.models import CaptureAccumulator
-
-        module._session_queue = CaptureAccumulator()
 
         mock_learning = MagicMock()
         mock_learning.timestamp = datetime.now(UTC)
+        mock_learning.tool_name = "Bash"
         mock_learning.summary = "Test"
         mock_learning.category = "error"
+        mock_learning.severity = "sev-1"
         mock_learning.to_memory_args.return_value = {"insight": "x", "tags": []}
 
         with (
@@ -381,7 +341,8 @@ class TestProcessToolResponse:
             patch(
                 "hooks.post_tool_capture.extract_learning", return_value=mock_learning
             ),
-            patch.object(module, "MEMORY_AVAILABLE", True),
+            patch.object(module, "FILE_QUEUE_AVAILABLE", True),
+            patch.object(module, "enqueue_learning", return_value=True) as mock_enqueue,
         ):
             mock_detector = MagicMock()
             mock_detector.calculate_score.return_value = 0.8
@@ -394,7 +355,8 @@ class TestProcessToolResponse:
                 cwd=str(tmp_path),
             )
 
-            assert module._session_queue.count == 1
+            # Verify enqueue was called
+            mock_enqueue.assert_called_once()
 
     def test_slow_detection_logs_warning(self, tmp_path):
         """Test slow detection logs a warning."""

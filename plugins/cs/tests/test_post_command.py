@@ -1118,3 +1118,355 @@ class TestRunStepAdditionalCases:
         run_step(str(tmp_path), "archive-logs", config)
 
         mock_module.run.assert_called_once()
+
+
+class TestFlushMemoryQueue:
+    """Tests for flush_memory_queue function."""
+
+    def test_flush_returns_early_when_queue_unavailable(self, tmp_path, monkeypatch):
+        """Test early return when MEMORY_QUEUE_AVAILABLE is False."""
+        import post_command
+
+        original = post_command.MEMORY_QUEUE_AVAILABLE
+        post_command.MEMORY_QUEUE_AVAILABLE = False
+
+        from post_command import flush_memory_queue
+
+        # Should not raise
+        flush_memory_queue(str(tmp_path))
+
+        post_command.MEMORY_QUEUE_AVAILABLE = original
+
+    def test_flush_returns_early_when_capture_unavailable(self, tmp_path, monkeypatch):
+        """Test early return when CAPTURE_SERVICE_AVAILABLE is False."""
+        import post_command
+
+        orig_queue = post_command.MEMORY_QUEUE_AVAILABLE
+        orig_capture = post_command.CAPTURE_SERVICE_AVAILABLE
+
+        post_command.MEMORY_QUEUE_AVAILABLE = True
+        post_command.CAPTURE_SERVICE_AVAILABLE = False
+
+        from post_command import flush_memory_queue
+
+        # Should not raise
+        flush_memory_queue(str(tmp_path))
+
+        post_command.MEMORY_QUEUE_AVAILABLE = orig_queue
+        post_command.CAPTURE_SERVICE_AVAILABLE = orig_capture
+
+    def test_flush_returns_early_when_queue_empty(self, tmp_path, monkeypatch):
+        """Test early return when queue is empty."""
+        import post_command
+
+        orig_queue = post_command.MEMORY_QUEUE_AVAILABLE
+        orig_capture = post_command.CAPTURE_SERVICE_AVAILABLE
+
+        post_command.MEMORY_QUEUE_AVAILABLE = True
+        post_command.CAPTURE_SERVICE_AVAILABLE = True
+
+        # Mock get_queue_size to return 0
+        monkeypatch.setattr("post_command.get_queue_size", lambda cwd: 0)
+
+        from post_command import flush_memory_queue
+
+        # Should not raise
+        flush_memory_queue(str(tmp_path))
+
+        post_command.MEMORY_QUEUE_AVAILABLE = orig_queue
+        post_command.CAPTURE_SERVICE_AVAILABLE = orig_capture
+
+    def test_flush_processes_items(self, tmp_path, monkeypatch, capsys):
+        """Test flush processes items from queue."""
+        import post_command
+
+        orig_queue = post_command.MEMORY_QUEUE_AVAILABLE
+        orig_capture = post_command.CAPTURE_SERVICE_AVAILABLE
+
+        post_command.MEMORY_QUEUE_AVAILABLE = True
+        post_command.CAPTURE_SERVICE_AVAILABLE = True
+
+        # Mock queue functions
+        monkeypatch.setattr("post_command.get_queue_size", lambda cwd: 2)
+        monkeypatch.setattr(
+            "post_command.dequeue_all",
+            lambda cwd: [
+                {"summary": "Test 1", "content": "Content 1", "spec": None, "tags": []},
+                {
+                    "summary": "Test 2",
+                    "content": "Content 2",
+                    "spec": "myspec",
+                    "tags": ["tag1"],
+                },
+            ],
+        )
+
+        # Mock capture service
+        mock_service = MagicMock()
+        mock_result = MagicMock()
+        mock_result.success = True
+        mock_result.warning = None
+        mock_service.capture_learning.return_value = mock_result
+        mock_service_cls = MagicMock(return_value=mock_service)
+        monkeypatch.setattr("post_command.CaptureService", mock_service_cls)
+
+        from post_command import flush_memory_queue
+
+        flush_memory_queue(str(tmp_path))
+
+        captured = capsys.readouterr()
+        assert "Flushed 2 learnings" in captured.err
+
+        post_command.MEMORY_QUEUE_AVAILABLE = orig_queue
+        post_command.CAPTURE_SERVICE_AVAILABLE = orig_capture
+
+    def test_flush_handles_capture_failure(self, tmp_path, monkeypatch, capsys):
+        """Test flush handles capture failure."""
+        import post_command
+
+        orig_queue = post_command.MEMORY_QUEUE_AVAILABLE
+        orig_capture = post_command.CAPTURE_SERVICE_AVAILABLE
+
+        post_command.MEMORY_QUEUE_AVAILABLE = True
+        post_command.CAPTURE_SERVICE_AVAILABLE = True
+
+        # Mock queue functions
+        monkeypatch.setattr("post_command.get_queue_size", lambda cwd: 1)
+        monkeypatch.setattr(
+            "post_command.dequeue_all",
+            lambda cwd: [
+                {"summary": "Test", "content": "Content", "spec": None, "tags": []}
+            ],
+        )
+
+        # Mock capture service with failure
+        mock_service = MagicMock()
+        mock_result = MagicMock()
+        mock_result.success = False
+        mock_result.warning = "Index error"
+        mock_service.capture_learning.return_value = mock_result
+        mock_service_cls = MagicMock(return_value=mock_service)
+        monkeypatch.setattr("post_command.CaptureService", mock_service_cls)
+
+        from post_command import flush_memory_queue
+
+        flush_memory_queue(str(tmp_path))
+
+        captured = capsys.readouterr()
+        assert "0 learnings" in captured.err or "1 errors" in captured.err
+
+        post_command.MEMORY_QUEUE_AVAILABLE = orig_queue
+        post_command.CAPTURE_SERVICE_AVAILABLE = orig_capture
+
+    def test_flush_handles_exception(self, tmp_path, monkeypatch, capsys):
+        """Test flush handles exception during capture."""
+        import post_command
+
+        orig_queue = post_command.MEMORY_QUEUE_AVAILABLE
+        orig_capture = post_command.CAPTURE_SERVICE_AVAILABLE
+
+        post_command.MEMORY_QUEUE_AVAILABLE = True
+        post_command.CAPTURE_SERVICE_AVAILABLE = True
+
+        # Mock queue functions
+        monkeypatch.setattr("post_command.get_queue_size", lambda cwd: 1)
+        monkeypatch.setattr(
+            "post_command.dequeue_all",
+            lambda cwd: [
+                {"summary": "Test", "content": "Content", "spec": None, "tags": []}
+            ],
+        )
+
+        # Mock capture service to raise exception
+        mock_service = MagicMock()
+        mock_service.capture_learning.side_effect = Exception("Git error")
+        mock_service_cls = MagicMock(return_value=mock_service)
+        monkeypatch.setattr("post_command.CaptureService", mock_service_cls)
+
+        from post_command import flush_memory_queue
+
+        flush_memory_queue(str(tmp_path))
+
+        captured = capsys.readouterr()
+        assert "Flush error" in captured.err
+
+        post_command.MEMORY_QUEUE_AVAILABLE = orig_queue
+        post_command.CAPTURE_SERVICE_AVAILABLE = orig_capture
+
+    def test_flush_skips_items_without_summary(self, tmp_path, monkeypatch, capsys):
+        """Test flush skips items without summary."""
+        import post_command
+
+        orig_queue = post_command.MEMORY_QUEUE_AVAILABLE
+        orig_capture = post_command.CAPTURE_SERVICE_AVAILABLE
+
+        post_command.MEMORY_QUEUE_AVAILABLE = True
+        post_command.CAPTURE_SERVICE_AVAILABLE = True
+
+        # Mock queue functions
+        monkeypatch.setattr("post_command.get_queue_size", lambda cwd: 2)
+        monkeypatch.setattr(
+            "post_command.dequeue_all",
+            lambda cwd: [
+                {"summary": "", "content": "Content 1", "spec": None, "tags": []},
+                {"summary": "Valid", "content": "Content 2", "spec": None, "tags": []},
+            ],
+        )
+
+        # Mock capture service
+        mock_service = MagicMock()
+        mock_result = MagicMock()
+        mock_result.success = True
+        mock_result.warning = None
+        mock_service.capture_learning.return_value = mock_result
+        mock_service_cls = MagicMock(return_value=mock_service)
+        monkeypatch.setattr("post_command.CaptureService", mock_service_cls)
+
+        from post_command import flush_memory_queue
+
+        flush_memory_queue(str(tmp_path))
+
+        # Only one item with summary should be captured
+        assert mock_service.capture_learning.call_count == 1
+
+        post_command.MEMORY_QUEUE_AVAILABLE = orig_queue
+        post_command.CAPTURE_SERVICE_AVAILABLE = orig_capture
+
+    def test_flush_handles_dequeue_returning_empty(self, tmp_path, monkeypatch, capsys):
+        """Test flush handles dequeue returning empty after size check."""
+        import post_command
+
+        orig_queue = post_command.MEMORY_QUEUE_AVAILABLE
+        orig_capture = post_command.CAPTURE_SERVICE_AVAILABLE
+
+        post_command.MEMORY_QUEUE_AVAILABLE = True
+        post_command.CAPTURE_SERVICE_AVAILABLE = True
+
+        # Mock queue functions
+        monkeypatch.setattr("post_command.get_queue_size", lambda cwd: 1)
+        monkeypatch.setattr("post_command.dequeue_all", lambda cwd: [])
+
+        from post_command import flush_memory_queue
+
+        # Should not raise
+        flush_memory_queue(str(tmp_path))
+
+        post_command.MEMORY_QUEUE_AVAILABLE = orig_queue
+        post_command.CAPTURE_SERVICE_AVAILABLE = orig_capture
+
+
+class TestMainFlushIntegration:
+    """Tests for flush_memory_queue integration in main."""
+
+    def test_main_flushes_queue(self, tmp_path, monkeypatch, capsys):
+        """Test main calls flush_memory_queue."""
+        import post_command
+
+        # Track if flush was called
+        flush_called = []
+
+        def mock_flush(cwd):
+            flush_called.append(cwd)
+
+        monkeypatch.setattr(post_command, "flush_memory_queue", mock_flush)
+
+        input_data = {"hook_event_name": "Stop", "cwd": str(tmp_path)}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        main()
+
+        # Verify flush was called with the cwd
+        assert len(flush_called) == 1
+        assert flush_called[0] == str(tmp_path)
+
+    def test_main_continues_after_flush_exception(self, tmp_path, monkeypatch, capsys):
+        """Test main continues even if flush_memory_queue raises."""
+        import post_command
+
+        def mock_flush(cwd):
+            raise Exception("Flush failed")
+
+        monkeypatch.setattr(post_command, "flush_memory_queue", mock_flush)
+
+        input_data = {"hook_event_name": "Stop", "cwd": str(tmp_path)}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        main()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        # Should still return success
+        assert output == {"continue": False}
+        # Should log the error
+        assert "Error flushing memory queue" in captured.err
+
+
+class TestPostCommandIOFallback:
+    """Tests for I/O fallback behavior in post_command."""
+
+    def test_main_fallback_read_input(self, tmp_path, monkeypatch, capsys):
+        """Test main uses fallback read when primary fails."""
+        import post_command
+
+        # Disable primary I/O
+        orig_io = post_command.IO_AVAILABLE
+        orig_fallback = post_command.FALLBACK_AVAILABLE
+        post_command.IO_AVAILABLE = False
+        post_command.FALLBACK_AVAILABLE = True
+
+        input_data = {"hook_event_name": "Stop", "cwd": str(tmp_path)}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        try:
+            main()
+            captured = capsys.readouterr()
+            output = json.loads(captured.out)
+            assert output == {"continue": False}
+        finally:
+            post_command.IO_AVAILABLE = orig_io
+            post_command.FALLBACK_AVAILABLE = orig_fallback
+
+    def test_main_inline_fallback(self, tmp_path, monkeypatch, capsys):
+        """Test main uses inline fallback when all imports fail."""
+        import post_command
+
+        # Disable all I/O options
+        orig_io = post_command.IO_AVAILABLE
+        orig_fallback = post_command.FALLBACK_AVAILABLE
+        post_command.IO_AVAILABLE = False
+        post_command.FALLBACK_AVAILABLE = False
+
+        input_data = {"hook_event_name": "Stop", "cwd": str(tmp_path)}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        try:
+            main()
+            captured = capsys.readouterr()
+            output = json.loads(captured.out)
+            assert output == {"continue": False}
+        finally:
+            post_command.IO_AVAILABLE = orig_io
+            post_command.FALLBACK_AVAILABLE = orig_fallback
+
+    def test_inline_fallback_handles_json_error(self, tmp_path, monkeypatch, capsys):
+        """Test inline fallback handles JSON decode error."""
+        import post_command
+
+        # Disable all I/O options
+        orig_io = post_command.IO_AVAILABLE
+        orig_fallback = post_command.FALLBACK_AVAILABLE
+        post_command.IO_AVAILABLE = False
+        post_command.FALLBACK_AVAILABLE = False
+
+        # Provide invalid JSON
+        monkeypatch.setattr("sys.stdin", io.StringIO("not json"))
+
+        try:
+            main()
+            captured = capsys.readouterr()
+            # Should produce valid output even on error
+            output = json.loads(captured.out)
+            assert output == {"continue": False}
+        finally:
+            post_command.IO_AVAILABLE = orig_io
+            post_command.FALLBACK_AVAILABLE = orig_fallback

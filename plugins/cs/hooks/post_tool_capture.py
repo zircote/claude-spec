@@ -58,12 +58,20 @@ except ImportError as e:
 
 try:
     from memory.capture import is_auto_capture_enabled
-    from memory.models import CaptureAccumulator
 
     MEMORY_AVAILABLE = True
 except ImportError as e:
     MEMORY_AVAILABLE = False
     sys.stderr.write(f"post_tool_capture: Memory import error: {e}\n")
+
+# Import file-based queue
+try:
+    from file_queue import enqueue_learning
+
+    FILE_QUEUE_AVAILABLE = True
+except ImportError as e:
+    FILE_QUEUE_AVAILABLE = False
+    sys.stderr.write(f"post_tool_capture: File queue import error: {e}\n")
 
 # Environment variable to disable tool capture
 TOOL_CAPTURE_ENV = "CS_TOOL_CAPTURE_ENABLED"
@@ -147,61 +155,36 @@ def detect_active_spec(cwd: str) -> str | None:
     return None
 
 
-# Global queue for this session (in-memory, flushed on Stop)
-_session_queue: CaptureAccumulator | None = None
-
-
-def get_session_queue() -> CaptureAccumulator | None:
-    """Get or create the session-scoped capture queue."""
-    global _session_queue
-    if _session_queue is None and MEMORY_AVAILABLE:
-        _session_queue = CaptureAccumulator()
-    return _session_queue
-
-
-def queue_learning(learning: Any, spec: str | None) -> bool:
-    """Queue a learning for later flush.
+def queue_learning(learning: Any, spec: str | None, cwd: str) -> bool:
+    """Queue a learning for later flush using file-based queue.
 
     Args:
         learning: ToolLearning object to queue
         spec: Specification slug
+        cwd: Working directory for queue file
 
     Returns:
         True if successfully queued
     """
-    queue = get_session_queue()
-    if queue is None:
-        sys.stderr.write(f"{LOG_PREFIX}: Queue not available\n")
+    if not FILE_QUEUE_AVAILABLE:
+        sys.stderr.write(f"{LOG_PREFIX}: File queue not available\n")
         return False
 
-    # Store learning data in queue for later CaptureService.capture_learning() call
-    # We use a simple approach: store the args as a dict
-    # The flusher step will call capture_learning() with these args
     try:
-        from memory.models import CaptureResult, Memory
-
-        # Create a placeholder CaptureResult with learning data attached
-        # The actual git notes write happens on flush
+        # Convert learning to memory args for storage
         memory_args = learning.to_memory_args()
 
-        # Create a "pending" capture result
-        result = CaptureResult(
-            success=True,
-            memory=Memory(
-                id=f"pending:{learning.timestamp.isoformat()}",
-                commit_sha="HEAD",
-                namespace="learnings",
-                summary=learning.summary,
-                content=memory_args.get("insight", ""),
-                timestamp=learning.timestamp,
-                spec=spec,
-                tags=tuple(memory_args.get("tags", [])),
-            ),
-            indexed=False,
-            warning="Queued for flush",
+        # Enqueue using file-based queue
+        return enqueue_learning(
+            cwd=cwd,
+            tool_name=learning.tool_name,
+            summary=learning.summary,
+            content=memory_args.get("insight", ""),
+            category=learning.category,
+            severity=learning.severity,
+            spec=spec,
+            tags=memory_args.get("tags", []),
         )
-        queue.add(result)
-        return True
 
     except Exception as e:
         sys.stderr.write(f"{LOG_PREFIX}: Failed to queue: {e}\n")
@@ -255,7 +238,7 @@ def process_tool_response(
     elapsed = time.time() - start_time
 
     if learning is not None:
-        queued = queue_learning(learning, spec)
+        queued = queue_learning(learning, spec, cwd)
         sys.stderr.write(
             f"{LOG_PREFIX}: Queued learning ({learning.category}, "
             f"score={detector.calculate_score(tool_name, tool_response):.2f}) "
@@ -285,6 +268,10 @@ def main() -> None:
 
         if not MEMORY_AVAILABLE:
             sys.stderr.write(f"{LOG_PREFIX}: Memory module not available\n")
+            return
+
+        if not FILE_QUEUE_AVAILABLE:
+            sys.stderr.write(f"{LOG_PREFIX}: File queue not available\n")
             return
 
         # Read input
