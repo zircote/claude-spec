@@ -12,6 +12,7 @@ from steps import (
     ContextLoaderStep,
     LogArchiverStep,
     MarkerCleanerStep,
+    PRManagerStep,
     RetrospectiveGeneratorStep,
     SecurityReviewerStep,
     StepError,
@@ -1239,3 +1240,391 @@ class TestRetrospectiveGeneratorStepModuleLevelRun:
         result = run(str(tmp_path), {"some": "config"})
         assert result.success is True
         assert result.data.get("generated") is True
+
+
+# ============================================================================
+# PR MANAGER STEP TESTS
+# ============================================================================
+
+
+class TestPRManagerStep:
+    """Tests for PRManagerStep."""
+
+    def test_step_name(self, tmp_path):
+        """Test PRManagerStep has correct step name."""
+        step = PRManagerStep(str(tmp_path))
+        assert step.name == "pr-manager"
+
+    def test_default_operation_is_create(self, tmp_path):
+        """Test default operation is 'create' when not specified."""
+        step = PRManagerStep(str(tmp_path))
+        assert step.config.get("operation", "create") == "create"
+
+    def test_respects_operation_config(self, tmp_path):
+        """Test operation configuration is respected."""
+        step = PRManagerStep(str(tmp_path), config={"operation": "ready"})
+        assert step.config.get("operation") == "ready"
+
+    def test_validate_always_returns_true(self, tmp_path, monkeypatch):
+        """Test validate() always returns True (fail-open pattern)."""
+        step = PRManagerStep(str(tmp_path))
+
+        # Mock _check_gh_available to return unavailable
+        monkeypatch.setattr(
+            step, "_check_gh_available", lambda: (False, "gh not installed")
+        )
+
+        # validate() should still return True
+        result = step.validate()
+        assert result is True
+
+    def test_validate_stores_skip_reason_when_gh_unavailable(
+        self, tmp_path, monkeypatch
+    ):
+        """Test validate() stores skip reason when gh is unavailable."""
+        step = PRManagerStep(str(tmp_path))
+
+        # Mock _check_gh_available to return unavailable
+        monkeypatch.setattr(
+            step, "_check_gh_available", lambda: (False, "gh CLI not installed")
+        )
+
+        step.validate()
+        assert step._skip_reason == "gh CLI not installed"
+
+    def test_execute_skips_when_gh_unavailable(self, tmp_path, monkeypatch):
+        """Test execute() skips gracefully when gh is unavailable."""
+        step = PRManagerStep(str(tmp_path))
+        step._skip_reason = "gh CLI not installed"
+
+        result = step.execute()
+
+        assert result.success is True
+        assert result.data.get("skipped") is True
+        assert result.data.get("reason") == "gh CLI not installed"
+        assert len(result.warnings) > 0
+        assert any("unavailable" in w.lower() for w in result.warnings)
+
+    def test_execute_dispatches_to_create(self, tmp_path, monkeypatch):
+        """Test execute() dispatches to _create_draft_pr for 'create' operation."""
+        step = PRManagerStep(str(tmp_path), config={"operation": "create"})
+
+        # Mock _create_draft_pr
+        create_called = [False]
+
+        def mock_create():
+            create_called[0] = True
+            return StepResult.ok("Created", pr_url="http://example.com/pr/1")
+
+        monkeypatch.setattr(step, "_create_draft_pr", mock_create)
+
+        result = step.execute()
+
+        assert create_called[0] is True
+        assert result.success is True
+
+    def test_execute_dispatches_to_update(self, tmp_path, monkeypatch):
+        """Test execute() dispatches to _update_pr_body for 'update' operation."""
+        step = PRManagerStep(str(tmp_path), config={"operation": "update"})
+
+        # Mock _update_pr_body
+        update_called = [False]
+
+        def mock_update():
+            update_called[0] = True
+            return StepResult.ok("Updated")
+
+        monkeypatch.setattr(step, "_update_pr_body", mock_update)
+
+        result = step.execute()
+
+        assert update_called[0] is True
+        assert result.success is True
+
+    def test_execute_dispatches_to_ready(self, tmp_path, monkeypatch):
+        """Test execute() dispatches to _mark_pr_ready for 'ready' operation."""
+        step = PRManagerStep(str(tmp_path), config={"operation": "ready"})
+
+        # Mock _mark_pr_ready
+        ready_called = [False]
+
+        def mock_ready():
+            ready_called[0] = True
+            return StepResult.ok("Ready")
+
+        monkeypatch.setattr(step, "_mark_pr_ready", mock_ready)
+
+        result = step.execute()
+
+        assert ready_called[0] is True
+        assert result.success is True
+
+    def test_execute_fails_on_unknown_operation(self, tmp_path):
+        """Test execute() fails with error for unknown operation."""
+        step = PRManagerStep(str(tmp_path), config={"operation": "invalid"})
+
+        result = step.execute()
+
+        assert result.success is False
+        assert "Unknown PR operation" in result.message
+        assert "invalid" in result.message
+
+
+class TestPRManagerStepGhAvailability:
+    """Tests for PRManagerStep gh CLI availability checking."""
+
+    def test_gh_not_installed(self, tmp_path, monkeypatch):
+        """Test detection when gh CLI is not installed."""
+        import subprocess
+
+        step = PRManagerStep(str(tmp_path))
+
+        def mock_run(cmd, *args, **kwargs):
+            if cmd == ["gh", "--version"]:
+                raise FileNotFoundError("gh not found")
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        available, reason = step._check_gh_available()
+
+        assert available is False
+        assert "not installed" in reason.lower()
+
+    def test_gh_version_check_timeout(self, tmp_path, monkeypatch):
+        """Test handling when gh --version times out."""
+        import subprocess
+
+        step = PRManagerStep(str(tmp_path))
+
+        def mock_run(cmd, *args, **kwargs):
+            if cmd == ["gh", "--version"]:
+                raise subprocess.TimeoutExpired(cmd, 5)
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        available, reason = step._check_gh_available()
+
+        assert available is False
+        assert "timed out" in reason.lower()
+
+    def test_gh_version_check_fails(self, tmp_path, monkeypatch):
+        """Test handling when gh --version returns non-zero exit."""
+        import subprocess
+
+        step = PRManagerStep(str(tmp_path))
+
+        def mock_run(cmd, *args, **kwargs):
+            if cmd == ["gh", "--version"]:
+                raise subprocess.CalledProcessError(1, cmd)
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        available, reason = step._check_gh_available()
+
+        assert available is False
+        assert "failed" in reason.lower()
+
+    def test_gh_not_authenticated(self, tmp_path, monkeypatch):
+        """Test detection when gh CLI is not authenticated."""
+        import subprocess
+
+        step = PRManagerStep(str(tmp_path))
+        call_count = [0]
+
+        def mock_run(cmd, *args, **kwargs):
+            call_count[0] += 1
+            if cmd == ["gh", "--version"]:
+                return subprocess.CompletedProcess(cmd, 0, "gh version 2.40.0", "")
+            if cmd == ["gh", "auth", "status"]:
+                return subprocess.CompletedProcess(cmd, 1, "", "not logged in")
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        available, reason = step._check_gh_available()
+
+        assert available is False
+        assert "not authenticated" in reason.lower()
+        assert call_count[0] == 2  # Both version and auth checks made
+
+    def test_gh_auth_check_timeout(self, tmp_path, monkeypatch):
+        """Test handling when gh auth status times out."""
+        import subprocess
+
+        step = PRManagerStep(str(tmp_path))
+
+        def mock_run(cmd, *args, **kwargs):
+            if cmd == ["gh", "--version"]:
+                return subprocess.CompletedProcess(cmd, 0, "gh version 2.40.0", "")
+            if cmd == ["gh", "auth", "status"]:
+                raise subprocess.TimeoutExpired(cmd, 10)
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        available, reason = step._check_gh_available()
+
+        assert available is False
+        assert "timed out" in reason.lower()
+
+    def test_gh_auth_check_fails(self, tmp_path, monkeypatch):
+        """Test handling when gh auth status raises CalledProcessError."""
+        import subprocess
+
+        step = PRManagerStep(str(tmp_path))
+
+        def mock_run(cmd, *args, **kwargs):
+            if cmd == ["gh", "--version"]:
+                return subprocess.CompletedProcess(cmd, 0, "gh version 2.40.0", "")
+            if cmd == ["gh", "auth", "status"]:
+                raise subprocess.CalledProcessError(1, cmd)
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        available, reason = step._check_gh_available()
+
+        assert available is False
+        assert "failed" in reason.lower()
+
+    def test_gh_fully_available(self, tmp_path, monkeypatch):
+        """Test detection when gh CLI is installed and authenticated."""
+        import subprocess
+
+        step = PRManagerStep(str(tmp_path))
+
+        def mock_run(cmd, *args, **kwargs):
+            if cmd == ["gh", "--version"]:
+                return subprocess.CompletedProcess(cmd, 0, "gh version 2.40.0", "")
+            if cmd == ["gh", "auth", "status"]:
+                return subprocess.CompletedProcess(cmd, 0, "Logged in", "")
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        available, reason = step._check_gh_available()
+
+        assert available is True
+        assert reason == ""
+
+
+class TestPRManagerStepOperations:
+    """Tests for PRManagerStep core operations (Phase 2 implementation)."""
+
+    def test_create_draft_pr_no_readme_fails(self, tmp_path):
+        """Test _create_draft_pr fails gracefully when no README."""
+        step = PRManagerStep(str(tmp_path))
+
+        result = step._create_draft_pr()
+
+        assert result.success is False
+        assert "no readme" in result.message.lower()
+
+    def test_create_draft_pr_no_frontmatter_skips(self, tmp_path):
+        """Test _create_draft_pr skips when README has no frontmatter."""
+        (tmp_path / "README.md").write_text("# Simple README\n\nNo frontmatter here.")
+        step = PRManagerStep(str(tmp_path))
+
+        result = step._create_draft_pr()
+
+        assert result.success is True
+        assert result.data.get("skipped") is True
+        assert "frontmatter" in result.message.lower()
+
+    def test_update_pr_body_no_pr_fails(self, tmp_path):
+        """Test _update_pr_body fails when no PR exists."""
+        # Create README with frontmatter but no draft_pr_url
+        readme_content = """---
+slug: test-project
+project_name: "Test Project"
+---
+
+# Test Project
+"""
+        (tmp_path / "README.md").write_text(readme_content)
+        step = PRManagerStep(str(tmp_path))
+
+        result = step._update_pr_body()
+
+        assert result.success is False
+        assert "no pr found" in result.message.lower()
+
+    def test_mark_pr_ready_no_pr_skips(self, tmp_path):
+        """Test _mark_pr_ready skips when no PR exists."""
+        step = PRManagerStep(str(tmp_path))
+
+        result = step._mark_pr_ready()
+
+        assert result.success is True
+        assert result.data.get("skipped") is True
+        assert "no pr found" in result.message.lower()
+
+
+class TestPRManagerStepModuleLevelRun:
+    """Tests for pr_manager module-level run function."""
+
+    def test_module_run_function(self, tmp_path):
+        """Test module-level run() function."""
+        from steps.pr_manager import run
+
+        result = run(str(tmp_path), None)
+        assert result.success is True
+
+    def test_module_run_with_config(self, tmp_path):
+        """Test module-level run() function with config."""
+        from steps.pr_manager import run
+
+        result = run(str(tmp_path), {"operation": "create"})
+        assert result.success is True
+
+    def test_module_run_via_step_class(self, tmp_path):
+        """Test PRManagerStep via run method."""
+        step = PRManagerStep(str(tmp_path))
+        result = step.run()
+        assert result.success is True
+
+
+class TestPRManagerStepIntegration:
+    """Integration tests for PRManagerStep with run() method."""
+
+    def test_full_run_when_gh_available_no_readme(self, tmp_path, monkeypatch):
+        """Test full run() cycle when gh is available but no README."""
+        import subprocess
+
+        def mock_run(cmd, *args, **kwargs):
+            if cmd == ["gh", "--version"]:
+                return subprocess.CompletedProcess(cmd, 0, "gh version 2.40.0", "")
+            if cmd == ["gh", "auth", "status"]:
+                return subprocess.CompletedProcess(cmd, 0, "Logged in", "")
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        step = PRManagerStep(str(tmp_path))
+        result = step.run()
+
+        # Should fail gracefully when no README exists
+        assert result.success is False
+        assert "no readme" in result.message.lower()
+
+    def test_full_run_when_gh_unavailable(self, tmp_path, monkeypatch):
+        """Test full run() cycle when gh is unavailable."""
+        import subprocess
+
+        def mock_run(cmd, *args, **kwargs):
+            if cmd == ["gh", "--version"]:
+                raise FileNotFoundError("gh not found")
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        step = PRManagerStep(str(tmp_path))
+        result = step.run()
+
+        assert result.success is True
+        assert result.data.get("skipped") is True
+        assert "gh CLI not installed" in result.data.get("reason", "")
+        assert len(result.warnings) > 0
