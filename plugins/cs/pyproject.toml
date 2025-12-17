@@ -1,6 +1,6 @@
 [project]
 name = "claude-spec-plugin"
-version = "0.3.0"
+version = "1.0.0"
 description = "Strategic project planning plugin for Claude Code"
 readme = "README.md"
 license = { text = "MIT" }
