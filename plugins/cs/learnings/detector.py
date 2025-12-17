@@ -314,7 +314,7 @@ class LearningDetector:
             signals.append(
                 DetectionSignal(
                     pattern_name="exit_code_nonzero",
-                    weight=0.5 if exit_code != 0 else 0.0,
+                    weight=0.5,  # Always 0.5 when exit_code != 0 (condition above)
                     matched_text=f"exit_code={exit_code}",
                     category_hint=LearningCategory.ERROR.value,
                     severity_hint=(

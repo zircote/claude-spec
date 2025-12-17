@@ -141,8 +141,8 @@ def find_all_active_specs(cwd: str | Path) -> list[ActiveSpec]:
                     if not slug:
                         slug = _extract_slug(entry.name)
                     specs.append(ActiveSpec(slug=slug, path=entry, readme_path=readme))
-    except (PermissionError, OSError):
-        pass
+    except (PermissionError, OSError) as e:
+        sys.stderr.write(f"spec_detector: Error listing specs in {spec_dir}: {e}\n")
 
     # Sort by modification time (most recent first)
     specs.sort(key=lambda s: s.readme_path.stat().st_mtime, reverse=True)
