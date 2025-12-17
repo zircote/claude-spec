@@ -323,12 +323,25 @@ class TestHookChainIntegration:
             for hook_entry in event_hooks:
                 for hook in hook_entry.get("hooks", []):
                     if hook.get("type") == "command":
-                        # Extract filename from command path
                         command = hook["command"]
-                        # Replace variable with actual path
-                        script_name = command.split("/")[-1]
-                        script_path = hooks_dir / script_name
-                        assert script_path.exists(), f"Missing: {script_path}"
+                        # Command format: ${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh <script>.py
+                        # Extract the wrapper and script name
+                        parts = command.split("/")[-1].split()
+                        if len(parts) == 2 and parts[0] == "run-hook.sh":
+                            # New format: run-hook.sh <script>.py
+                            wrapper_path = hooks_dir / parts[0]
+                            script_path = hooks_dir / parts[1]
+                            assert wrapper_path.exists(), (
+                                f"Missing wrapper: {wrapper_path}"
+                            )
+                            assert script_path.exists(), (
+                                f"Missing script: {script_path}"
+                            )
+                        else:
+                            # Legacy format: direct script name
+                            script_name = parts[0]
+                            script_path = hooks_dir / script_name
+                            assert script_path.exists(), f"Missing: {script_path}"
 
     def test_user_prompt_submit_hook_order(self):
         """Test that UserPromptSubmit hooks are in correct order."""
@@ -343,7 +356,12 @@ class TestHookChainIntegration:
         for entry in ups_hooks:
             for hook in entry.get("hooks", []):
                 command = hook.get("command", "")
-                script_name = command.split("/")[-1]
+                # Command format: ${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh <script>.py
+                # Extract the Python script name (last argument)
+                parts = command.split()
+                script_name = parts[
+                    -1
+                ]  # Get the last part (e.g., "command_detector.py")
                 hook_names.append(script_name)
 
         # command_detector should be first
