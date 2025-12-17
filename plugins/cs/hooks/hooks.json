@@ -43,9 +43,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": {
-          "toolName": "^(Bash|Read|Write|Edit|WebFetch)$"
-        },
+        "matcher": "Bash|Read|Write|Edit|WebFetch",
         "hooks": [
           {
             "type": "command",
