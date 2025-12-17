@@ -24,7 +24,16 @@
     "commands": {
       "cs:p": {
         "preSteps": [],
-        "postSteps": []
+        "postSteps": [
+          {
+            "name": "pr-manager",
+            "enabled": true,
+            "operation": "create",
+            "labels": ["spec", "work-in-progress"],
+            "title_format": "[WIP] {slug}: {project_name}",
+            "base_branch": "main"
+          }
+        ]
       },
       "cs:c": {
         "preSteps": [
@@ -33,7 +42,14 @@
         "postSteps": [
           { "name": "generate-retrospective", "enabled": true },
           { "name": "archive-logs", "enabled": true },
-          { "name": "cleanup-markers", "enabled": true }
+          { "name": "cleanup-markers", "enabled": true },
+          {
+            "name": "pr-manager",
+            "enabled": true,
+            "operation": "ready",
+            "remove_labels": ["work-in-progress"],
+            "reviewers": []
+          }
         ]
       },
       "cs:i": {

@@ -140,9 +140,12 @@ When beginning work on a new feature, recall relevant past decisions:
 /cs:p "Add OAuth2 login support"
 # -> Claude automatically searches for: "OAuth authentication login security"
 # -> Surfaces past decisions about auth, security, user management
+# -> Creates draft PR with [WIP] prefix (if configured)
 ```
 
 **Why this helps**: Claude immediately knows about past authentication decisions without you having to re-explain them.
+
+**Automatic PR management**: If `gh` CLI is installed and PR management is enabled in lifecycle config, `/cs:p` creates a draft PR with `[WIP]` title prefix and `work-in-progress` label.
 
 ### Workflow 2: Hitting a Blocker
 
@@ -238,6 +241,7 @@ Claude automatically:
 2. Extracts learnings and patterns
 3. Captures retrospective notes
 4. Archives memories with summaries
+5. Converts draft PR to ready-for-review (if configured)
 
 ```
 Project Close-out: my-feature
@@ -261,6 +265,12 @@ Patterns Detected:
 Retrospective captured as retrospective:pqr678e:1702578000000
 Memories archived with summaries
 ```
+
+**Automatic PR management**: If PR management is enabled, `/cs:c` also:
+- Converts the draft PR to ready-for-review
+- Removes `[WIP]` prefix from title
+- Removes `work-in-progress` label
+- Requests configured reviewers
 
 ---
 

@@ -28,6 +28,7 @@ STEP_MODULES = {
     "archive-logs": "log_archiver",
     "cleanup-markers": "marker_cleaner",
     "flush-memory-queue": "memory_queue_flusher",
+    "pr-manager": "pr_manager",
 }
 
 

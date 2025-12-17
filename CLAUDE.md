@@ -93,7 +93,8 @@ plugins/cs/
 │   ├── security_reviewer.py # Run bandit security scan
 │   ├── log_archiver.py      # Archive prompt logs to completed/
 │   ├── marker_cleaner.py    # Clean up temp files
-│   └── retrospective_gen.py # Generate RETROSPECTIVE.md
+│   ├── retrospective_gen.py # Generate RETROSPECTIVE.md
+│   └── pr_manager.py        # Create/update draft PRs for spec projects
 ├── analyzers/
 │   ├── log_analyzer.py    # Log file analysis
 │   └── analyze_cli.py     # CLI for retrospective analysis
@@ -204,6 +205,18 @@ Pre/post steps are configured via `~/.claude/worktree-manager.config.json`:
       }
     },
     "commands": {
+      "cs:p": {
+        "postSteps": [
+          {
+            "name": "pr-manager",
+            "enabled": true,
+            "operation": "create",
+            "labels": ["spec", "work-in-progress"],
+            "title_format": "[WIP] {slug}: {project_name}",
+            "base_branch": "main"
+          }
+        ]
+      },
       "cs:c": {
         "preSteps": [
           { "name": "security-review", "enabled": true, "timeout": 120 }
@@ -211,7 +224,14 @@ Pre/post steps are configured via `~/.claude/worktree-manager.config.json`:
         "postSteps": [
           { "name": "generate-retrospective", "enabled": true },
           { "name": "archive-logs", "enabled": true },
-          { "name": "cleanup-markers", "enabled": true }
+          { "name": "cleanup-markers", "enabled": true },
+          {
+            "name": "pr-manager",
+            "enabled": true,
+            "operation": "ready",
+            "remove_labels": ["work-in-progress"],
+            "reviewers": []
+          }
         ]
       }
     }
@@ -235,6 +255,33 @@ export CS_TRIGGER_MEMORY_ENABLED=false
 # Disable only auto-capture (keeps hook-based capture)
 export CS_AUTO_CAPTURE_ENABLED=false
 ```
+
+### PR Manager Step
+
+The `pr-manager` step manages GitHub draft PRs for spec projects:
+
+**Operations:**
+- `create`: Creates draft PR at planning start (`/cs:p`)
+- `update`: Updates PR body with phase progress (internal use)
+- `ready`: Converts draft to ready-for-review on completion (`/cs:c`)
+
+**Configuration Options:**
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `operation` | string | `"create"` | PR operation: "create", "update", "ready" |
+| `labels` | string[] | `["spec", "work-in-progress"]` | Labels to add (create) |
+| `title_format` | string | `"[WIP] {slug}: {project_name}"` | PR title template |
+| `base_branch` | string | `"main"` | Base branch for PR |
+| `remove_labels` | string[] | `["work-in-progress"]` | Labels to remove (ready) |
+| `reviewers` | string[] | `[]` | GitHub usernames to request reviews |
+
+**Requirements:**
+- `gh` CLI must be installed and authenticated (`gh auth login`)
+- If gh is unavailable, step completes with warning (fail-open pattern)
+
+**Fail-Open Philosophy:**
+- gh CLI unavailable → warn but succeed (no workflow blocking)
+- Invalid config (unknown operation) → fail-fast with error
 
 6. **Log Writer** (`filters/log_writer.py`):
    - Atomic writes with file locking (`fcntl.flock`)
@@ -341,7 +388,15 @@ Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planni
 
 ## Active Spec Projects
 
-(None - all projects completed)
+- `docs/spec/active/2025-12-17-pull-request-draft-start/` - Draft PR Creation for /cs:p Workflow
+  - Status: draft (planning complete, awaiting implementation)
+  - GitHub Issue: [zircote/claude-spec#13](https://github.com/zircote/claude-spec/issues/13)
+  - Branch: `plan/feat-pull-request-draft-start`
+  - Scope: Create draft GitHub PR at start of /cs:p workflow for stakeholder visibility
+  - Key docs: REQUIREMENTS.md (21 FRs), ARCHITECTURE.md (4 ADRs), IMPLEMENTATION_PLAN.md (4 phases, 21 tasks)
+  - P0 Features: Draft PR creation, gh auth check, graceful degradation, URL storage in frontmatter
+  - P1 Features: Phase-based push, PR body updates, draft→ready on /cs:c
+  - Implementation: New `pr_manager.py` step module following existing BaseStep pattern
 
 ## Completed Spec Projects
 

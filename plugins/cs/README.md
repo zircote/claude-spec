@@ -27,6 +27,8 @@ A comprehensive Claude Code plugin for project specification and implementation 
 
 - **Prompt Capture** - Session logging for traceability and retrospectives
 
+- **Automatic PR Management** - Draft PR creation on `/cs:p`, ready-for-review on `/cs:c`
+
 - **Parallel Agent Orchestration** - Built-in directives for parallel specialist agent usage
 
 ## Installation
@@ -111,6 +113,57 @@ Generates RETROSPECTIVE.md, archives to `docs/spec/completed/`.
 /cs:log show    # View captured prompts
 ```
 
+### Automatic PR Management
+
+When enabled in lifecycle configuration, PRs are automatically managed:
+
+**On `/cs:p` (planning):**
+- Creates draft PR with `[WIP]` title prefix
+- Adds `spec` and `work-in-progress` labels
+- Links PR to project branch
+
+**On `/cs:c` (close-out):**
+- Converts draft to ready-for-review
+- Removes `[WIP]` prefix from title
+- Removes `work-in-progress` label
+- Optionally requests reviewers
+
+**Requirements:**
+- `gh` CLI installed and authenticated
+- Git repository with remote configured
+- Branch pushed to remote
+
+**Configuration** (in `~/.claude/worktree-manager.config.json`):
+```json
+{
+  "lifecycle": {
+    "commands": {
+      "cs:p": {
+        "postSteps": [{
+          "name": "pr-manager",
+          "enabled": true,
+          "operation": "create",
+          "labels": ["spec", "work-in-progress"],
+          "title_format": "[WIP] {slug}: {project_name}",
+          "base_branch": "main"
+        }]
+      },
+      "cs:c": {
+        "postSteps": [{
+          "name": "pr-manager",
+          "enabled": true,
+          "operation": "ready",
+          "remove_labels": ["work-in-progress"],
+          "reviewers": []
+        }]
+      }
+    }
+  }
+}
+```
+
+**Fail-open design:** If `gh` CLI is unavailable, the step warns but doesn't block the command.
+
 ### Migration from /arch:*
 
 ```
@@ -168,6 +221,7 @@ docs/spec/
 - Python 3.11+ (managed by uv)
 - jq (for registry operations)
 - Terminal app (iTerm2, Ghostty, tmux, etc.)
+- gh CLI (optional, for automatic PR management)
 
 ### Installing uv
 
