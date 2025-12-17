@@ -78,6 +78,25 @@ def get_lifecycle_manager():
     return get_lifecycle_manager()
 
 
+def get_embedding_service(preload: bool = False):
+    """
+    Get the embedding service singleton (lazy import).
+
+    Args:
+        preload: If True, force model loading immediately.
+    """
+    from .embedding import get_embedding_service as _get_embedding_service
+
+    return _get_embedding_service(preload=preload)
+
+
+def preload_embedding_model():
+    """Pre-warm the embedding model for low-latency hooks."""
+    from .embedding import preload_model
+
+    preload_model()
+
+
 __version__ = "0.1.0"
 
 __all__ = [
@@ -110,4 +129,6 @@ __all__ = [
     "get_search_optimizer",
     "get_pattern_manager",
     "get_lifecycle_manager",
+    "get_embedding_service",
+    "preload_embedding_model",
 ]

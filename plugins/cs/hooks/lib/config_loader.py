@@ -25,6 +25,10 @@ The configuration file is JSON with the following top-level structure:
         - ``claudeMd`` (bool): Load CLAUDE.md files. Default: ``true``
         - ``gitState`` (bool): Load git status/branch info. Default: ``true``
         - ``projectStructure`` (bool): Load project file tree. Default: ``true``
+    - ``memoryInjection`` (object): Memory injection configuration:
+        - ``enabled`` (bool): Whether to inject memories. Default: ``true``
+        - ``limit`` (int): Max memories to inject. Default: ``10``
+        - ``includeContent`` (bool): Include full content vs summary only. Default: ``false``
 
 **lifecycle.commands** - Per-command step configuration:
 
@@ -52,6 +56,11 @@ Example Configuration
                     "claudeMd": true,
                     "gitState": true,
                     "projectStructure": true
+                },
+                "memoryInjection": {
+                    "enabled": true,
+                    "limit": 10,
+                    "includeContent": false
                 }
             },
             "commands": {
@@ -314,3 +323,36 @@ def is_session_start_enabled() -> bool:
     lifecycle = get_lifecycle_config()
     session_start = lifecycle.get("sessionStart", {})
     return session_start.get("enabled", True)
+
+
+def is_memory_injection_enabled() -> bool:
+    """Check if memory injection at session start is enabled.
+
+    Returns:
+        True if memory injection is enabled (defaults to True if not configured)
+    """
+    lifecycle = get_lifecycle_config()
+    session_start = lifecycle.get("sessionStart", {})
+    memory_injection = session_start.get("memoryInjection", {})
+    return memory_injection.get("enabled", True)
+
+
+def get_memory_injection_config() -> dict[str, Any]:
+    """Get memory injection configuration.
+
+    Returns:
+        Dictionary with memory injection settings:
+        - enabled (bool): Whether to inject memories. Default: True
+        - limit (int): Max memories to inject. Default: 10
+        - includeContent (bool): Include full content vs summary. Default: False
+    """
+    lifecycle = get_lifecycle_config()
+    session_start = lifecycle.get("sessionStart", {})
+    memory_config = session_start.get("memoryInjection", {})
+
+    # Return with defaults applied
+    return {
+        "enabled": memory_config.get("enabled", True),
+        "limit": memory_config.get("limit", 10),
+        "includeContent": memory_config.get("includeContent", False),
+    }

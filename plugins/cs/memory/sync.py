@@ -6,6 +6,7 @@ the SQLite index (derived, for fast search).
 """
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 
 from .config import NAMESPACES
 from .embedding import EmbeddingService
@@ -75,9 +76,14 @@ class SyncService:
         memory_id = extract_memory_id(namespace, commit_sha)
 
         # Parse timestamp (ARCH-008: use shared utility)
-        timestamp = metadata.get("timestamp")
-        if isinstance(timestamp, str):
-            timestamp = parse_iso_timestamp_safe(timestamp)
+        raw_timestamp = metadata.get("timestamp")
+        if isinstance(raw_timestamp, str):
+            parsed_ts = parse_iso_timestamp_safe(raw_timestamp)
+            timestamp = parsed_ts if parsed_ts is not None else datetime.now(UTC)
+        elif isinstance(raw_timestamp, datetime):
+            timestamp = raw_timestamp
+        else:
+            timestamp = datetime.now(UTC)
 
         # Create Memory object
         memory = Memory(

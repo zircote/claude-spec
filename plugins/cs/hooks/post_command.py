@@ -23,6 +23,10 @@ Output format:
 
 Post-steps are executed based on the command stored in session state.
 This hook never blocks - errors are logged to stderr.
+
+Security Features:
+    - Path traversal prevention via validate_cwd()
+    - Input size limits via hook_io module
 """
 
 from __future__ import annotations
@@ -77,8 +81,46 @@ LOG_PREFIX = "post_command"
 SESSION_STATE_FILE = ".cs-session-state.json"
 
 
+def validate_cwd(cwd: str) -> Path | None:
+    """Validate and resolve the working directory path.
+
+    Security: Prevents path traversal attacks by ensuring the resolved
+    path is a valid directory without symlink-based escapes.
+
+    Args:
+        cwd: The working directory path to validate
+
+    Returns:
+        Resolved Path object if valid, None otherwise
+    """
+    if not cwd or not cwd.strip():
+        return None
+
+    try:
+        # Resolve to absolute path, following symlinks
+        resolved = Path(cwd).resolve(strict=True)
+
+        # Verify it's a directory
+        if not resolved.is_dir():
+            sys.stderr.write(f"cs-{LOG_PREFIX}: cwd is not a directory: {cwd}\n")
+            return None
+
+        # Security: Reject paths containing null bytes
+        if "\x00" in str(resolved):
+            sys.stderr.write(f"cs-{LOG_PREFIX}: Invalid null byte in path\n")
+            return None
+
+        return resolved
+
+    except (OSError, ValueError) as e:
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Invalid cwd path: {e}\n")
+        return None
+
+
 def load_session_state(cwd: str) -> dict[str, Any] | None:
     """Load session state from command_detector.
+
+    Security: Validates cwd to prevent path traversal attacks.
 
     Args:
         cwd: Current working directory
@@ -86,12 +128,27 @@ def load_session_state(cwd: str) -> dict[str, Any] | None:
     Returns:
         State dictionary if found, None otherwise
     """
-    state_file = Path(cwd) / SESSION_STATE_FILE
-    if not state_file.is_file():
+    # SEC-001: Validate cwd to prevent path traversal
+    validated_cwd = validate_cwd(cwd)
+    if validated_cwd is None:
+        return None
+
+    state_file = validated_cwd / SESSION_STATE_FILE
+
+    # SEC-001: Verify the state file path is still within validated_cwd
+    try:
+        resolved_state_file = state_file.resolve()
+        # Ensure the resolved path is under the validated cwd
+        resolved_state_file.relative_to(validated_cwd)
+    except (ValueError, OSError) as e:
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Path traversal detected: {e}\n")
+        return None
+
+    if not resolved_state_file.is_file():
         return None
 
     try:
-        with open(state_file, encoding="utf-8") as f:
+        with open(resolved_state_file, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         sys.stderr.write(f"cs-{LOG_PREFIX}: Error loading state: {e}\n")
@@ -101,13 +158,30 @@ def load_session_state(cwd: str) -> dict[str, Any] | None:
 def cleanup_session_state(cwd: str) -> None:
     """Remove session state file.
 
+    Security: Validates cwd to prevent path traversal attacks.
+
     Args:
         cwd: Current working directory
     """
-    state_file = Path(cwd) / SESSION_STATE_FILE
+    # SEC-001: Validate cwd to prevent path traversal
+    validated_cwd = validate_cwd(cwd)
+    if validated_cwd is None:
+        return
+
+    state_file = validated_cwd / SESSION_STATE_FILE
+
+    # SEC-001: Verify the state file path is still within validated_cwd
     try:
-        if state_file.is_file():
-            state_file.unlink()
+        resolved_state_file = state_file.resolve()
+        # Ensure the resolved path is under the validated cwd
+        resolved_state_file.relative_to(validated_cwd)
+    except (ValueError, OSError) as e:
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Path traversal detected: {e}\n")
+        return
+
+    try:
+        if resolved_state_file.is_file():
+            resolved_state_file.unlink()
     except Exception as e:
         sys.stderr.write(f"cs-{LOG_PREFIX}: Error cleaning state: {e}\n")
 

@@ -71,12 +71,22 @@ plugins/cs/
 │   └── log_writer.py  # Atomic JSON file writer
 ├── hooks/
 │   ├── hooks.json         # Hook registration for Claude Code
-│   ├── session_start.py   # SessionStart hook - loads context
+│   ├── session_start.py   # SessionStart hook - loads context + memory injection
 │   ├── command_detector.py # UserPromptSubmit hook - detects /cs:* commands
 │   ├── post_command.py    # Stop hook - runs post-steps
 │   ├── prompt_capture.py  # UserPromptSubmit hook - logs prompts
+│   ├── trigger_memory.py  # UserPromptSubmit hook - trigger-based memory injection
+│   ├── post_tool_capture.py # PostToolUse hook - learning capture
 │   └── lib/
-│       └── config_loader.py  # Lifecycle configuration loader
+│       ├── config_loader.py   # Lifecycle configuration loader
+│       ├── memory_injector.py # Memory injection for SessionStart
+│       ├── spec_detector.py   # Active spec detection
+│       └── trigger_detector.py # Trigger phrase detection
+├── learnings/             # PostToolUse learning capture system
+│   ├── models.py          # ToolLearning, LearningCategory, LearningSeverity
+│   ├── detector.py        # LearningDetector with signal patterns
+│   ├── deduplicator.py    # SessionDeduplicator with LRU cache
+│   └── extractor.py       # extract_learning() with secret filtering
 ├── steps/              # Pre/post step modules
 │   ├── base.py         # StepResult, BaseStep classes
 │   ├── context_loader.py    # Load CLAUDE.md, git state, structure
@@ -88,7 +98,7 @@ plugins/cs/
 │   ├── log_analyzer.py    # Log file analysis
 │   └── analyze_cli.py     # CLI for retrospective analysis
 ├── skills/worktree-manager/  # Worktree automation (config at ~/.claude/worktree-manager.config.json)
-└── tests/             # Pytest test suite (600+ tests)
+└── tests/             # Pytest test suite (890+ tests)
 ```
 
 ### cs-memory Module
@@ -131,10 +141,11 @@ export CS_AUTO_CAPTURE_ENABLED=false  # Disable auto-capture
    - Fires when Claude Code session starts
    - Checks if project is claude-spec managed (has docs/spec/ or .prompt-log-enabled)
    - Loads context: CLAUDE.md files, git state, project structure
+   - **Memory Injection**: Queries RecallService for relevant memories (5-10 items)
    - Outputs context to stdout (added to Claude's initial memory)
    - Respects lifecycle config for which context types to load
 
-2. **UserPromptSubmit Hooks**:
+2. **UserPromptSubmit Hooks** (in order):
    - `hooks/command_detector.py` (runs first):
      - Detects /cs:* commands in user prompts
      - Saves command state to `.cs-session-state.json`
@@ -145,8 +156,22 @@ export CS_AUTO_CAPTURE_ENABLED=false  # Disable auto-capture
      - Filters secrets via `filters/pipeline.py`
      - Appends to `.prompt-log.json` at project root
      - Always returns `{"decision": "approve"}` (never blocks)
+   - `hooks/trigger_memory.py` (runs third):
+     - **Trigger Detection**: Detects memory-related phrases (why did we, remind me, etc.)
+     - Queries RecallService with prompt as semantic query
+     - Returns `additionalContext` with matching memories
+     - Always returns `{"decision": "approve"}`
 
-3. **Stop Hook** (`hooks/post_command.py`):
+3. **PostToolUse Hook** (`hooks/post_tool_capture.py`):
+   - Fires after tool execution (Bash, Read, Write, Edit, WebFetch)
+   - **Learning Detection**: Detects learnable signals (errors, warnings, workarounds)
+   - Calculates capture score using heuristics (threshold ≥0.6)
+   - Deduplicates against session captures
+   - Filters secrets from output
+   - Queues learnings for batch commit on session Stop
+   - Returns immediately (never blocks, <50ms target)
+
+4. **Stop Hook** (`hooks/post_command.py`):
    - Fires when Claude Code session ends
    - Reads command state from `.cs-session-state.json`
    - Triggers post-steps (e.g., log archival, retrospective gen for /cs:c)
@@ -171,6 +196,11 @@ Pre/post steps are configured via `~/.claude/worktree-manager.config.json`:
         "claudeMd": true,
         "gitState": true,
         "projectStructure": true
+      },
+      "memoryInjection": {
+        "enabled": true,
+        "limit": 10,
+        "includeContent": false
       }
     },
     "commands": {
@@ -187,6 +217,23 @@ Pre/post steps are configured via `~/.claude/worktree-manager.config.json`:
     }
   }
 }
+```
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CS_AUTO_CAPTURE_ENABLED` | `true` | Enable/disable auto-capture during /cs:* commands |
+| `CS_TOOL_CAPTURE_ENABLED` | `true` | Enable/disable PostToolUse learning capture |
+| `CS_TRIGGER_MEMORY_ENABLED` | `true` | Enable/disable trigger phrase memory injection |
+
+```bash
+# Disable all hook-based memory features
+export CS_TOOL_CAPTURE_ENABLED=false
+export CS_TRIGGER_MEMORY_ENABLED=false
+
+# Disable only auto-capture (keeps hook-based capture)
+export CS_AUTO_CAPTURE_ENABLED=false
 ```
 
 5. **Log Writer** (`filters/log_writer.py`):
@@ -297,6 +344,31 @@ Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planni
 (None - all projects completed)
 
 ## Completed Spec Projects
+
+- `docs/spec/completed/2025-12-17-hook-based-memory-arch/` - Hooks Based Git-Native Memory Architecture
+  - Completed: 2025-12-17
+  - Outcome: success
+  - Effort: 18 hours (24 tasks across 4 phases, within 16-24 hour estimate)
+  - Quality: 1108 tests passing (+218 beyond target), code review 7.5/10
+  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, IMPLEMENTATION_PLAN.md, RETROSPECTIVE.md, DECISIONS.md
+  - Key features:
+    - PostToolUse hook for automatic learning capture (errors, workarounds, discoveries)
+    - SessionStart memory injection (5-10 relevant memories per session)
+    - Trigger phrase detection (16 patterns: "why did we", "remind me", etc.)
+    - Memory queue flush on Stop hook
+    - LearningDetector with threshold ≥0.6 for signal quality
+    - SessionDeduplicator with LRU cache
+    - Performance: All components 5-1000× faster than targets
+    - Security: Secret filtering via filter_pipeline
+    - Environment variables: CS_TOOL_CAPTURE_ENABLED, CS_TRIGGER_MEMORY_ENABLED
+  - New components:
+    - `learnings/` package: detector, models, deduplicator, extractor
+    - `hooks/post_tool_capture.py`: PostToolUse learning capture
+    - `hooks/trigger_memory.py`: UserPromptSubmit trigger detection
+    - `hooks/lib/memory_injector.py`: Session memory injection
+    - `hooks/lib/trigger_detector.py`: Pattern matching for memory recall
+    - `hooks/lib/spec_detector.py`: Active spec detection
+    - `steps/memory_queue_flusher.py`: Batch commit on session end
 
 - `docs/spec/completed/2025-12-15-memory-auto-capture/` - Memory Auto-Capture Implementation
   - Completed: 2025-12-15

@@ -23,6 +23,12 @@ class IndexService:
     Handles all database operations including CRUD and vector search.
     The database schema uses a metadata table joined with a virtual
     sqlite-vec table for embeddings.
+
+    Supports context manager protocol for automatic resource cleanup:
+
+        with IndexService() as index:
+            index.search_vector(embedding)
+        # Connection automatically closed
     """
 
     def __init__(self, db_path: Path | str | None = None):
@@ -34,6 +40,19 @@ class IndexService:
         """
         self.db_path = Path(db_path) if db_path else INDEX_PATH
         self._conn: sqlite3.Connection | None = None
+
+    def __enter__(self) -> "IndexService":
+        """Enter context manager, returning self for use."""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
+        """Exit context manager, closing connection."""
+        self.close()
 
     def _get_connection(self) -> sqlite3.Connection:
         """Get or create database connection."""
