@@ -17,6 +17,14 @@ A comprehensive Claude Code plugin for project specification and implementation 
   - `/cs:wt:status` - View worktree status
   - `/cs:wt:cleanup` - Clean up worktrees
 
+- **`/cs:memory` Commands** - Git-native persistent memory
+  - `/cs:remember` - Capture decisions, learnings, blockers
+  - `/cs:recall` - Semantic search across memories
+  - `/cs:context` - Load all memories for a spec
+  - `/cs:memory status` - View memory statistics
+
+- **Automatic Learning Capture** - Hooks capture insights from tool use
+
 - **Prompt Capture** - Session logging for traceability and retrospectives
 
 - **Parallel Agent Orchestration** - Built-in directives for parallel specialist agent usage
@@ -155,10 +163,26 @@ docs/spec/
 ## Requirements
 
 - Claude Code CLI
-- Git (for worktree operations)
-- Python 3 (for hooks)
+- **[uv](https://docs.astral.sh/uv/)** (required for hooks - manages Python dependencies)
+- Git (for worktree operations and memory storage)
+- Python 3.11+ (managed by uv)
 - jq (for registry operations)
 - Terminal app (iTerm2, Ghostty, tmux, etc.)
+
+### Installing uv
+
+```bash
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Or via Homebrew
+brew install uv
+
+# Verify installation
+uv --version
+```
+
+The plugin will display an error at session start if uv is not installed.
 
 ## Attribution
 
