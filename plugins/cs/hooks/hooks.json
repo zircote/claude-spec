@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py",
+            "command": "${CLAUDE_PLUGIN_ROOT}/plugins/cs/hooks/session_start.py",
             "timeout": 10
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/command_detector.py",
+            "command": "${CLAUDE_PLUGIN_ROOT}/plugins/cs/hooks/command_detector.py",
             "timeout": 30
           }
         ]
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/prompt_capture.py",
+            "command": "${CLAUDE_PLUGIN_ROOT}/plugins/cs/hooks/prompt_capture.py",
             "timeout": 30
           }
         ]
@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post_command.py",
+            "command": "${CLAUDE_PLUGIN_ROOT}/plugins/cs/hooks/post_command.py",
             "timeout": 60
           }
         ]
