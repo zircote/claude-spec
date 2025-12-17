@@ -1,0 +1,39 @@
+{
+  "name": "cs",
+  "version": "1.1.0",
+  "description": "Project specification and implementation lifecycle management with pre/post steps",
+  "author": {
+    "name": "Claude Spec Contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "architecture",
+    "planning",
+    "specification",
+    "worktree",
+    "prompt-capture",
+    "implementation-tracking"
+  ],
+  "commands": [
+    "./plugins/cs/commands/c.md",
+    "./plugins/cs/commands/context.md",
+    "./plugins/cs/commands/fix.md",
+    "./plugins/cs/commands/i.md",
+    "./plugins/cs/commands/log.md",
+    "./plugins/cs/commands/memory.md",
+    "./plugins/cs/commands/migrate.md",
+    "./plugins/cs/commands/p.md",
+    "./plugins/cs/commands/recall.md",
+    "./plugins/cs/commands/remember.md",
+    "./plugins/cs/commands/review.md",
+    "./plugins/cs/commands/s.md",
+    "./plugins/cs/commands/wt/cleanup.md",
+    "./plugins/cs/commands/wt/create.md",
+    "./plugins/cs/commands/wt/setup.md",
+    "./plugins/cs/commands/wt/status.md"
+  ],
+  "skills": [
+    "./plugins/cs/skills/worktree-manager/SKILL.md"
+  ],
+  "hooks": "./plugins/cs/hooks/hooks.json"
+}
