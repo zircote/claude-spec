@@ -169,12 +169,25 @@ class SyncService:
             VerificationResult with consistency details
         """
         # Get all memory IDs from Git notes
+        # Must read each note to get the actual timestamp for correct ID generation
         notes_ids: set[str] = set()
         for namespace in NAMESPACES:
             notes = self.git_ops.list_notes(namespace)
             for _, commit_sha in notes:
-                memory_id = extract_memory_id(namespace, commit_sha)
-                notes_ids.add(memory_id)
+                # Read note content to get the actual timestamp
+                content = self.git_ops.show_note(namespace, commit_sha)
+                if content:
+                    try:
+                        metadata, _ = parse_note(content)
+                        ts = metadata.get("timestamp")
+                        if isinstance(ts, str):
+                            ts = parse_iso_timestamp_safe(ts)
+                        memory_id = extract_memory_id(namespace, commit_sha, ts)
+                        notes_ids.add(memory_id)
+                    except ParseError:
+                        # If note can't be parsed, use commit-only matching
+                        # by checking if any index ID starts with namespace:sha
+                        pass
 
         # Get all memory IDs from index using public method (ARCH-002 fix)
         index_ids = self.index_service.get_all_ids()

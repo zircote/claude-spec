@@ -64,6 +64,7 @@ source = ["filters", "hooks", "analyzers", "memory", "learnings"]
 omit = ["tests/*", "*/__pycache__/*"]
 
 [tool.coverage.report]
+fail_under = 95
 exclude_lines = [
     "pragma: no cover",
     "if __name__ == .__main__.:",
