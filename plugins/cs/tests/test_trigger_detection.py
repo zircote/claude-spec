@@ -506,3 +506,239 @@ class TestTriggerDetectionEdgeCases:
         captured = capsys.readouterr()
         assert result is None
         assert "Error processing trigger" in captured.err
+
+
+# =============================================================================
+# Additional tests for trigger_detector.py coverage
+# =============================================================================
+
+
+class TestTriggerMemoryInjectorCoverage:
+    """Additional tests for TriggerMemoryInjector coverage."""
+
+    def test_recall_service_property_import_error(self, monkeypatch, capsys):
+        """Test recall_service property handles ImportError."""
+        from trigger_detector import TriggerMemoryInjector
+
+        injector = TriggerMemoryInjector()
+        assert injector._recall_service is None
+
+        # Mock the import to fail
+        original_import = __builtins__["__import__"]
+
+        def mock_import(name, *args, **kwargs):
+            if name == "memory.recall" or "memory.recall" in name:
+                raise ImportError("Test import error")
+            return original_import(name, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.__import__", mock_import)
+
+        # Force recreation
+        injector._recall_service = None
+        result = injector.recall_service
+
+        captured = capsys.readouterr()
+        assert result is None
+        assert "RecallService import error" in captured.err
+
+    def test_recall_service_returns_existing(self):
+        """Test recall_service property returns existing service."""
+        from trigger_detector import TriggerMemoryInjector
+
+        mock_recall = MagicMock()
+        injector = TriggerMemoryInjector(recall_service=mock_recall)
+
+        # Should return the same instance
+        assert injector.recall_service is mock_recall
+        assert injector.recall_service is mock_recall  # Second call too
+
+    def test_process_prompt_with_mock_recall_service(self, capsys):
+        """Test process_prompt with mocked recall service returns memories."""
+        from trigger_detector import TriggerMemoryInjector
+
+        mock_recall = MagicMock()
+
+        # Create mock results with distance within threshold
+        mock_result1 = MagicMock()
+        mock_result1.distance = 0.5  # Within threshold (0.8)
+        mock_result1.id = "decisions:abc123:1234"
+
+        mock_result2 = MagicMock()
+        mock_result2.distance = 0.3  # Within threshold
+        mock_result2.id = "learnings:def456:5678"
+
+        mock_recall.search.return_value = [mock_result1, mock_result2]
+
+        injector = TriggerMemoryInjector(recall_service=mock_recall, limit=5)
+        result = injector.process_prompt("Why did we choose this approach?")
+
+        assert len(result) == 2
+        mock_recall.search.assert_called_once()
+
+        captured = capsys.readouterr()
+        assert "Matched trigger" in captured.err
+        assert "returning 2 memories" in captured.err
+
+    def test_process_prompt_filters_by_relevance(self, capsys):
+        """Test process_prompt filters out irrelevant results."""
+        from trigger_detector import TriggerMemoryInjector
+
+        mock_recall = MagicMock()
+
+        # Create results with mixed distances
+        mock_result_relevant = MagicMock()
+        mock_result_relevant.distance = 0.5  # Within threshold (0.8)
+        mock_result_relevant.id = "decisions:abc:1234"
+
+        mock_result_irrelevant = MagicMock()
+        mock_result_irrelevant.distance = 0.95  # Above threshold
+        mock_result_irrelevant.id = "decisions:xyz:9999"
+
+        mock_recall.search.return_value = [mock_result_relevant, mock_result_irrelevant]
+
+        injector = TriggerMemoryInjector(recall_service=mock_recall, limit=10)
+        result = injector.process_prompt("Remind me about the decision")
+
+        # Only the relevant result should be included
+        assert len(result) == 1
+        assert result[0].id == "decisions:abc:1234"
+
+    def test_process_prompt_respects_limit(self, capsys):
+        """Test process_prompt respects limit parameter."""
+        from trigger_detector import TriggerMemoryInjector
+
+        mock_recall = MagicMock()
+
+        # Return more results than limit
+        mock_results = []
+        for i in range(20):
+            result = MagicMock()
+            result.distance = 0.5  # All within threshold
+            result.id = f"decisions:id{i}:{i}"
+            mock_results.append(result)
+
+        mock_recall.search.return_value = mock_results
+
+        injector = TriggerMemoryInjector(recall_service=mock_recall, limit=3)
+        result = injector.process_prompt("Why did we choose this?")
+
+        # Should stop at limit
+        assert len(result) == 3
+
+    def test_process_prompt_handles_exception(self, capsys):
+        """Test process_prompt handles search exceptions gracefully."""
+        from trigger_detector import TriggerMemoryInjector
+
+        mock_recall = MagicMock()
+        mock_recall.search.side_effect = Exception("Database error")
+
+        injector = TriggerMemoryInjector(recall_service=mock_recall, limit=5)
+        result = injector.process_prompt("Why did we choose this?")
+
+        captured = capsys.readouterr()
+        assert result == []
+        assert "Error querying memories" in captured.err
+
+    def test_process_prompt_with_spec(self, capsys):
+        """Test process_prompt passes spec to search."""
+        from trigger_detector import TriggerMemoryInjector
+
+        mock_recall = MagicMock()
+        mock_recall.search.return_value = []
+
+        injector = TriggerMemoryInjector(recall_service=mock_recall, limit=5)
+        injector.process_prompt("What was the decision?", spec="my-feature")
+
+        call_args = mock_recall.search.call_args
+        assert call_args.kwargs.get("spec") == "my-feature"
+
+    def test_process_prompt_no_memories_found(self, capsys):
+        """Test process_prompt when no relevant memories found."""
+        from trigger_detector import TriggerMemoryInjector
+
+        mock_recall = MagicMock()
+        mock_recall.search.return_value = []  # No results
+
+        injector = TriggerMemoryInjector(recall_service=mock_recall, limit=5)
+        result = injector.process_prompt("Remind me of something")
+
+        captured = capsys.readouterr()
+        assert result == []
+        # Should not log "Matched trigger" when no memories found
+        assert "returning 0 memories" not in captured.err
+
+    def test_format_for_additional_context_without_content(self):
+        """Test formatting without including content."""
+        from trigger_detector import TriggerMemoryInjector
+
+        mock_memory = MagicMock()
+        mock_memory.namespace = "decisions"
+        mock_memory.summary = "Test summary"
+        mock_memory.timestamp = datetime(2025, 12, 17, tzinfo=UTC)
+        mock_memory.content = "This should not appear"
+
+        mock_result = MagicMock()
+        mock_result.memory = mock_memory
+
+        injector = TriggerMemoryInjector()
+        result = injector.format_for_additional_context(
+            [mock_result], include_content=False
+        )
+
+        assert "Test summary" in result
+        assert "This should not appear" not in result
+
+    def test_format_handles_result_without_memory_attr(self):
+        """Test formatting handles results without memory attribute."""
+        from trigger_detector import TriggerMemoryInjector
+
+        # Create mock that doesn't have .memory attribute
+        mock_result = MagicMock(spec=[])  # Empty spec means no attributes
+        mock_result.namespace = "decisions"
+        mock_result.summary = "Direct result"
+        mock_result.timestamp = datetime.now(UTC)
+        mock_result.content = None
+
+        injector = TriggerMemoryInjector()
+        result = injector.format_for_additional_context([mock_result])
+
+        assert "Relevant Memories" in result
+
+    def test_all_namespace_icons(self):
+        """Test all namespace icons are covered."""
+        from trigger_detector import TriggerMemoryInjector
+
+        injector = TriggerMemoryInjector()
+
+        # Test all defined icons
+        assert injector._get_namespace_icon("patterns") == "🔄"
+        assert injector._get_namespace_icon("reviews") == "📝"
+        assert injector._get_namespace_icon("retrospective") == "🔍"
+        assert injector._get_namespace_icon("progress") == "📊"
+
+    def test_all_trigger_patterns(self):
+        """Test all trigger patterns are detected."""
+        from trigger_detector import TriggerDetector
+
+        detector = TriggerDetector()
+
+        # Test remaining patterns not covered in main tests
+        assert detector.should_inject("what did we decide on") is True
+        assert detector.should_inject("continue where we left off") is True
+        assert detector.should_inject("where was I") is False  # Not a trigger
+        assert detector.should_inject("where were we on that?") is True
+        assert detector.should_inject("pick up where we stopped") is True
+        assert detector.should_inject("what did I learn") is True
+        assert detector.should_inject("what went wrong last time") is True
+        assert detector.should_inject("what was blocking us") is True
+        assert detector.should_inject("recall the decision") is True
+        assert detector.should_inject("recall what happened") is True
+
+    def test_custom_threshold(self):
+        """Test TriggerMemoryInjector with custom threshold."""
+        from trigger_detector import TriggerDetector, TriggerMemoryInjector
+
+        custom_detector = TriggerDetector(threshold=0.5)
+        injector = TriggerMemoryInjector(detector=custom_detector)
+
+        assert injector.detector.threshold == 0.5

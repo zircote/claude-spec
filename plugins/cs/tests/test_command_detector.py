@@ -673,3 +673,240 @@ class TestFallbackIOFunctions:
         captured = capsys.readouterr()
         output = json.loads(captured.out)
         assert output == {"decision": "approve"}
+
+
+# ============================================================================
+# ADDITIONAL COVERAGE TESTS (73% → 95%+ target)
+# ============================================================================
+
+
+class TestValidateCwdCoverage:
+    """Tests for validate_cwd edge cases and error paths."""
+
+    def test_empty_string(self, capsys):
+        """Test validate_cwd with empty string returns None."""
+        from command_detector import validate_cwd
+
+        result = validate_cwd("")
+        assert result is None
+
+    def test_whitespace_only(self, capsys):
+        """Test validate_cwd with whitespace-only returns None."""
+        from command_detector import validate_cwd
+
+        result = validate_cwd("   \t\n  ")
+        assert result is None
+
+    def test_path_not_directory(self, tmp_path, capsys):
+        """Test validate_cwd when path is a file, not directory."""
+        from command_detector import validate_cwd
+
+        # Create a file, not a directory
+        test_file = tmp_path / "notadir.txt"
+        test_file.write_text("content")
+
+        result = validate_cwd(str(test_file))
+        assert result is None
+
+        captured = capsys.readouterr()
+        assert "not a directory" in captured.err
+
+    def test_path_with_null_byte(self, tmp_path, capsys):
+        """Test validate_cwd rejects paths with null bytes."""
+        from command_detector import validate_cwd
+
+        # Path with embedded null byte
+        result = validate_cwd(f"{tmp_path}\x00malicious")
+        assert result is None
+
+        # The null byte causes OSError before we check, or we catch it
+        captured = capsys.readouterr()
+        # Either null byte message or invalid path message
+        assert "null" in captured.err.lower() or "invalid" in captured.err.lower()
+
+    def test_nonexistent_path(self, tmp_path, capsys):
+        """Test validate_cwd with nonexistent path."""
+        from command_detector import validate_cwd
+
+        result = validate_cwd(str(tmp_path / "nonexistent"))
+        assert result is None
+
+        captured = capsys.readouterr()
+        assert "Invalid cwd path" in captured.err
+
+    def test_permission_denied(self, tmp_path, capsys, monkeypatch):
+        """Test validate_cwd when permission denied on resolve."""
+        from pathlib import Path
+
+        from command_detector import validate_cwd
+
+        # Mock Path.resolve to raise OSError
+        original_resolve = Path.resolve
+
+        def mock_resolve(self, strict=False):
+            if "protected" in str(self):
+                raise OSError(13, "Permission denied")
+            return original_resolve(self, strict=strict)
+
+        monkeypatch.setattr(Path, "resolve", mock_resolve)
+
+        result = validate_cwd("/protected/path")
+        assert result is None
+
+        captured = capsys.readouterr()
+        assert "Invalid cwd path" in captured.err
+
+
+class TestSaveSessionStateCoverage:
+    """Tests for save_session_state edge cases and error paths."""
+
+    def test_invalid_cwd_logs_warning(self, capsys):
+        """Test save_session_state with invalid cwd logs warning."""
+        from command_detector import save_session_state
+
+        # Empty cwd should be caught by validate_cwd
+        save_session_state("", {"command": "cs:p"})
+
+        captured = capsys.readouterr()
+        assert "invalid cwd" in captured.err.lower()
+
+    def test_path_traversal_attempt(self, tmp_path, capsys):
+        """Test save_session_state detects path traversal."""
+        from command_detector import save_session_state
+
+        # Create a symlink that escapes the validated path
+        # This tests lines 178-180
+        escape_dir = tmp_path / "escape"
+        escape_dir.mkdir()
+
+        # Note: Modern Python's relative_to check should catch this
+        # We need to test the code path where resolved file isn't under cwd
+        # Actually the code validates cwd first then constructs state_file
+        # Path traversal would require SESSION_STATE_FILE to contain ".."
+        # which it doesn't, so we need to test via different mechanism
+
+        # The path traversal check is for if state_file.resolve() is outside validated_cwd
+        # This can happen if someone modifies SESSION_STATE_FILE constant
+        # Let's mock the resolution to trigger the check
+
+        from pathlib import Path
+        from unittest.mock import patch
+
+        with patch.object(Path, "resolve") as mock_resolve:
+            # First call validates cwd (returns valid)
+            # Second call for state_file resolves to escape path
+            mock_resolve.side_effect = [
+                tmp_path,  # validate_cwd resolve
+                Path("/etc/passwd"),  # state_file resolve (outside cwd)
+            ]
+
+            save_session_state(str(tmp_path), {"command": "cs:p"})
+
+        captured = capsys.readouterr()
+        assert "Path traversal detected" in captured.err
+
+    def test_json_dump_exception(self, tmp_path, capsys, monkeypatch):
+        """Test save_session_state handles JSON dump exception."""
+        from command_detector import save_session_state
+
+        # Create an unserializable object
+        class Unserializable:
+            def __repr__(self):
+                return "Unserializable"
+
+        # This should trigger the inner exception handler (lines 193-195)
+        save_session_state(str(tmp_path), {"bad": Unserializable()})
+
+        captured = capsys.readouterr()
+        assert "Error saving state" in captured.err
+
+    def test_generic_exception_in_save(self, tmp_path, capsys, monkeypatch):
+        """Test save_session_state handles generic exception."""
+        import os
+
+        original_open = os.open
+
+        def mock_open(path, flags, mode=None):
+            if ".cs-session-state.json" in str(path):
+                raise RuntimeError("Simulated failure")
+            return original_open(path, flags, mode)
+
+        monkeypatch.setattr("os.open", mock_open)
+
+        from command_detector import save_session_state
+
+        save_session_state(str(tmp_path), {"command": "cs:p"})
+
+        captured = capsys.readouterr()
+        assert "Error saving state" in captured.err
+
+
+class TestInlineFallbackWriteException:
+    """Tests for inline fallback write_output exception handling."""
+
+    def test_write_output_json_error(self, tmp_path, monkeypatch, capsys):
+        """Test inline fallback write_output handles JSON serialization error."""
+        import command_detector
+
+        # Force inline fallback path
+        original_io = command_detector.IO_AVAILABLE
+        original_fb = command_detector.FALLBACK_AVAILABLE
+        command_detector.IO_AVAILABLE = False
+        command_detector.FALLBACK_AVAILABLE = False
+
+        # Create unserializable output via monkey-patching json.dumps
+        import json as json_module
+
+        original_dumps = json_module.dumps
+        call_count = [0]
+
+        def mock_dumps(obj, *args, **kwargs):
+            call_count[0] += 1
+            # Fail on the response output (should be 2nd+ call after reading input)
+            if call_count[0] > 1 and "decision" in str(obj):
+                raise ValueError("Serialization failed")
+            return original_dumps(obj, *args, **kwargs)
+
+        monkeypatch.setattr(json_module, "dumps", mock_dumps)
+
+        input_data = {"prompt": "", "cwd": str(tmp_path), "session_id": ""}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        main()
+
+        captured = capsys.readouterr()
+        # Should fall back to hardcoded approve response
+        assert '{"decision": "approve"}' in captured.out
+
+        command_detector.IO_AVAILABLE = original_io
+        command_detector.FALLBACK_AVAILABLE = original_fb
+
+
+class TestRunPreStepsIOFallback:
+    """Additional tests for run_pre_steps I/O fallback paths."""
+
+    def test_io_unavailable_logs_skip(self, tmp_path, monkeypatch, capsys):
+        """Test run_pre_steps logs skip message when IO unavailable."""
+        import command_detector
+
+        original_io = command_detector.IO_AVAILABLE
+        original_config = command_detector.CONFIG_AVAILABLE
+
+        command_detector.IO_AVAILABLE = False
+        command_detector.CONFIG_AVAILABLE = True
+
+        # Mock get_enabled_steps to return steps
+        monkeypatch.setattr(
+            command_detector,
+            "get_enabled_steps",
+            lambda cmd, phase: [{"name": "security-review"}],
+        )
+
+        run_pre_steps(str(tmp_path), "cs:c")
+
+        captured = capsys.readouterr()
+        # Should see "libs not available" message
+        assert "not available" in captured.err or "skipped" in captured.err
+
+        command_detector.IO_AVAILABLE = original_io
+        command_detector.CONFIG_AVAILABLE = original_config

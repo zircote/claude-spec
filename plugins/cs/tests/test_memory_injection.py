@@ -637,3 +637,264 @@ class TestMemoryInjectionEdgeCases:
         # Most recent should be first
         assert result[0].slug == "newer"
         assert result[1].slug == "older"
+
+
+# =============================================================================
+# Additional tests for memory_injector.py coverage
+# =============================================================================
+
+
+class TestMemoryInjectorCoverage:
+    """Additional tests for memory injector coverage."""
+
+    def test_recall_service_property_import_error(self, monkeypatch, capsys):
+        """Test recall_service property handles ImportError."""
+        from memory_injector import MemoryInjector
+
+        injector = MemoryInjector()
+        assert injector._recall_service is None
+
+        # Mock the import to fail
+        original_import = __builtins__["__import__"]
+
+        def mock_import(name, *args, **kwargs):
+            if name == "memory.recall" or "memory.recall" in name:
+                raise ImportError("Test import error")
+            return original_import(name, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.__import__", mock_import)
+
+        # Force recreation by setting to None and clearing cache
+        injector._recall_service = None
+        result = injector.recall_service
+
+        captured = capsys.readouterr()
+        assert result is None
+        assert "RecallService import error" in captured.err
+
+    def test_get_session_memories_with_mock_recall_service(self):
+        """Test get_session_memories with mocked recall service."""
+        from memory_injector import MemoryInjector
+
+        mock_recall = MagicMock()
+
+        # Create mock results with distance within threshold
+        mock_result1 = MagicMock()
+        mock_result1.distance = 0.5  # Within threshold (0.7)
+        mock_result1.id = "decisions:abc123:1234"
+
+        mock_result2 = MagicMock()
+        mock_result2.distance = 0.3  # Within threshold
+        mock_result2.id = "learnings:def456:5678"
+
+        mock_recall.search.return_value = [mock_result1, mock_result2]
+        mock_recall.recent.return_value = []
+
+        injector = MemoryInjector(recall_service=mock_recall, limit=5)
+        result = injector.get_session_memories(spec="test-spec")
+
+        assert len(result) == 2
+        mock_recall.search.assert_called_once()
+        # recent should be called to fill up to limit
+        mock_recall.recent.assert_called_once()
+
+    def test_get_session_memories_filters_by_relevance(self):
+        """Test get_session_memories filters out irrelevant results."""
+        from memory_injector import MemoryInjector
+
+        mock_recall = MagicMock()
+
+        # Create results with mixed distances
+        mock_result_relevant = MagicMock()
+        mock_result_relevant.distance = 0.5  # Within threshold (0.7)
+        mock_result_relevant.id = "decisions:abc:1234"
+
+        mock_result_irrelevant = MagicMock()
+        mock_result_irrelevant.distance = 0.9  # Above threshold
+        mock_result_irrelevant.id = "decisions:xyz:9999"
+
+        mock_recall.search.return_value = [mock_result_relevant, mock_result_irrelevant]
+        mock_recall.recent.return_value = []
+
+        injector = MemoryInjector(recall_service=mock_recall, limit=10)
+        result = injector.get_session_memories()
+
+        # Only the relevant result should be included
+        assert len(result) == 1
+        assert result[0].id == "decisions:abc:1234"
+
+    def test_get_session_memories_deduplication(self):
+        """Test get_session_memories deduplicates results from recent."""
+        from memory_injector import MemoryInjector
+
+        mock_recall = MagicMock()
+
+        # Search returns one result
+        mock_result1 = MagicMock()
+        mock_result1.distance = 0.5
+        mock_result1.id = "decisions:abc:1234"
+
+        # Recent returns same ID plus a new one
+        mock_recent1 = MagicMock()
+        mock_recent1.id = "decisions:abc:1234"  # Duplicate
+
+        mock_recent2 = MagicMock()
+        mock_recent2.id = "learnings:def:5678"  # New
+
+        mock_recall.search.return_value = [mock_result1]
+        mock_recall.recent.return_value = [mock_recent1, mock_recent2]
+
+        injector = MemoryInjector(recall_service=mock_recall, limit=10)
+        result = injector.get_session_memories()
+
+        # Should have 2: original + deduplicated recent
+        assert len(result) == 2
+        ids = {r.id for r in result}
+        assert "decisions:abc:1234" in ids
+        assert "learnings:def:5678" in ids
+
+    def test_get_session_memories_wraps_non_memoryresult(self):
+        """Test get_session_memories wraps non-MemoryResult from recent."""
+        from memory_injector import MemoryInjector
+
+        mock_recall = MagicMock()
+
+        # Search returns nothing
+        mock_recall.search.return_value = []
+
+        # Recent returns a raw Memory (not MemoryResult)
+        mock_memory = MagicMock()
+        mock_memory.id = "decisions:abc:1234"
+        # Don't give it a distance attribute (simulating raw Memory)
+        del mock_memory.distance
+
+        mock_recall.recent.return_value = [mock_memory]
+
+        injector = MemoryInjector(recall_service=mock_recall, limit=5)
+        result = injector.get_session_memories()
+
+        # Result should contain wrapped memory
+        assert len(result) == 1
+        # Should be wrapped in MemoryResult with neutral distance
+        assert result[0].distance == 0.5
+
+    def test_get_session_memories_without_spec(self):
+        """Test get_session_memories query without spec."""
+        from memory_injector import MemoryInjector
+
+        mock_recall = MagicMock()
+        mock_recall.search.return_value = []
+        mock_recall.recent.return_value = []
+
+        injector = MemoryInjector(recall_service=mock_recall, limit=5)
+        injector.get_session_memories()  # No spec argument
+
+        # Should use general query
+        call_args = mock_recall.search.call_args
+        assert "recent important" in call_args.kwargs.get(
+            "query", call_args[1].get("query", "")
+        )
+
+    def test_get_session_memories_with_spec_query(self):
+        """Test get_session_memories query with spec."""
+        from memory_injector import MemoryInjector
+
+        mock_recall = MagicMock()
+        mock_recall.search.return_value = []
+        mock_recall.recent.return_value = []
+
+        injector = MemoryInjector(recall_service=mock_recall, limit=5)
+        injector.get_session_memories(spec="my-feature")
+
+        # Should use spec-focused query
+        call_args = mock_recall.search.call_args
+        query = call_args.kwargs.get("query", call_args[1].get("query", ""))
+        assert "spec:my-feature" in query
+
+    def test_get_session_memories_respects_limit(self):
+        """Test get_session_memories respects limit parameter."""
+        from memory_injector import MemoryInjector
+
+        mock_recall = MagicMock()
+
+        # Return more results than limit
+        mock_results = []
+        for i in range(20):
+            result = MagicMock()
+            result.distance = 0.5
+            result.id = f"decisions:id{i}:{i}"
+            mock_results.append(result)
+
+        mock_recall.search.return_value = mock_results
+        mock_recall.recent.return_value = []
+
+        injector = MemoryInjector(recall_service=mock_recall, limit=5)
+        result = injector.get_session_memories()
+
+        # Should stop at limit
+        assert len(result) <= 5
+
+    def test_get_session_memories_handles_error(self, capsys):
+        """Test get_session_memories handles errors gracefully."""
+        from memory_injector import MemoryInjector
+
+        mock_recall = MagicMock()
+        mock_recall.search.side_effect = Exception("Test error")
+
+        injector = MemoryInjector(recall_service=mock_recall, limit=5)
+        result = injector.get_session_memories()
+
+        captured = capsys.readouterr()
+        assert result == []
+        assert "Error querying memories" in captured.err
+
+    def test_get_session_memories_with_namespace(self):
+        """Test get_session_memories with namespace filter."""
+        from memory_injector import MemoryInjector
+
+        mock_recall = MagicMock()
+        mock_recall.search.return_value = []
+        mock_recall.recent.return_value = []
+
+        injector = MemoryInjector(recall_service=mock_recall, limit=5)
+        injector.get_session_memories(namespace="decisions")
+
+        call_args = mock_recall.search.call_args
+        assert call_args.kwargs.get("namespace") == "decisions"
+
+    def test_get_session_memories_custom_limit_parameter(self):
+        """Test get_session_memories with custom limit override."""
+        from memory_injector import MemoryInjector
+
+        mock_recall = MagicMock()
+        mock_recall.search.return_value = []
+        mock_recall.recent.return_value = []
+
+        injector = MemoryInjector(recall_service=mock_recall, limit=10)
+        injector.get_session_memories(limit=3)
+
+        call_args = mock_recall.search.call_args
+        # Should request limit * 2 for filtering
+        assert call_args.kwargs.get("limit") == 6
+
+    def test_format_for_context_all_namespace_icons(self):
+        """Test all namespace icons are covered."""
+        from memory_injector import MemoryInjector
+
+        injector = MemoryInjector()
+
+        # Test all defined icons
+        assert injector._get_namespace_icon("patterns") == "🔄"
+        assert injector._get_namespace_icon("reviews") == "📝"
+        assert injector._get_namespace_icon("retrospective") == "🔍"
+
+    def test_recall_service_returns_existing(self):
+        """Test recall_service property returns existing service."""
+        from memory_injector import MemoryInjector
+
+        mock_recall = MagicMock()
+        injector = MemoryInjector(recall_service=mock_recall)
+
+        # Should return the same instance
+        assert injector.recall_service is mock_recall
+        assert injector.recall_service is mock_recall  # Second call too

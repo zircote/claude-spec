@@ -483,5 +483,137 @@ class TestClearLog(unittest.TestCase):
         self.assertTrue(log_symlink.exists())
 
 
+class TestPathTraversalErrorHandling(unittest.TestCase):
+    """Tests for PathTraversalError handling in all functions."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        import shutil
+
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_append_to_log_handles_path_traversal(self):
+        """append_to_log should return False on PathTraversalError."""
+        entry = LogEntry.create(
+            session_id="test",
+            entry_type="user_input",
+            content="test",
+        )
+
+        with patch(
+            "filters.log_writer.get_log_path",
+            side_effect=PathTraversalError("Path traversal detected"),
+        ):
+            with patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+                result = append_to_log(self.temp_dir, entry)
+
+        self.assertFalse(result)
+        self.assertIn("Security error", mock_stderr.getvalue())
+
+    def test_read_log_handles_path_traversal(self):
+        """read_log should return empty list on PathTraversalError."""
+        with patch(
+            "filters.log_writer.get_log_path",
+            side_effect=PathTraversalError("Path traversal detected"),
+        ):
+            with patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+                result = read_log(self.temp_dir)
+
+        self.assertEqual(result, [])
+        self.assertIn("Security error", mock_stderr.getvalue())
+
+    def test_log_exists_handles_path_traversal(self):
+        """log_exists should return False on PathTraversalError."""
+        with patch(
+            "filters.log_writer.get_log_path",
+            side_effect=PathTraversalError("Path traversal detected"),
+        ):
+            result = log_exists(self.temp_dir)
+
+        self.assertFalse(result)
+
+    def test_clear_log_handles_path_traversal(self):
+        """clear_log should return False on PathTraversalError."""
+        with patch(
+            "filters.log_writer.get_log_path",
+            side_effect=PathTraversalError("Path traversal detected"),
+        ):
+            with patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+                result = clear_log(self.temp_dir)
+
+        self.assertFalse(result)
+        self.assertIn("Security error", mock_stderr.getvalue())
+
+
+class TestSymlinkAttackPrevention(unittest.TestCase):
+    """Tests for symlink attack prevention in append_to_log."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        import shutil
+
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_append_catches_symlink_on_open(self):
+        """append_to_log should catch symlink attack on os.open."""
+        entry = LogEntry.create(
+            session_id="test",
+            entry_type="user_input",
+            content="test",
+        )
+
+        # Mock os.open to raise OSError with symlink message
+        with patch("os.open", side_effect=OSError(40, "Too many symbolic links")):
+            with patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+                result = append_to_log(self.temp_dir, entry)
+
+        self.assertFalse(result)
+        self.assertIn("Symlink attack prevented", mock_stderr.getvalue())
+
+    def test_append_catches_symlink_via_message(self):
+        """append_to_log should catch symlink attack via error message."""
+        entry = LogEntry.create(
+            session_id="test",
+            entry_type="user_input",
+            content="test",
+        )
+
+        # Mock os.open to raise OSError with "symbolic link" in message
+        with patch(
+            "os.open",
+            side_effect=OSError(0, "Path is a symbolic link"),
+        ):
+            with patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+                result = append_to_log(self.temp_dir, entry)
+
+        self.assertFalse(result)
+        self.assertIn("Symlink attack prevented", mock_stderr.getvalue())
+
+    def test_append_reraises_non_symlink_oserror(self):
+        """append_to_log should reraise non-symlink OSError."""
+        entry = LogEntry.create(
+            session_id="test",
+            entry_type="user_input",
+            content="test",
+        )
+
+        # Mock os.open to raise non-symlink OSError
+        with patch("os.open", side_effect=OSError(13, "Permission denied")):
+            with patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+                result = append_to_log(self.temp_dir, entry)
+
+        # Should be caught by outer exception handler
+        self.assertFalse(result)
+        self.assertIn("Error writing log", mock_stderr.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()
