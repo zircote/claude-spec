@@ -98,7 +98,7 @@ plugins/cs/
 │   ├── log_analyzer.py    # Log file analysis
 │   └── analyze_cli.py     # CLI for retrospective analysis
 ├── skills/worktree-manager/  # Worktree automation (config at ~/.claude/worktree-manager.config.json)
-└── tests/             # Pytest test suite (890+ tests)
+└── tests/             # Pytest test suite (1236 tests, 95% coverage enforced)
 ```
 
 ### cs-memory Module
@@ -178,7 +178,7 @@ export CS_AUTO_CAPTURE_ENABLED=false  # Disable auto-capture
    - Cleans up session state file
    - Returns `{"continue": false}`
 
-4. **Filter Pipeline** (`filters/pipeline.py`):
+5. **Filter Pipeline** (`filters/pipeline.py`):
    - Pre-compiled regex patterns for 15+ secret types (AWS, GitHub, API keys, etc.)
    - Order: secrets -> truncation
    - Returns `FilterResult` with statistics
@@ -236,7 +236,7 @@ export CS_TRIGGER_MEMORY_ENABLED=false
 export CS_AUTO_CAPTURE_ENABLED=false
 ```
 
-5. **Log Writer** (`filters/log_writer.py`):
+6. **Log Writer** (`filters/log_writer.py`):
    - Atomic writes with file locking (`fcntl.flock`)
    - Creates backup before modifications
    - JSON array format with `LogEntry` schema
@@ -368,7 +368,7 @@ Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planni
     - `hooks/lib/memory_injector.py`: Session memory injection
     - `hooks/lib/trigger_detector.py`: Pattern matching for memory recall
     - `hooks/lib/spec_detector.py`: Active spec detection
-    - `steps/memory_queue_flusher.py`: Batch commit on session end
+    - Stop hook flushes pending memory queue on session end
 
 - `docs/spec/completed/2025-12-15-memory-auto-capture/` - Memory Auto-Capture Implementation
   - Completed: 2025-12-15
