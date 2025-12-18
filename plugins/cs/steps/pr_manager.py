@@ -288,11 +288,9 @@ class PRManagerStep(BaseStep):
                         frontmatter[key] = []
                 # Handle quoted strings
                 elif value.startswith('"') and value.endswith('"'):
-                    value = value[1:-1]
-                    frontmatter[key] = value
+                    frontmatter[key] = value[1:-1]
                 elif value.startswith("'") and value.endswith("'"):
-                    value = value[1:-1]
-                    frontmatter[key] = value
+                    frontmatter[key] = value[1:-1]
                 else:
                     frontmatter[key] = value
 
