@@ -1,0 +1,48 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-sha-based-decision-id-with-timestamps
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- identification
+title: SHA-Based Decision ID with Timestamps
+---
+
+# SHA-Based Decision Identification with Timestamps
+
+## Status
+Accepted (Revised from original "SHA-Based Identification")
+
+## Context
+Architecture Decision Records (ADRs) and other memories need unique identifiers. The original decision used commit SHA as the sole identifier: <namespace>:<commit_sha>.
+
+However, during implementation we discovered that multiple memories can legitimately attach to the same commit. This happens when:
+- Batch ADR capture during planning captures multiple decisions
+- Multiple learnings discovered during a single implementation task
+- Review findings all attach to the reviewed commit
+
+The original format decisions:abc123 would collide when two decisions attach to the same commit.
+
+## Decision
+Use commit SHA plus millisecond timestamp as the unique identifier for memories.
+
+Format: <namespace>:<short_sha>:<timestamp_ms>
+Example: decisions:abc123d:1702560000000
+
+## Rationale
+- Zero coordination: Timestamps are locally generated, no distributed counter
+- Collision-free: Millisecond precision + SHA makes collisions astronomically unlikely
+- Batch-friendly: Multiple memories per commit work naturally
+- Simpler than counters: No need to maintain or sync a sequence number
+- Backwards compatible: Parser accepts legacy namespace:sha format
+
+## Consequences
+- Memory IDs are longer but still human-readable
+- Display can show short form when context is clear
+- Legacy namespace:sha format still parseable
+- No database migration needed (IDs are strings)
