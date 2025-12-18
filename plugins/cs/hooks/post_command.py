@@ -23,6 +23,10 @@ Output format:
 
 Post-steps are executed based on the command stored in session state.
 This hook never blocks - errors are logged to stderr.
+
+Security Features:
+    - Path traversal prevention via validate_cwd()
+    - Input size limits via hook_io module
 """
 
 from __future__ import annotations
@@ -71,14 +75,68 @@ try:
 except ImportError:
     FALLBACK_AVAILABLE = False
 
+# Import memory queue flusher
+try:
+    from file_queue import dequeue_all, get_queue_size
+
+    MEMORY_QUEUE_AVAILABLE = True
+except ImportError:
+    MEMORY_QUEUE_AVAILABLE = False
+
+# Import capture service for flushing
+try:
+    from memory.capture import CaptureService
+
+    CAPTURE_SERVICE_AVAILABLE = True
+except ImportError:
+    CAPTURE_SERVICE_AVAILABLE = False
+
 LOG_PREFIX = "post_command"
 
 # Session state file created by command_detector
 SESSION_STATE_FILE = ".cs-session-state.json"
 
 
+def validate_cwd(cwd: str) -> Path | None:
+    """Validate and resolve the working directory path.
+
+    Security: Prevents path traversal attacks by ensuring the resolved
+    path is a valid directory without symlink-based escapes.
+
+    Args:
+        cwd: The working directory path to validate
+
+    Returns:
+        Resolved Path object if valid, None otherwise
+    """
+    if not cwd or not cwd.strip():
+        return None
+
+    try:
+        # Resolve to absolute path, following symlinks
+        resolved = Path(cwd).resolve(strict=True)
+
+        # Verify it's a directory
+        if not resolved.is_dir():
+            sys.stderr.write(f"cs-{LOG_PREFIX}: cwd is not a directory: {cwd}\n")
+            return None
+
+        # Security: Reject paths containing null bytes
+        if "\x00" in str(resolved):
+            sys.stderr.write(f"cs-{LOG_PREFIX}: Invalid null byte in path\n")
+            return None
+
+        return resolved
+
+    except (OSError, ValueError) as e:
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Invalid cwd path: {e}\n")
+        return None
+
+
 def load_session_state(cwd: str) -> dict[str, Any] | None:
     """Load session state from command_detector.
+
+    Security: Validates cwd to prevent path traversal attacks.
 
     Args:
         cwd: Current working directory
@@ -86,12 +144,27 @@ def load_session_state(cwd: str) -> dict[str, Any] | None:
     Returns:
         State dictionary if found, None otherwise
     """
-    state_file = Path(cwd) / SESSION_STATE_FILE
-    if not state_file.is_file():
+    # SEC-001: Validate cwd to prevent path traversal
+    validated_cwd = validate_cwd(cwd)
+    if validated_cwd is None:
+        return None
+
+    state_file = validated_cwd / SESSION_STATE_FILE
+
+    # SEC-001: Verify the state file path is still within validated_cwd
+    try:
+        resolved_state_file = state_file.resolve()
+        # Ensure the resolved path is under the validated cwd
+        resolved_state_file.relative_to(validated_cwd)
+    except (ValueError, OSError) as e:
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Path traversal detected: {e}\n")
+        return None
+
+    if not resolved_state_file.is_file():
         return None
 
     try:
-        with open(state_file, encoding="utf-8") as f:
+        with open(resolved_state_file, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         sys.stderr.write(f"cs-{LOG_PREFIX}: Error loading state: {e}\n")
@@ -101,13 +174,30 @@ def load_session_state(cwd: str) -> dict[str, Any] | None:
 def cleanup_session_state(cwd: str) -> None:
     """Remove session state file.
 
+    Security: Validates cwd to prevent path traversal attacks.
+
     Args:
         cwd: Current working directory
     """
-    state_file = Path(cwd) / SESSION_STATE_FILE
+    # SEC-001: Validate cwd to prevent path traversal
+    validated_cwd = validate_cwd(cwd)
+    if validated_cwd is None:
+        return
+
+    state_file = validated_cwd / SESSION_STATE_FILE
+
+    # SEC-001: Verify the state file path is still within validated_cwd
     try:
-        if state_file.is_file():
-            state_file.unlink()
+        resolved_state_file = state_file.resolve()
+        # Ensure the resolved path is under the validated cwd
+        resolved_state_file.relative_to(validated_cwd)
+    except (ValueError, OSError) as e:
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Path traversal detected: {e}\n")
+        return
+
+    try:
+        if resolved_state_file.is_file():
+            resolved_state_file.unlink()
     except Exception as e:
         sys.stderr.write(f"cs-{LOG_PREFIX}: Error cleaning state: {e}\n")
 
@@ -137,6 +227,73 @@ def run_post_steps(cwd: str, command: str) -> None:
         except Exception as e:
             # Fail-open: log error but continue
             sys.stderr.write(f"cs-post-step {step_name} error: {e}\n")
+
+
+def flush_memory_queue(cwd: str) -> None:
+    """Flush any pending learnings from the file-based queue to git notes.
+
+    This runs unconditionally on Stop to ensure learnings captured during
+    any tool use get persisted, not just during /cs:* commands.
+
+    Args:
+        cwd: Current working directory
+    """
+    if not MEMORY_QUEUE_AVAILABLE:
+        return
+
+    if not CAPTURE_SERVICE_AVAILABLE:
+        return
+
+    # Check if there's anything to flush
+    queue_size = get_queue_size(cwd)
+    if queue_size == 0:
+        return
+
+    sys.stderr.write(f"cs-{LOG_PREFIX}: Flushing {queue_size} queued learnings...\n")
+
+    # Dequeue and flush
+    items = dequeue_all(cwd)
+    if not items:
+        return
+
+    capture_service = CaptureService()
+    flushed = 0
+    errors = 0
+
+    for item in items:
+        try:
+            summary = item.get("summary", "")
+            content = item.get("content", "")
+            spec = item.get("spec")
+            tags = item.get("tags", [])
+
+            if not summary:
+                continue
+
+            result = capture_service.capture_learning(
+                spec=spec,
+                summary=summary,
+                insight=content,
+                applicability=None,
+                tags=tags,
+            )
+
+            if result.success:
+                flushed += 1
+            else:
+                errors += 1
+                if result.warning:
+                    sys.stderr.write(
+                        f"cs-{LOG_PREFIX}: Capture warning: {result.warning}\n"
+                    )
+
+        except Exception as e:
+            errors += 1
+            sys.stderr.write(f"cs-{LOG_PREFIX}: Flush error: {e}\n")
+
+    sys.stderr.write(
+        f"cs-{LOG_PREFIX}: Flushed {flushed} learnings ({errors} errors)\n"
+    )
 
 
 # I/O wrapper functions to avoid lambda expressions (E731)
@@ -197,7 +354,14 @@ def main() -> None:
         _write_output(_stop_response())
         return
 
-    # Load session state
+    # Always try to flush memory queue regardless of command state
+    # This ensures learnings captured during any tool use get persisted
+    try:
+        flush_memory_queue(cwd)
+    except Exception as e:
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Error flushing memory queue: {e}\n")
+
+    # Load session state for command-specific post-steps
     state = load_session_state(cwd)
 
     if state:

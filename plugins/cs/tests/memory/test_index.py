@@ -157,6 +157,17 @@ class TestConnectionErrors:
 
                 assert "Failed to load sqlite-vec" in str(exc_info.value)
 
+    def test_directory_path_raises_error(self, tmp_path):
+        """Test error when db_path is a directory instead of a file."""
+        # Pass directory path instead of file path
+        service = IndexService(db_path=tmp_path)
+
+        with pytest.raises(MemoryIndexError) as exc_info:
+            service._create_connection()
+
+        assert "Database path is a directory" in str(exc_info.value)
+        assert "Pass a file path" in exc_info.value.recovery_action
+
 
 class TestInitialize:
     """Tests for database initialization."""

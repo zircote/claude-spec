@@ -1,13 +1,13 @@
 {
-  "description": "Lifecycle hooks for claude-spec projects",
+  "description": "Lifecycle hooks for claude-spec projects (requires uv: https://docs.astral.sh/uv/)",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/plugins/cs/hooks/session_start.py",
-            "timeout": 10
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh session_start.py",
+            "timeout": 15
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/plugins/cs/hooks/command_detector.py",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh command_detector.py",
             "timeout": 30
           }
         ]
@@ -26,8 +26,29 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/plugins/cs/hooks/prompt_capture.py",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh prompt_capture.py",
             "timeout": 30
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh trigger_memory.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Read|Write|Edit|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh post_tool_capture.py",
+            "timeout": 5
           }
         ]
       }
@@ -37,7 +58,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/plugins/cs/hooks/post_command.py",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.sh post_command.py",
             "timeout": 60
           }
         ]

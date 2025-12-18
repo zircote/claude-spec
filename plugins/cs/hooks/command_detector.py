@@ -25,11 +25,17 @@ Output format:
 
 This hook NEVER blocks prompts - it always returns approve.
 Pre-step output goes to stderr or is stored for post-processing.
+
+Security Features:
+    - Path traversal prevention via validate_cwd()
+    - Restrictive file permissions (0o600) for session state
+    - Input size limits via hook_io module
 """
 
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -91,6 +97,42 @@ COMMAND_PATTERNS = {
 }
 
 
+def validate_cwd(cwd: str) -> Path | None:
+    """Validate and resolve the working directory path.
+
+    Security: Prevents path traversal attacks by ensuring the resolved
+    path is a valid directory without symlink-based escapes.
+
+    Args:
+        cwd: The working directory path to validate
+
+    Returns:
+        Resolved Path object if valid, None otherwise
+    """
+    if not cwd or not cwd.strip():
+        return None
+
+    try:
+        # Resolve to absolute path, following symlinks
+        resolved = Path(cwd).resolve(strict=True)
+
+        # Verify it's a directory
+        if not resolved.is_dir():
+            sys.stderr.write(f"cs-{LOG_PREFIX}: cwd is not a directory: {cwd}\n")
+            return None
+
+        # Security: Reject paths containing null bytes
+        if "\x00" in str(resolved):
+            sys.stderr.write(f"cs-{LOG_PREFIX}: Invalid null byte in path\n")
+            return None
+
+        return resolved
+
+    except (OSError, ValueError) as e:
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Invalid cwd path: {e}\n")
+        return None
+
+
 def detect_command(prompt: str) -> str | None:
     """Detect /cs:* command in the prompt.
 
@@ -112,14 +154,47 @@ def detect_command(prompt: str) -> str | None:
 def save_session_state(cwd: str, state: dict[str, Any]) -> None:
     """Save session state for post-command hook.
 
+    Security:
+        - Validates cwd to prevent path traversal
+        - Uses restrictive file permissions (0o600)
+
     Args:
         cwd: Current working directory
         state: State dictionary to save
     """
-    state_file = Path(cwd) / SESSION_STATE_FILE
+    # SEC-001: Validate cwd to prevent path traversal
+    validated_cwd = validate_cwd(cwd)
+    if validated_cwd is None:
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Skipping state save - invalid cwd\n")
+        return
+
+    state_file = validated_cwd / SESSION_STATE_FILE
+
+    # SEC-001: Verify the state file path is still within validated_cwd
     try:
-        with open(state_file, "w", encoding="utf-8") as f:
-            json.dump(state, f, indent=2)
+        resolved_state_file = state_file.resolve()
+        # Ensure the resolved path is under the validated cwd
+        resolved_state_file.relative_to(validated_cwd)
+    except (ValueError, OSError) as e:
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Path traversal detected: {e}\n")
+        return
+
+    try:
+        # SEC-004: Create file with restrictive permissions (0o600 = owner read/write only)
+        # Use os.open with O_CREAT | O_WRONLY | O_TRUNC for atomic creation with permissions
+        fd = os.open(
+            str(resolved_state_file),
+            os.O_CREAT | os.O_WRONLY | os.O_TRUNC,
+            0o600,
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(state, f, indent=2)
+        except Exception:
+            # fd is closed by os.fdopen even on error
+            raise
+    except OSError as e:
+        sys.stderr.write(f"cs-{LOG_PREFIX}: Error saving state: {e}\n")
     except Exception as e:
         sys.stderr.write(f"cs-{LOG_PREFIX}: Error saving state: {e}\n")
 

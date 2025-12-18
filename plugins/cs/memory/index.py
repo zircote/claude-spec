@@ -23,6 +23,12 @@ class IndexService:
     Handles all database operations including CRUD and vector search.
     The database schema uses a metadata table joined with a virtual
     sqlite-vec table for embeddings.
+
+    Supports context manager protocol for automatic resource cleanup:
+
+        with IndexService() as index:
+            index.search_vector(embedding)
+        # Connection automatically closed
     """
 
     def __init__(self, db_path: Path | str | None = None):
@@ -35,6 +41,19 @@ class IndexService:
         self.db_path = Path(db_path) if db_path else INDEX_PATH
         self._conn: sqlite3.Connection | None = None
 
+    def __enter__(self) -> "IndexService":
+        """Enter context manager, returning self for use."""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
+        """Exit context manager, closing connection."""
+        self.close()
+
     def _get_connection(self) -> sqlite3.Connection:
         """Get or create database connection."""
         if self._conn is None:
@@ -43,15 +62,25 @@ class IndexService:
 
     def _create_connection(self) -> sqlite3.Connection:
         """Create a new database connection with sqlite-vec loaded."""
-        # Ensure directory exists
+        # Validate db_path is not a directory
+        if self.db_path.is_dir():
+            raise MemoryIndexError(
+                f"Database path is a directory: {self.db_path}",
+                "Pass a file path like '/path/to/.cs-memory/index.db', not a directory",
+            )
+
+        # Ensure parent directory exists
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
             conn = sqlite3.connect(str(self.db_path))
             conn.row_factory = sqlite3.Row
         except sqlite3.Error as e:
+            # Show absolute path for easier debugging
+            abs_path = self.db_path.resolve()
             raise MemoryIndexError(
-                f"Failed to open database: {e}", f"Check permissions on {self.db_path}"
+                f"Failed to open database: {e}",
+                f"Check permissions on {abs_path} and parent directory",
             ) from e
 
         # Load sqlite-vec extension
@@ -231,7 +260,8 @@ class IndexService:
         conn = self._get_connection()
         placeholders = ",".join("?" * len(memory_ids))
         cursor = conn.execute(
-            f"SELECT * FROM memories WHERE id IN ({placeholders})", memory_ids
+            f"SELECT * FROM memories WHERE id IN ({placeholders})",  # nosec B608
+            memory_ids,
         )
         return {row["id"]: self._row_to_memory(row) for row in cursor}
 
@@ -390,6 +420,7 @@ class IndexService:
         # Query with vector search
         # sqlite-vec requires 'k = ?' in the vec0 WHERE clause for KNN queries
         # We do a subquery to get KNN results, then filter with metadata
+        # nosec B608 - where_sql uses parameterized values (all ? placeholders)
         query = f"""
             SELECT m.id, v.distance
             FROM vec_memories v
@@ -398,7 +429,7 @@ class IndexService:
               AND k = ?
               AND {where_sql}
             ORDER BY v.distance
-        """
+        """  # nosec
 
         # k and embedding params go first for vec0
         params = [json.dumps(embedding), limit] + params

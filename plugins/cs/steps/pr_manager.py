@@ -277,7 +277,8 @@ class PRManagerStep(BaseStep):
                 key, _, value = line.partition(":")
                 key = key.strip()
                 value = value.strip()
-                # Handle arrays first (simple single-line)
+                # Handle arrays first (before quote stripping to avoid
+                # misinterpreting quoted strings like "[a,b]" as arrays)
                 if value.startswith("[") and value.endswith("]"):
                     # Parse simple array: [item1, item2]
                     inner = value[1:-1]
@@ -316,7 +317,8 @@ class PRManagerStep(BaseStep):
                 data = json.loads(result.stdout)
                 return data.get("url")
         except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError):
-            # Fail-open: gh CLI errors should not block workflow
+            # Non-critical: PR existence check is best-effort; proceed with
+            # None to let caller decide whether to create a new PR
             pass
         return None
 
@@ -792,9 +794,9 @@ class PRManagerStep(BaseStep):
                     timeout=self.GH_PR_TIMEOUT,
                     cwd=self.cwd,
                 )
-                # Ignore errors - labels might not exist
             except (subprocess.TimeoutExpired, OSError):
-                # Label removal is best-effort, don't fail if gh CLI errors
+                # Non-critical: Label removal is best-effort; labels may not
+                # exist or gh may timeout. Proceed with reviewer assignment.
                 pass
 
         # Add reviewers if configured
@@ -809,9 +811,9 @@ class PRManagerStep(BaseStep):
                     timeout=self.GH_PR_TIMEOUT,
                     cwd=self.cwd,
                 )
-                # Ignore errors - reviewers might not be valid
             except (subprocess.TimeoutExpired, OSError):
-                # Reviewer assignment is best-effort, don't fail if gh CLI errors
+                # Non-critical: Reviewer assignment is best-effort; users may
+                # not exist or gh may timeout. PR is already ready for review.
                 pass
 
         return StepResult.ok(
