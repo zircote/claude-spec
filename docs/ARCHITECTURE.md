@@ -22,7 +22,7 @@ claude-spec is a Claude Code plugin that provides structured project specificati
                     ▼                 ▼                 ▼
             ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
             │   Commands    │ │     Hooks     │ │    Skills     │
-            │   (/cs:*)     │ │ (UserPrompt)  │ │  (worktree)   │
+            │   (/*)     │ │ (UserPrompt)  │ │  (worktree)   │
             └───────────────┘ └───────────────┘ └───────────────┘
                     │                 │                 │
                     │                 ▼                 │
@@ -72,8 +72,8 @@ Commands are Markdown files with YAML frontmatter. Claude Code parses these and 
 
 **Command Resolution:**
 ```
-/cs:p → plugins/cs/commands/p.md
-/cs:wt:create → plugins/cs/commands/wt/create.md
+/p → plugins/cs/commands/p.md
+/wt:create → plugins/cs/commands/wt/create.md
 ```
 
 **Frontmatter Schema:**
@@ -238,7 +238,7 @@ This ensures:
 
 **NDJSON Format:**
 ```json
-{"timestamp": "2025-12-12T10:30:00Z", "session_id": "abc123", "prompt": "...", "command": "/cs:p", "filter_info": {...}}
+{"timestamp": "2025-12-12T10:30:00Z", "session_id": "abc123", "prompt": "...", "command": "/p", "filter_info": {...}}
 {"timestamp": "2025-12-12T10:31:00Z", "session_id": "abc123", "prompt": "...", "command": null, "filter_info": {...}}
 ```
 
@@ -248,7 +248,7 @@ This ensures:
 | `timestamp` | ISO 8601 | When prompt was captured |
 | `session_id` | string | UUID for this Claude Code session |
 | `prompt` | string | Filtered user prompt |
-| `command` | string? | Detected /cs:* command or null |
+| `command` | string? | Detected /* command or null |
 | `filter_info` | object | Filtering metadata |
 
 ### 7. Worktree Manager
@@ -338,18 +338,18 @@ esac
 
 ## Data Flow Diagrams
 
-### Planning Flow (/cs:p)
+### Planning Flow (/p)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ User: /cs:p "implement user authentication"                     │
+│ User: /p "implement user authentication"                     │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ Phase 0: Worktree Check                                         │
 │ IF on protected branch (main, master, develop):                 │
-│   → Recommend /cs:wt:create                                     │
+│   → Recommend /wt:create                                     │
 │   → STOP (user restarts in worktree)                           │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -382,7 +382,7 @@ esac
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Document Sync Flow (/cs:i)
+### Document Sync Flow (/i)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

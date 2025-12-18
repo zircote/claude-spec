@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-**claude-spec** is a Claude Code plugin for project specification and implementation lifecycle management. It provides slash commands (`/cs:*`) for strategic planning, progress tracking, and project close-out with retrospectives.
+**claude-spec** is a Claude Code plugin for project specification and implementation lifecycle management. It provides slash commands (`/*`) for strategic planning, progress tracking, and project close-out with retrospectives.
 
 ## Build & Test Commands
 
@@ -44,15 +44,15 @@ make clean
 ```
 plugins/cs/
 ├── commands/           # Slash command definitions (markdown)
-│   ├── p.md           # /cs:p - Strategic project planning
-│   ├── i.md           # /cs:i - Implementation progress tracking
-│   ├── s.md           # /cs:s - Status monitoring
-│   ├── c.md           # /cs:c - Project close-out
-│   ├── log.md         # /cs:log - Prompt capture toggle
-│   ├── remember.md    # /cs:remember - Memory capture
-│   ├── recall.md      # /cs:recall - Memory search
-│   ├── context.md     # /cs:context - Load spec memories
-│   ├── memory.md      # /cs:memory - Memory admin
+│   ├── p.md           # /p - Strategic project planning
+│   ├── i.md           # /i - Implementation progress tracking
+│   ├── s.md           # /s - Status monitoring
+│   ├── c.md           # /c - Project close-out
+│   ├── log.md         # /log - Prompt capture toggle
+│   ├── remember.md    # /remember - Memory capture
+│   ├── recall.md      # /recall - Memory search
+│   ├── context.md     # /context - Load spec memories
+│   ├── memory.md      # /memory - Memory admin
 │   └── wt/            # Worktree commands
 ├── memory/            # cs-memory Git-native memory system
 │   ├── models.py      # Data models (Memory, CaptureResult, etc.)
@@ -72,7 +72,7 @@ plugins/cs/
 ├── hooks/
 │   ├── hooks.json         # Hook registration for Claude Code
 │   ├── session_start.py   # SessionStart hook - loads context
-│   ├── command_detector.py # UserPromptSubmit hook - detects /cs:* commands
+│   ├── command_detector.py # UserPromptSubmit hook - detects /* commands
 │   ├── post_command.py    # Stop hook - runs post-steps
 │   ├── prompt_capture.py  # UserPromptSubmit hook - logs prompts
 │   └── lib/
@@ -87,7 +87,7 @@ plugins/cs/
 ├── analyzers/
 │   ├── log_analyzer.py    # Log file analysis
 │   └── analyze_cli.py     # CLI for retrospective analysis
-├── skills/worktree-manager/  # Worktree automation (config at ~/.claude/worktree-manager.config.json)
+├── skills/worktree-manager/  # Worktree automation (config at ~/.claude/claude-spec.config.json)
 └── tests/             # Pytest test suite (600+ tests)
 ```
 
@@ -112,11 +112,11 @@ The memory module (`plugins/cs/memory/`) provides Git-native persistent memory:
 - Rewrite ref: `refs/notes/cs/*` (preserves notes during rebase)
 - Merge strategy: `cat_sort_uniq`
 
-**Auto-Capture:** Memories are automatically captured during `/cs:*` commands:
-- `/cs:p` - Inception, elicitation, research, decisions
-- `/cs:i` - Progress, blockers, learnings, deviations
-- `/cs:c` - Retrospective, learnings, patterns
-- `/cs:review` - Review findings, recurring patterns
+**Auto-Capture:** Memories are automatically captured during `/*` commands:
+- `/p` - Inception, elicitation, research, decisions
+- `/i` - Progress, blockers, learnings, deviations
+- `/c` - Retrospective, learnings, patterns
+- `/review` - Review findings, recurring patterns
 
 Specialized capture methods: `capture_review()`, `capture_retrospective()`, `capture_pattern()`
 
@@ -136,9 +136,9 @@ export CS_AUTO_CAPTURE_ENABLED=false  # Disable auto-capture
 
 2. **UserPromptSubmit Hooks**:
    - `hooks/command_detector.py` (runs first):
-     - Detects /cs:* commands in user prompts
+     - Detects /* commands in user prompts
      - Saves command state to `.cs-session-state.json`
-     - Triggers pre-steps (e.g., security review for /cs:c)
+     - Triggers pre-steps (e.g., security review for /c)
      - Always returns `{"decision": "approve"}`
    - `hooks/prompt_capture.py` (runs second):
      - Checks for `.prompt-log-enabled` marker at project root
@@ -149,7 +149,7 @@ export CS_AUTO_CAPTURE_ENABLED=false  # Disable auto-capture
 3. **Stop Hook** (`hooks/post_command.py`):
    - Fires when Claude Code session ends
    - Reads command state from `.cs-session-state.json`
-   - Triggers post-steps (e.g., log archival, retrospective gen for /cs:c)
+   - Triggers post-steps (e.g., log archival, retrospective gen for /c)
    - Cleans up session state file
    - Returns `{"continue": false}`
 
@@ -160,7 +160,7 @@ export CS_AUTO_CAPTURE_ENABLED=false  # Disable auto-capture
 
 ### Lifecycle Configuration
 
-Pre/post steps are configured via `~/.claude/worktree-manager.config.json`:
+Pre/post steps are configured via `~/.claude/claude-spec.config.json`:
 
 ```json
 {
@@ -174,7 +174,7 @@ Pre/post steps are configured via `~/.claude/worktree-manager.config.json`:
       }
     },
     "commands": {
-      "cs:c": {
+      "claude-spec:complete": {
         "preSteps": [
           { "name": "security-review", "enabled": true, "timeout": 120 }
         ],
@@ -259,38 +259,38 @@ def test_something(temp_project_dir, monkeypatch):
 ## Plugin Command Workflow
 
 ```
-/cs:p "idea"  ->  Plan with Socratic elicitation
+/p "idea"  ->  Plan with Socratic elicitation
        |
-/cs:i slug    ->  Track implementation (PROGRESS.md)
+/i slug    ->  Track implementation (PROGRESS.md)
        |
-/cs:s         ->  Monitor status
+/s         ->  Monitor status
        |
-/cs:c slug    ->  Close out with retrospective
+/c slug    ->  Close out with retrospective
 ```
 
-Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planning.
+Enable logging with `/log on` before `/p` for prompt capture during planning.
 
 ### Memory Commands
 
 | Command | Description |
 |---------|-------------|
-| `/cs:remember <type> <summary>` | Capture a memory (decision, learning, blocker, progress, pattern) |
-| `/cs:recall <query>` | Semantic search across memories |
-| `/cs:context [spec]` | Load all memories for a spec |
-| `/cs:memory status` | View memory statistics and index health |
-| `/cs:memory reindex` | Rebuild index from Git notes |
-| `/cs:memory verify` | Check index consistency |
-| `/cs:memory gc` | Remove orphaned entries |
-| `/cs:memory export` | Export memories to JSON |
+| `/remember <type> <summary>` | Capture a memory (decision, learning, blocker, progress, pattern) |
+| `/recall <query>` | Semantic search across memories |
+| `/context [spec]` | Load all memories for a spec |
+| `/memory status` | View memory statistics and index health |
+| `/memory reindex` | Rebuild index from Git notes |
+| `/memory verify` | Check index consistency |
+| `/memory gc` | Remove orphaned entries |
+| `/memory export` | Export memories to JSON |
 
 ### Worktree Commands
 
 | Command | Description |
 |---------|-------------|
-| `/cs:wt:setup` | Interactive configuration wizard (creates ~/.claude/worktree-manager.config.json) |
-| `/cs:wt:create` | Create git worktree with Claude agent |
-| `/cs:wt:status` | Show worktree status |
-| `/cs:wt:cleanup` | Clean up stale worktrees |
+| `/claude-spec:worktree-setup` | Interactive configuration wizard (creates ~/.claude/claude-spec.config.json) |
+| `/claude-spec:worktree-create` | Create git worktree with Claude agent |
+| `/claude-spec:worktree-status` | Show worktree status |
+| `/claude-spec:worktree-cleanup` | Clean up stale worktrees |
 
 ## Active Spec Projects
 
@@ -306,7 +306,7 @@ Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planni
   - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, IMPLEMENTATION_PLAN.md, RETROSPECTIVE.md
   - Key changes:
     - 3 new capture methods: `capture_review()`, `capture_retrospective()`, `capture_pattern()`
-    - Auto-capture integration in `/cs:p`, `/cs:i`, `/cs:c`, `/cs:review` commands
+    - Auto-capture integration in `/p`, `/i`, `/c`, `/review` commands
     - CaptureAccumulator model for tracking captures during command execution
     - CS_AUTO_CAPTURE_ENABLED environment variable for user control
     - Command file cleanup: 400+ lines of pseudo-code replaced with executable integration
@@ -320,7 +320,7 @@ Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planni
   - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, IMPLEMENTATION_PLAN.md, DECISIONS.md
   - Key changes:
     - Git notes storage + SQLite/sqlite-vec semantic search
-    - 4 new commands: /cs:remember, /cs:recall, /cs:context, /cs:memory
+    - 4 new commands: /remember, /recall, /context, /memory
     - Memory ID format: `namespace:sha:timestamp_ms` (supports multiple per commit)
     - Auto-configuration of git notes sync on first capture
     - 600 tests passing (84 new memory tests)
@@ -336,7 +336,7 @@ Enable logging with `/cs:log on` before `/cs:p` for prompt capture during planni
   - Completed: 2025-12-13
   - Outcome: success
   - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
-  - Key changes: User config at ~/.claude/worktree-manager.config.json, prompt log at project root
+  - Key changes: User config at ~/.claude/claude-spec.config.json, prompt log at project root
 
 - `docs/spec/completed/2025-12-12-quality-release-ci-github-act/` - Quality Release CI/CD with GitHub Actions
   - Completed: 2025-12-13

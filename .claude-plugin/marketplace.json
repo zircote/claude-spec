@@ -1,0 +1,19 @@
+{
+  "name": "claude-spec",
+  "owner": {
+    "name": "zircote",
+    "email": "zircote@gmail.com",
+    "url": "https://github.com/zircote"
+  },
+  "metadata": {
+    "description": "Claude-Spec: Project specification lifecycle management with strategic planning, implementation tracking, and retrospectives",
+    "version": "1.2.0"
+  },
+  "plugins": [
+    {
+      "name": "claude-spec",
+      "description": "Project specification lifecycle management with strategic planning, implementation tracking, and retrospectives",
+      "source": "./"
+    }
+  ]
+}

@@ -82,12 +82,12 @@ claude-spec/
 │   │   └── log_writer.py         # Atomic file operations
 │   │
 │   ├── commands/                 # Slash commands
-│   │   ├── p.md                  # /cs:p - Planning
-│   │   ├── i.md                  # /cs:i - Implementation
-│   │   ├── s.md                  # /cs:s - Status
-│   │   ├── c.md                  # /cs:c - Close-out
-│   │   ├── log.md                # /cs:log - Logging control
-│   │   ├── migrate.md            # /cs:migrate - Migration
+│   │   ├── p.md                  # /p - Planning
+│   │   ├── i.md                  # /i - Implementation
+│   │   ├── s.md                  # /s - Status
+│   │   ├── c.md                  # /c - Close-out
+│   │   ├── log.md                # /log - Logging control
+│   │   ├── migrate.md            # /migrate - Migration
 │   │   └── wt/                   # Worktree subcommands
 │   │       ├── create.md
 │   │       ├── status.md
@@ -131,7 +131,7 @@ Follow the [Coding Standards](#coding-standards) below.
 Use conventional commits:
 
 ```bash
-git commit -m "feat(commands): add timeout option to /cs:p"
+git commit -m "feat(commands): add timeout option to /p"
 git commit -m "fix(filters): handle unicode in secret detection"
 git commit -m "docs(readme): clarify worktree setup instructions"
 ```
@@ -201,7 +201,7 @@ model: claude-opus-4-5-20251101  # Optional model override
 allowed-tools: Read, Write, Bash, Glob, Grep  # Restrict available tools
 ---
 
-# /cs:command-name - Full Name
+# /command-name - Full Name
 
 <role>
 Clear role definition for the AI.
@@ -306,7 +306,7 @@ Variables:
 1. Install your development version
 2. Create a test project:
    ```
-   /cs:p test feature for manual testing
+   /p test feature for manual testing
    ```
 3. Walk through the full workflow:
    - Planning → Implementation → Status → Close-out
