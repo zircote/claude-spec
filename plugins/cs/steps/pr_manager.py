@@ -277,12 +277,7 @@ class PRManagerStep(BaseStep):
                 key, _, value = line.partition(":")
                 key = key.strip()
                 value = value.strip()
-                # Handle quoted strings
-                if value.startswith('"') and value.endswith('"'):
-                    value = value[1:-1]
-                elif value.startswith("'") and value.endswith("'"):
-                    value = value[1:-1]
-                # Handle arrays (simple single-line)
+                # Handle arrays first (simple single-line)
                 if value.startswith("[") and value.endswith("]"):
                     # Parse simple array: [item1, item2]
                     inner = value[1:-1]
@@ -291,6 +286,13 @@ class PRManagerStep(BaseStep):
                         frontmatter[key] = items
                     else:
                         frontmatter[key] = []
+                # Handle quoted strings
+                elif value.startswith('"') and value.endswith('"'):
+                    value = value[1:-1]
+                    frontmatter[key] = value
+                elif value.startswith("'") and value.endswith("'"):
+                    value = value[1:-1]
+                    frontmatter[key] = value
                 else:
                     frontmatter[key] = value
 
@@ -316,6 +318,7 @@ class PRManagerStep(BaseStep):
                 data = json.loads(result.stdout)
                 return data.get("url")
         except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError):
+            # Fail-open: gh CLI errors should not block workflow
             pass
         return None
 
@@ -573,8 +576,8 @@ class PRManagerStep(BaseStep):
 
         # Check if draft_pr_url already exists
         has_pr_url = False
-        for i, line in enumerate(lines[1:end_idx], start=1):
-            if line.startswith("draft_pr_url:"):
+        for i in range(1, end_idx):
+            if lines[i].startswith("draft_pr_url:"):
                 # Update existing entry
                 lines[i] = f"draft_pr_url: {pr_url}"
                 has_pr_url = True
@@ -793,6 +796,7 @@ class PRManagerStep(BaseStep):
                 )
                 # Ignore errors - labels might not exist
             except (subprocess.TimeoutExpired, OSError):
+                # Label removal is best-effort, don't fail if gh CLI errors
                 pass
 
         # Add reviewers if configured
@@ -809,6 +813,7 @@ class PRManagerStep(BaseStep):
                 )
                 # Ignore errors - reviewers might not be valid
             except (subprocess.TimeoutExpired, OSError):
+                # Reviewer assignment is best-effort, don't fail if gh CLI errors
                 pass
 
         return StepResult.ok(

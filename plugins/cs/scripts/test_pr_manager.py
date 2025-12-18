@@ -46,7 +46,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 # Import steps module - this sets up the package properly
 try:
-    from steps import pr_manager as _test_import  # noqa: F401
+    from steps import pr_manager
 
     STEPS_MODULE_AVAILABLE = True
 except ImportError:
