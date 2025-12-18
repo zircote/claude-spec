@@ -1,0 +1,44 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-prompt-log-timing-fix-in-worktree
+linked_commits:
+- 835add9
+status: accepted
+tags:
+- logging
+- worktree
+title: Prompt Log Timing Fix in Worktree
+---
+
+# Prompt Log Timing Fix Location
+
+## Status
+Accepted
+
+## Context
+When /cs:p creates a worktree and launches a new agent, the .prompt-log-enabled marker isn't created until after the first prompt is processed, causing the first prompt to be missed.
+
+## Decision
+Create the spec directory and .prompt-log-enabled marker in the worktree BEFORE launching the agent, within the p.md command's mandatory_first_actions section.
+
+## Consequences
+
+### Positive
+- First prompt is captured
+- No changes needed to launch-agent.sh (stays generic)
+- Marker creation logic stays with spec planning logic
+
+### Negative
+- p.md needs to compute the slug twice (once for marker, once when command runs)
+- Slight complexity in mandatory_first_actions
+
+### Neutral
+- Works correctly even if second /cs:p execution skips directory creation (already exists)
+
+## Alternatives Considered
+1. **Add flag to launch-agent.sh**: Couples generic script to spec-specific logic
+2. **Separate setup script**: More moving parts
+3. **Hook modification**: More complex, harder to reason about timing
