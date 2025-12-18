@@ -1,0 +1,46 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-history-rewriting-and-note-orphaning
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- git
+title: History Rewriting and Note Orphaning
+---
+
+# History Rewriting and Note Orphaning
+
+## Status
+Accepted
+
+## Context
+Git notes attach to specific commit SHAs. When developers rewrite history (rebase, squash, amend), the original commits are replaced with new commits having different SHAs. Notes attached to the original commits become "orphaned".
+
+## Decision
+Document and warn, but do not automatically migrate notes. The system will:
+
+1. Detect orphaned notes during cs:memory status by checking if referenced commits exist
+2. Warn users when orphaned notes are detected
+3. Preserve orphaned notes (they may reference commits in other branches or reflog)
+4. Defer automatic migration to a future phase unless user demand emerges
+
+## Rationale
+- Complexity vs. Frequency: History rewriting after attaching memories is an edge case
+- Git's Philosophy: Notes are loosely coupled to commits by design
+- Safety: Automatic migration could incorrectly reassign notes
+- Reflog Preservation: "Orphaned" commits often exist in reflog for 90 days
+
+## Alternatives Considered
+1. **Automatic migration via git notes copy**: Complex SHA mapping, may incorrectly reassign
+2. **Block history rewriting when notes exist**: Overly restrictive
+3. **Manual cs:memory migrate command**: Extra maintenance for infrequent scenario
+
+## Consequences
+- Users must understand that rebase/squash may orphan notes
+- cs:memory status will show orphaned note count
+- Future phase may add cs:memory migrate if demand emerges
