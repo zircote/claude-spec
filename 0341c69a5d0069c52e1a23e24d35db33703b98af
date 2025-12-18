@@ -1,0 +1,45 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-proactive-memory-recall-strategy
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- user-experience
+title: Proactive Memory Recall Strategy
+---
+
+# Proactive Memory Recall Strategy
+
+## Status
+Accepted
+
+## Context
+Claude Code suffers from context loss after compaction. Without intervention, Claude "strays from documented guidance" and forgets prior decisions.
+
+Two recall approaches were considered:
+1. Explicit only: Memories only recalled via /cs:recall command
+2. Proactive: System automatically searches for relevant memories during work
+
+## Decision
+Implement a two-tier proactive recall strategy:
+
+1. Session awareness (minimal): At session start, notify Claude that memories exist with namespace counts. No content loaded.
+
+2. Topic-based proactive search (on-demand): When Claude works on a topic, proactively search for relevant memories and suggest them. Non-blocking, dismissible.
+
+## Rationale
+- Minimal awareness prevents drift: Claude knows to search before making decisions
+- Proactive search reduces friction: No need to remember to run /cs:recall
+- Non-blocking preserves flow: Suggestions don't interrupt primary workflow
+- Progressive revelation: Summary -> full content only when needed
+
+## Consequences
+- Additional hook integration required
+- Topic detection logic needs careful tuning to avoid noise
+- Must not slow down primary workflow
+- Balances awareness with context window preservation
