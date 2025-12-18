@@ -1,0 +1,47 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-commit-anchor-strategy-for-memory
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- git
+title: Commit Anchor Strategy for Memory
+---
+
+# Commit Anchor Strategy
+
+## Status
+Accepted
+
+## Context
+Memories must attach to commits (per core principle). Pre-implementation memories have no natural commit.
+
+## Decision
+Use specification documents as commit anchors:
+1. Scaffold spec directory early with templates
+2. Commit scaffold immediately
+3. Amend within phase as understanding develops
+4. New commit at phase boundaries
+
+## Rationale
+- Every memory has anchor: No orphan memories
+- Clean history: Phase-delineated commits
+- Document-as-anchor: Spec docs serve dual purpose
+- Flexible: Amend allows refinement
+
+## Pattern
+spec(slug): initialize specification     <- inception, elicitation memories
+spec(slug): complete requirements        <- research memories
+spec(slug): complete architecture        <- decision memories
+feat(slug): implement feature X          <- progress, blocker, learning memories
+spec(slug): complete, archived           <- retrospective, pattern memories
+
+## Consequences
+- Requires early scaffold commit
+- Amend pattern during phases
+- Clear phase transition commits
