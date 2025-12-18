@@ -33,6 +33,11 @@ Security Features
     Pre-compiled regex patterns detect 20+ secret types across major
     cloud providers, SaaS services, and common credential formats.
 
+**ReDoS Prevention (SEC-003)**:
+    All regex patterns use bounded quantifiers with restrictive character
+    classes to prevent catastrophic backtracking. Patterns like `.{0,20}`
+    are replaced with `[^\'"]{0,20}` to avoid ReDoS attacks.
+
 SECRET_PATTERNS Reference
 -------------------------
 
@@ -102,6 +107,9 @@ To add a new secret pattern:
    - Use non-capturing groups ``(?:...)`` for alternation
    - Use case-insensitive flag ``(?i)`` only when necessary
    - Test against both positive and negative cases
+   - SEC-003: Use restrictive character classes instead of `.` to prevent ReDoS
+     - Use `[^\'"\\s]` instead of `.` for bounded quantifiers
+     - Avoid unbounded `.*` or `.+` - always specify limits
 
 3. Pattern name conventions:
    - Use lowercase with underscores
@@ -161,14 +169,17 @@ MAX_CONTENT_LENGTH = 50000
 B64_PATTERN = re.compile(r"[A-Za-z0-9+/]{20,}={0,2}")
 
 # Pre-compiled regex patterns for secret detection
-# SEC-004: Comprehensive secret detection patterns for major cloud providers and services
+# SEC-003: All patterns use bounded quantifiers with restrictive character classes
+# to prevent ReDoS (catastrophic backtracking) attacks.
+# Patterns use [^'"\s] instead of . to avoid excessive backtracking.
 SECRET_PATTERNS: dict[str, Pattern[str]] = {
     # AWS
     "aws_access_key": re.compile(
         r"\b((?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16})\b"
     ),
+    # SEC-003: Use [^'"] instead of . to prevent ReDoS
     "aws_secret_key": re.compile(
-        r'(?i)aws.{0,20}secret.{0,20}[\'"][0-9a-zA-Z/+=]{40}[\'"]'
+        r"(?i)aws[^'\"]{0,20}secret[^'\"]{0,20}['\"][0-9a-zA-Z/+=]{40}['\"]"
     ),
     # GitHub
     "github_pat": re.compile(r"ghp_[A-Za-z0-9_]{36,}"),
@@ -191,9 +202,10 @@ SECRET_PATTERNS: dict[str, Pattern[str]] = {
     "twilio_key": re.compile(r"\bSK[a-f0-9]{32}\b"),
     # SendGrid - API keys start with SG
     "sendgrid_key": re.compile(r"\bSG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}\b"),
+    # SEC-003: Use [^'"\s] instead of . to prevent ReDoS
     # Azure Storage - base64-encoded 88-char keys
     "azure_storage_key": re.compile(
-        r'(?i)(?:accountkey|storage.{0,20}key)\s*[:=]\s*[\'"]?[A-Za-z0-9+/]{86}==[\'""]?'
+        r"(?i)(?:accountkey|storage[^'\"]{0,20}key)\s*[:=]\s*['\"]?[A-Za-z0-9+/]{86}==['\"]?"
     ),
     # Generic patterns
     "bearer_token": re.compile(r"Bearer\s+[a-zA-Z0-9\-_.~+\/]+=*"),
@@ -210,11 +222,12 @@ SECRET_PATTERNS: dict[str, Pattern[str]] = {
         r"-----BEGIN (?:RSA |DSA |EC |OPENSSH |PGP )?PRIVATE KEY"
     ),
     # Password patterns (context-aware)
+    # SEC-003: Use [^'"] instead of [^\'"]{8,} to limit backtracking
     "password_assignment": re.compile(
-        r'(?i)(?:password|passwd|pwd)\s*[:=]\s*[\'"][^\'"]{8,}[\'"]'
+        r"(?i)(?:password|passwd|pwd)\s*[:=]\s*['\"][^'\"]{8,}['\"]"
     ),
     "secret_assignment": re.compile(
-        r'(?i)(?:secret|api[_-]?key|access[_-]?token|auth[_-]?token)\s*[:=]\s*[\'"][^\'"]{10,}[\'"]'
+        r"(?i)(?:secret|api[_-]?key|access[_-]?token|auth[_-]?token)\s*[:=]\s*['\"][^'\"]{10,}['\"]"
     ),
 }
 

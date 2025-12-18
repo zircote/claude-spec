@@ -327,6 +327,17 @@ class TestVerifyIndex:
 
         mock_git_ops.list_notes.side_effect = mock_list_notes
 
+        # Mock show_note to return valid note content with timestamp
+        note_content = """---
+type: decisions
+spec: test-spec
+timestamp: '2025-12-15T10:00:00Z'
+summary: Test decision
+---
+Test body
+"""
+        mock_git_ops.show_note.return_value = note_content
+
         # Index is empty (using public get_all_ids method)
         mock_index_service.get_all_ids.return_value = set()
 

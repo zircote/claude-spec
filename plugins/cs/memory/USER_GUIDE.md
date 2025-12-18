@@ -323,6 +323,156 @@ Use `/cs:context` to load all memories for a spec:
 | `retrospective` | Project retrospective | End of project |
 | `patterns` | Recurring patterns | When patterns emerge |
 
+## Hook-Based Memory System
+
+The hook-based memory system provides bidirectional memory flow through Claude Code hooks:
+
+### Memory Injection at Session Start
+
+When you start a new Claude Code session in a cs-managed project, relevant memories are automatically injected into context:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                        Claude Spec Session Context
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## Session Memories
+
+🎯 **decisions:abc123d:1702560000000** (2 days ago)
+   Using TypeScript for type safety
+
+💡 **learnings:def456a:1702563600000** (1 day ago)
+   Connection pooling reduces latency by 40%
+
+🚧 **blockers:ghi789b:1702567200000** (today)
+   Rate limit on GitHub API
+```
+
+**Configuration** (in `~/.claude/worktree-manager.config.json`):
+
+```json
+{
+  "lifecycle": {
+    "sessionStart": {
+      "memoryInjection": {
+        "enabled": true,
+        "limit": 10,
+        "includeContent": false
+      }
+    }
+  }
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `enabled` | `true` | Enable/disable memory injection |
+| `limit` | `10` | Maximum memories to inject |
+| `includeContent` | `false` | Include full content (vs summary only) |
+
+### Trigger Phrase Detection
+
+When you use certain phrases, Claude automatically retrieves relevant memories:
+
+**Trigger Phrases:**
+- "Why did we choose..." → Retrieves decisions
+- "What was the decision about..." → Retrieves decisions
+- "Remind me what we discussed" → Retrieves recent context
+- "Continue from where we left off" → Retrieves progress
+- "Last time we talked about..." → Retrieves recent memories
+- "We previously decided..." → Retrieves decisions
+- "What was the blocker..." → Retrieves blockers
+- "What did we learn from..." → Retrieves learnings
+
+**Example:**
+
+```
+User: "Why did we choose PostgreSQL?"
+
+[Claude receives additionalContext with relevant memories]
+
+## Relevant Memories
+
+🎯 **Decision** (5 days ago)
+   Chose PostgreSQL over MySQL for ACID compliance
+
+   PostgreSQL provides stronger ACID guarantees for our
+   financial transaction requirements. MySQL's default
+   isolation level (REPEATABLE READ) doesn't prevent
+   phantom reads, which could cause issues with our
+   balance calculations.
+
+─────────────────────────────────────────────────────────
+
+Claude: "We chose PostgreSQL for ACID compliance. The decision
+was documented 5 days ago, noting that PostgreSQL's stricter
+isolation levels prevent phantom reads in our financial
+transaction calculations."
+```
+
+**Environment Variable to Disable:**
+
+```bash
+export CS_TRIGGER_MEMORY_ENABLED=false
+```
+
+### PostToolUse Learning Capture
+
+The system automatically captures learnings from tool execution:
+
+**What Gets Captured:**
+- Command errors (exit code ≠ 0)
+- Deprecation warnings
+- Permission issues
+- Connection failures
+- Workarounds and discoveries
+
+**Capture Threshold:** Score ≥ 0.6 (balances signal vs noise)
+
+**Example capture:**
+
+```python
+# Bash command fails
+$ npm install --legacy-peer-deps
+
+# Output contains useful learning
+npm WARN deprecated inflight@1.0.6: This module is not supported
+
+# System captures:
+{
+  "tool_name": "Bash",
+  "category": "warning",
+  "summary": "Bash warning: npm WARN deprecated inflight",
+  "observation": "Detected signals: npm WARN deprecated",
+  "exit_code": 0,
+  "output_excerpt": "npm WARN deprecated inflight@1.0.6..."
+}
+```
+
+**Environment Variable to Disable:**
+
+```bash
+export CS_TOOL_CAPTURE_ENABLED=false
+```
+
+### Security: Secret Filtering
+
+All captured content passes through the secret filter pipeline:
+
+- AWS keys (AKIA*, ASIA*)
+- GitHub tokens (ghp_*, gho_*, ghu_*, ghs_*)
+- OpenAI/Anthropic keys (sk-*T3BlbkFJ*, sk-ant-api*)
+- Database connection strings
+- Private keys
+- JWT tokens
+- Generic passwords
+
+Secrets are replaced with `[SECRET:type]` placeholders.
+
+**Path Sanitization:**
+- Home directories: `/Users/username/` → `/Users/[USER]/`
+- Credential files: `.env`, `credentials` → `[REDACTED]`
+
 ## Auto-Capture Integration
 
 Memories are automatically captured during spec workflows:

@@ -4,6 +4,7 @@ import io
 import json
 import os
 import sys
+from unittest.mock import MagicMock
 
 # Add parent directories for imports
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -13,6 +14,7 @@ if PLUGIN_ROOT not in sys.path:
     sys.path.insert(0, PLUGIN_ROOT)
 
 from hooks.lib.fallback import (
+    MAX_INPUT_SIZE,
     fallback_pass_through,
     fallback_read_input,
     fallback_stop_response,
@@ -39,7 +41,10 @@ class TestFallbackReadInput:
         assert result is None
 
         captured = capsys.readouterr()
-        assert "Error reading input" in captured.err
+        # SEC-002: More specific error handling now provides detailed error messages
+        assert (
+            "JSON decode error" in captured.err or "Error reading input" in captured.err
+        )
 
     def test_empty_input_returns_none(self, monkeypatch, capsys):
         """Test that empty input returns None."""
@@ -57,6 +62,44 @@ class TestFallbackReadInput:
 
         captured = capsys.readouterr()
         assert "cs-custom-hook:" in captured.err
+
+    def test_input_size_limit_truncation(self, monkeypatch, capsys):
+        """Test that input exceeding max size is truncated with warning."""
+        # Create input larger than max size
+        large_input = '{"key": "' + "x" * (MAX_INPUT_SIZE + 100) + '"}'
+        monkeypatch.setattr("sys.stdin", io.StringIO(large_input))
+
+        # Call function - result may be None due to truncated JSON being invalid
+        # The important thing is that we don't crash or run out of memory
+        fallback_read_input()
+
+        captured = capsys.readouterr()
+        assert "exceeds maximum size" in captured.err
+
+    def test_oserror_handling(self, monkeypatch, capsys):
+        """Test that OSError is handled gracefully."""
+        mock_stdin = MagicMock()
+        mock_stdin.read.side_effect = OSError("Permission denied")
+        monkeypatch.setattr("sys.stdin", mock_stdin)
+
+        result = fallback_read_input()
+        assert result is None
+
+        captured = capsys.readouterr()
+        assert "I/O error reading input" in captured.err
+
+    def test_custom_max_size(self, monkeypatch, capsys):
+        """Test custom max_size parameter."""
+        # Input that's valid JSON but exceeds our custom limit
+        input_data = {"data": "x" * 200}
+        json_input = json.dumps(input_data)
+        monkeypatch.setattr("sys.stdin", io.StringIO(json_input))
+
+        # Set a very small max size - result will be None due to truncation
+        fallback_read_input(max_size=50)
+
+        captured = capsys.readouterr()
+        assert "exceeds maximum size" in captured.err
 
 
 class TestFallbackWriteOutput:
@@ -128,3 +171,11 @@ class TestFallbackStopResponse:
         """Test that stop_response returns continue: false."""
         result = fallback_stop_response()
         assert result == {"continue": False}
+
+
+class TestMaxInputSize:
+    """Tests for MAX_INPUT_SIZE constant."""
+
+    def test_max_input_size_is_1mb(self):
+        """Test that MAX_INPUT_SIZE is 1MB as documented."""
+        assert MAX_INPUT_SIZE == 1024 * 1024

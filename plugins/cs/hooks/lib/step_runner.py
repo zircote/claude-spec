@@ -27,6 +27,7 @@ STEP_MODULES = {
     "generate-retrospective": "retrospective_gen",
     "archive-logs": "log_archiver",
     "cleanup-markers": "marker_cleaner",
+    "flush-memory-queue": "memory_queue_flusher",
 }
 
 

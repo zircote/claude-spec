@@ -7,6 +7,48 @@ allowed-tools: Read, Write, Bash, Grep, AskUserQuestion, TodoWrite
 
 # /cs:review - Code Review Memory Integration
 
+<report_placement>
+## Report Placement Directive
+
+**MANDATORY**: All generated reports MUST be placed in the current active spec directory when one exists.
+
+### Detection Protocol
+
+Before generating any report files, detect the current active spec:
+
+```bash
+# Check for active spec project
+SPEC_DIR=$(find docs/spec/active -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)
+
+if [ -n "$SPEC_DIR" ]; then
+  echo "ACTIVE_SPEC_DIR=${SPEC_DIR}"
+else
+  echo "ACTIVE_SPEC_DIR=."  # Fallback to repo root
+fi
+```
+
+### Report File Locations
+
+| Report | When Spec Active | When No Spec |
+|--------|------------------|--------------|
+| CODE_REVIEW.md | `${SPEC_DIR}/CODE_REVIEW.md` | `./CODE_REVIEW.md` |
+| REVIEW_SUMMARY.md | `${SPEC_DIR}/REVIEW_SUMMARY.md` | `./REVIEW_SUMMARY.md` |
+| REMEDIATION_TASKS.md | `${SPEC_DIR}/REMEDIATION_TASKS.md` | `./REMEDIATION_TASKS.md` |
+
+### Enforcement
+
+```
+BEFORE writing any report file:
+  1. Detect active spec directory
+  2. Construct full path: ${SPEC_DIR}/${REPORT_NAME}
+  3. Write to the spec directory
+
+NEVER write reports to repo root when an active spec exists.
+```
+
+This ensures all review artifacts are co-located with the spec they relate to, making archival and retrospective analysis straightforward.
+</report_placement>
+
 <role>
 You are a Code Review Memory Agent for the cs-memory system. Your role is to:
 1. Capture code review findings as persistent memories

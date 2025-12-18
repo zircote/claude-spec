@@ -47,16 +47,13 @@ def mock_index_service():
 @pytest.fixture
 def capture_service(mock_git_ops, mock_embedding_service, mock_index_service):
     """Create CaptureService with mocked dependencies."""
-    # Reset sync flag for test isolation
-    CaptureService.reset_sync_configured()
+    # Each new instance starts with _sync_configured = False (instance-level)
     service = CaptureService(
         git_ops=mock_git_ops,
         embedding_service=mock_embedding_service,
         index_service=mock_index_service,
     )
-    yield service
-    # Cleanup after test
-    CaptureService.reset_sync_configured()
+    return service
 
 
 class TestCaptureLock:
@@ -143,17 +140,20 @@ class TestCaptureServiceInit:
                     assert mock_embed.called
                     assert mock_index.called
 
+    def test_init_sync_configured_is_false(
+        self, mock_git_ops, mock_embedding_service, mock_index_service
+    ):
+        """Test that new instances start with _sync_configured = False."""
+        service = CaptureService(
+            git_ops=mock_git_ops,
+            embedding_service=mock_embedding_service,
+            index_service=mock_index_service,
+        )
+        assert service._sync_configured is False
+
 
 class TestAutoConfiguration:
     """Tests for auto-configuration of git notes sync."""
-
-    def setup_method(self):
-        """Reset sync configured flag before each test."""
-        CaptureService.reset_sync_configured()
-
-    def teardown_method(self):
-        """Reset sync configured flag after each test."""
-        CaptureService.reset_sync_configured()
 
     def test_configure_sync_called_on_first_capture(
         self, mock_git_ops, mock_embedding_service, mock_index_service, tmp_path
@@ -178,7 +178,7 @@ class TestAutoConfiguration:
     def test_configure_sync_not_called_on_subsequent_captures(
         self, mock_git_ops, mock_embedding_service, mock_index_service, tmp_path
     ):
-        """Test that configure_sync is only called once across captures."""
+        """Test that configure_sync is only called once across captures on same instance."""
         service = CaptureService(
             git_ops=mock_git_ops,
             embedding_service=mock_embedding_service,
@@ -207,7 +207,7 @@ class TestAutoConfiguration:
     def test_reset_sync_configured(
         self, mock_git_ops, mock_embedding_service, mock_index_service, tmp_path
     ):
-        """Test that reset_sync_configured allows reconfiguration."""
+        """Test that reset_sync_configured allows reconfiguration on same instance."""
         service = CaptureService(
             git_ops=mock_git_ops,
             embedding_service=mock_embedding_service,
@@ -220,9 +220,38 @@ class TestAutoConfiguration:
             service.capture(namespace="decisions", summary="Test", content="Content")
             assert mock_git_ops.configure_sync.call_count == 1
 
-            # Reset and capture again
-            CaptureService.reset_sync_configured()
+            # Reset and capture again on same instance
+            service.reset_sync_configured()
             service.capture(
+                namespace="decisions", summary="Test 2", content="Content 2"
+            )
+            assert mock_git_ops.configure_sync.call_count == 2
+
+    def test_new_instances_have_independent_sync_state(
+        self, mock_git_ops, mock_embedding_service, mock_index_service, tmp_path
+    ):
+        """Test that each new instance has its own _sync_configured flag."""
+        service1 = CaptureService(
+            git_ops=mock_git_ops,
+            embedding_service=mock_embedding_service,
+            index_service=mock_index_service,
+        )
+
+        lock_file = tmp_path / "test.lock"
+        with patch("memory.capture.LOCK_FILE", lock_file):
+            # First capture on service1
+            service1.capture(namespace="decisions", summary="Test", content="Content")
+            assert mock_git_ops.configure_sync.call_count == 1
+
+            # Create new instance - should have its own fresh state
+            service2 = CaptureService(
+                git_ops=mock_git_ops,
+                embedding_service=mock_embedding_service,
+                index_service=mock_index_service,
+            )
+
+            # Capture on service2 - should configure again (independent state)
+            service2.capture(
                 namespace="decisions", summary="Test 2", content="Content 2"
             )
             assert mock_git_ops.configure_sync.call_count == 2

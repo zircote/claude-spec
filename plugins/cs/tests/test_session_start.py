@@ -385,3 +385,215 @@ class TestLoadProjectStructureEdgeCases:
         result = load_project_structure(str(tmp_path))
         # Should handle exception gracefully
         assert isinstance(result, str)
+
+
+class TestLoadSessionMemories:
+    """Tests for load_session_memories function."""
+
+    def test_returns_none_when_memory_unavailable(self, tmp_path, monkeypatch):
+        """Test returns None when memory injection not available."""
+        from session_start import load_session_memories
+
+        original = session_start.MEMORY_INJECTION_AVAILABLE
+        session_start.MEMORY_INJECTION_AVAILABLE = False
+
+        result = load_session_memories(str(tmp_path))
+        assert result is None
+
+        session_start.MEMORY_INJECTION_AVAILABLE = original
+
+    def test_returns_none_when_injection_disabled(self, tmp_path, monkeypatch):
+        """Test returns None when memory injection disabled by config."""
+        from session_start import load_session_memories
+
+        original_memory = session_start.MEMORY_INJECTION_AVAILABLE
+        original_config = session_start.CONFIG_AVAILABLE
+        session_start.MEMORY_INJECTION_AVAILABLE = True
+        session_start.CONFIG_AVAILABLE = True
+
+        monkeypatch.setattr(
+            "session_start.is_memory_injection_enabled", lambda: False, raising=False
+        )
+
+        result = load_session_memories(str(tmp_path))
+        assert result is None
+
+        session_start.MEMORY_INJECTION_AVAILABLE = original_memory
+        session_start.CONFIG_AVAILABLE = original_config
+
+    def test_uses_default_config_when_config_unavailable(self, tmp_path, monkeypatch):
+        """Test uses default config when CONFIG_AVAILABLE is False."""
+        from session_start import load_session_memories
+
+        original_memory = session_start.MEMORY_INJECTION_AVAILABLE
+        original_config = session_start.CONFIG_AVAILABLE
+        session_start.MEMORY_INJECTION_AVAILABLE = True
+        session_start.CONFIG_AVAILABLE = False
+
+        # Mock the spec detector and injector
+        mock_spec = MagicMock()
+        mock_spec.slug = None
+        monkeypatch.setattr(
+            "session_start.detect_active_spec", lambda cwd: None, raising=False
+        )
+
+        mock_injector = MagicMock()
+        mock_injector.get_session_memories.return_value = []
+        monkeypatch.setattr(
+            "session_start.MemoryInjector",
+            lambda limit=10: mock_injector,
+            raising=False,
+        )
+
+        result = load_session_memories(str(tmp_path))
+        # No memories returned, so None
+        assert result is None
+
+        session_start.MEMORY_INJECTION_AVAILABLE = original_memory
+        session_start.CONFIG_AVAILABLE = original_config
+
+    def test_returns_none_when_config_disabled(self, tmp_path, monkeypatch):
+        """Test returns None when config.enabled is False."""
+        from session_start import load_session_memories
+
+        original_memory = session_start.MEMORY_INJECTION_AVAILABLE
+        original_config = session_start.CONFIG_AVAILABLE
+        session_start.MEMORY_INJECTION_AVAILABLE = True
+        session_start.CONFIG_AVAILABLE = True
+
+        monkeypatch.setattr(
+            "session_start.is_memory_injection_enabled", lambda: True, raising=False
+        )
+        monkeypatch.setattr(
+            "session_start.get_memory_injection_config",
+            lambda: {"enabled": False},
+            raising=False,
+        )
+
+        result = load_session_memories(str(tmp_path))
+        assert result is None
+
+        session_start.MEMORY_INJECTION_AVAILABLE = original_memory
+        session_start.CONFIG_AVAILABLE = original_config
+
+    def test_returns_formatted_memories(self, tmp_path, monkeypatch, capsys):
+        """Test returns formatted memories when available."""
+        from session_start import load_session_memories
+
+        original_memory = session_start.MEMORY_INJECTION_AVAILABLE
+        original_config = session_start.CONFIG_AVAILABLE
+        session_start.MEMORY_INJECTION_AVAILABLE = True
+        session_start.CONFIG_AVAILABLE = True
+
+        monkeypatch.setattr(
+            "session_start.is_memory_injection_enabled", lambda: True, raising=False
+        )
+        monkeypatch.setattr(
+            "session_start.get_memory_injection_config",
+            lambda: {"enabled": True, "limit": 5, "includeContent": True},
+            raising=False,
+        )
+
+        mock_spec = MagicMock()
+        mock_spec.slug = "test-spec"
+        monkeypatch.setattr(
+            "session_start.detect_active_spec", lambda cwd: mock_spec, raising=False
+        )
+
+        mock_memories = [MagicMock(), MagicMock()]
+        mock_injector = MagicMock()
+        mock_injector.get_session_memories.return_value = mock_memories
+        mock_injector.format_for_context.return_value = (
+            "## Memories\n- Memory 1\n- Memory 2"
+        )
+        monkeypatch.setattr(
+            "session_start.MemoryInjector",
+            lambda limit=10: mock_injector,
+            raising=False,
+        )
+
+        result = load_session_memories(str(tmp_path))
+        assert result == "## Memories\n- Memory 1\n- Memory 2"
+
+        captured = capsys.readouterr()
+        assert "Injected 2 memories" in captured.err
+        assert "test-spec" in captured.err
+
+        session_start.MEMORY_INJECTION_AVAILABLE = original_memory
+        session_start.CONFIG_AVAILABLE = original_config
+
+    def test_handles_exception_gracefully(self, tmp_path, monkeypatch, capsys):
+        """Test handles exception in memory loading."""
+        from session_start import load_session_memories
+
+        original_memory = session_start.MEMORY_INJECTION_AVAILABLE
+        original_config = session_start.CONFIG_AVAILABLE
+        session_start.MEMORY_INJECTION_AVAILABLE = True
+        session_start.CONFIG_AVAILABLE = False
+
+        monkeypatch.setattr(
+            "session_start.detect_active_spec",
+            lambda cwd: (_ for _ in ()).throw(RuntimeError("Test error")),
+            raising=False,
+        )
+
+        result = load_session_memories(str(tmp_path))
+        assert result is None
+
+        captured = capsys.readouterr()
+        assert "Error loading memories" in captured.err
+
+        session_start.MEMORY_INJECTION_AVAILABLE = original_memory
+        session_start.CONFIG_AVAILABLE = original_config
+
+
+class TestMainEmbeddingPrewarm:
+    """Tests for embedding pre-warm in main."""
+
+    def test_handles_embedding_prewarm_exception(self, tmp_path, monkeypatch, capsys):
+        """Test graceful handling of embedding pre-warm failure."""
+        (tmp_path / "docs" / "spec").mkdir(parents=True)
+        (tmp_path / "CLAUDE.md").write_text("# Test")
+
+        input_data = {"hook_event_name": "SessionStart", "cwd": str(tmp_path)}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        original_embedding = session_start.EMBEDDING_AVAILABLE
+        original_memory = session_start.MEMORY_INJECTION_AVAILABLE
+        session_start.EMBEDDING_AVAILABLE = True
+        session_start.MEMORY_INJECTION_AVAILABLE = True
+
+        def failing_preload():
+            raise RuntimeError("Model load failed")
+
+        monkeypatch.setattr(
+            "session_start.preload_embedding_model", failing_preload, raising=False
+        )
+
+        main()
+
+        captured = capsys.readouterr()
+        assert "Embedding pre-warm failed" in captured.err
+        # Should still output context despite embedding failure
+        assert "Claude Spec Session Context" in captured.out
+
+        session_start.EMBEDDING_AVAILABLE = original_embedding
+        session_start.MEMORY_INJECTION_AVAILABLE = original_memory
+
+    def test_skips_context_utils_unavailable(self, tmp_path, monkeypatch, capsys):
+        """Test exits early when context utils unavailable."""
+        (tmp_path / "docs" / "spec").mkdir(parents=True)
+
+        input_data = {"hook_event_name": "SessionStart", "cwd": str(tmp_path)}
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(input_data)))
+
+        original = session_start.CONTEXT_UTILS_AVAILABLE
+        session_start.CONTEXT_UTILS_AVAILABLE = False
+
+        main()
+
+        captured = capsys.readouterr()
+        assert "Context utils not available" in captured.err
+        assert captured.out == ""
+
+        session_start.CONTEXT_UTILS_AVAILABLE = original

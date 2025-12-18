@@ -3,8 +3,12 @@ Embedding service for cs-memory.
 
 Provides local embedding generation using sentence-transformers.
 Model is loaded lazily on first use and cached for subsequent calls.
+
+Module-level singleton pattern allows pre-warming during SessionStart
+to avoid cold-start latency (2-5s) during latency-sensitive hooks.
 """
 
+import threading
 from typing import TYPE_CHECKING
 
 from .config import DEFAULT_EMBEDDING_MODEL, EMBEDDING_DIMENSIONS, MODELS_DIR
@@ -12,6 +16,61 @@ from .exceptions import EmbeddingError
 
 if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer
+
+# Thread-safe singleton for module-level caching
+_embedding_service: "EmbeddingService | None" = None
+_embedding_lock = threading.Lock()
+
+
+def get_embedding_service(preload: bool = False) -> "EmbeddingService":
+    """
+    Get the module-level embedding service singleton.
+
+    Thread-safe lazy initialization with optional pre-loading.
+
+    Args:
+        preload: If True, force model loading immediately.
+                 Use during SessionStart hook (500ms budget) to avoid
+                 cold start during latency-sensitive hooks (<100ms budget).
+
+    Returns:
+        Shared EmbeddingService instance
+    """
+    global _embedding_service
+
+    if _embedding_service is None:
+        with _embedding_lock:
+            # Double-checked locking
+            if _embedding_service is None:
+                _embedding_service = EmbeddingService()
+
+    if preload and not _embedding_service.is_loaded():
+        # Force model loading by accessing the model property
+        _ = _embedding_service.model
+
+    return _embedding_service
+
+
+def preload_model() -> None:
+    """
+    Pre-warm the embedding model.
+
+    Call during SessionStart hook to eliminate cold-start latency
+    in subsequent UserPromptSubmit and PostToolUse hooks.
+    """
+    get_embedding_service(preload=True)
+
+
+def reset_singleton() -> None:
+    """
+    Reset the singleton instance (for testing only).
+
+    Warning: Not thread-safe, only use in test teardown.
+    """
+    global _embedding_service
+    if _embedding_service is not None:
+        _embedding_service.unload()
+    _embedding_service = None
 
 
 class EmbeddingService:
@@ -162,7 +221,7 @@ class EmbeddingService:
 
         try:
             embeddings = self.model.encode(non_empty_texts)
-            result = [None] * len(texts)
+            result: list[list[float] | None] = [None] * len(texts)
 
             # Map embeddings back to original indices
             for i, emb in zip(non_empty_indices, embeddings, strict=True):
@@ -174,7 +233,8 @@ class EmbeddingService:
                 if r is None:
                     result[i] = zero_vector
 
-            return result  # type: ignore
+            # At this point, all None values have been replaced with zero vectors
+            return [r for r in result if r is not None]
 
         except MemoryError as err:
             raise EmbeddingError(
@@ -193,7 +253,8 @@ class EmbeddingService:
         Returns:
             Number of dimensions (e.g., 384 for all-MiniLM-L6-v2)
         """
-        return self.model.get_sentence_embedding_dimension()
+        dims = self.model.get_sentence_embedding_dimension()
+        return dims if dims is not None else EMBEDDING_DIMENSIONS
 
     def is_loaded(self) -> bool:
         """Check if the model is already loaded."""
