@@ -1,0 +1,47 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-config-lookup-precedence-chain
+linked_commits:
+- 835add9
+status: accepted
+tags:
+- configuration
+- architecture
+title: Config Lookup Precedence Chain
+---
+
+# Config Lookup Precedence
+
+## Status
+Accepted
+
+## Context
+Scripts need to find configuration, but user config may not exist (first run) or may be incomplete.
+
+## Decision
+Use a fallback chain: User config → Template → Hardcoded defaults
+
+1. Check ~/.claude/worktree-manager.config.json (user preferences)
+2. Fall back to plugins/.../config.template.json (bundled defaults)
+3. Fall back to hardcoded defaults (last resort)
+
+## Consequences
+
+### Positive
+- Scripts always work, even without any config files
+- Users can override just the fields they care about
+- Template provides reference for all available options
+
+### Negative
+- Slightly more complex config loading logic
+
+### Neutral
+- Partial user configs are valid (missing fields use template values)
+
+## Alternatives Considered
+1. **Fail if no user config**: Poor first-run experience
+2. **Copy template to user location automatically**: May overwrite user changes unexpectedly
+3. **Merge at runtime**: Chosen approach - most flexible
