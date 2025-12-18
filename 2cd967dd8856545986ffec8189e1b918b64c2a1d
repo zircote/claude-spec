@@ -1,0 +1,52 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-auto-configuration-of-git-notes-sync
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- git
+- automation
+title: Auto-Configuration of Git Notes Sync
+---
+
+# Auto-Configuration of Git Notes Sync
+
+## Status
+Accepted
+
+## Context
+Git notes require explicit configuration to sync with remote repositories. Without configuration:
+- git push does not push notes
+- git pull does not fetch notes
+- git rebase does not preserve notes
+
+## Decision
+Auto-configure git notes sync on first memory capture. The CaptureService automatically configures:
+
+1. Push refspec: refs/notes/cs/*:refs/notes/cs/*
+2. Fetch refspec: refs/notes/cs/*:refs/notes/cs/*
+3. Rewrite ref: refs/notes/cs/* (preserves notes during rebase)
+4. Merge strategy: cat_sort_uniq (handles concurrent note additions)
+
+## Rationale
+- Zero friction: Users don't need to know about git notes internals
+- Team-ready immediately: First capture enables collaboration
+- Idempotent: Safe to run multiple times
+- Non-destructive: Only adds configuration, never removes
+
+## Consequences
+- First capture takes slightly longer (configuration overhead)
+- Git config is modified automatically
+- Repositories gain notes refs after first use
+- Team members must git pull to receive notes after cloning
+
+## Verification
+git config --get-all remote.origin.push | grep notes
+git config --get-all remote.origin.fetch | grep notes
+git config --get-all notes.rewriteRef
+git config --get notes.cs.mergeStrategy
