@@ -1,0 +1,42 @@
+---
+date: '2025-12-18'
+deciders:
+- Claude
+id: 20251218-template-file-naming-convention
+linked_commits:
+- 835add9
+status: accepted
+tags:
+- configuration
+- naming
+title: Template File Naming Convention
+---
+
+# Template File Naming
+
+## Status
+Accepted
+
+## Context
+The bundled configuration file serves as a template/default, not the active user config. The name should reflect this.
+
+## Decision
+Rename config.json to config.template.json.
+
+## Consequences
+
+### Positive
+- Clear distinction between template and user config
+- No confusion about which file to edit
+- Template suffix is a common pattern
+
+### Negative
+- Existing documentation references config.json
+
+### Neutral
+- One-time rename during implementation
+
+## Alternatives Considered
+1. **config.default.json**: Similar, slightly less clear
+2. **config.example.json**: Implies it's just an example, not used
+3. **Keep config.json**: Confusing alongside user config
