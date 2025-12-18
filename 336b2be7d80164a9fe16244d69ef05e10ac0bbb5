@@ -1,0 +1,42 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+id: 20251218-security-review-as-pre-step-for-cs-c
+linked_commits:
+- de63d73
+status: accepted
+tags:
+- security
+- workflow
+title: Security Review as Pre-Step for cs-c
+---
+
+# Security Review as Pre-Step for /cs:c
+
+## Status
+Accepted
+
+## Context
+Security review could be:
+1. A pre-step before /cs:c (audit before close-out)
+2. A post-step after /cs:p (audit the plan)
+3. A post-step after /cs:c (audit after close-out)
+4. Applied to all commands
+
+## Decision
+Security review is a pre-step for /cs:c only.
+
+## Consequences
+
+### Positive
+- Catches vulnerabilities before project is marked complete
+- User can address findings before close-out
+- Focused scope (only when closing projects)
+
+### Negative
+- Security issues found during planning not caught early
+- User must wait for security review before close-out
+
+### Neutral
+- Can extend to other commands later based on feedback
