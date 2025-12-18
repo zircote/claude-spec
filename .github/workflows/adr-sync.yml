@@ -38,13 +38,12 @@ jobs:
       - name: Install git-adr
         run: pip install git-adr==0.2.1
 
-      - name: Initialize git-adr if needed
+      - name: Initialize git-adr
         run: |
-          # Initialize git-adr if not already initialized
-          if ! git adr list --format json >/dev/null 2>&1; then
-            echo "Initializing git-adr..."
-            git adr init --adr-dir docs/adr || true
-          fi
+          # Force init to configure local state even when notes exist from fetch
+          # This is required due to git-adr bug: "list" fails without init,
+          # but "init" without --force fails when notes namespace exists
+          git adr init --no-input --force
 
       - name: Validate ADRs
         run: |
