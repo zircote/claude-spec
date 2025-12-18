@@ -277,12 +277,8 @@ class PRManagerStep(BaseStep):
                 key, _, value = line.partition(":")
                 key = key.strip()
                 value = value.strip()
-                # Handle quoted strings
-                if value.startswith('"') and value.endswith('"'):
-                    value = value[1:-1]
-                elif value.startswith("'") and value.endswith("'"):
-                    value = value[1:-1]
-                # Handle arrays (simple single-line)
+                # Handle arrays first (before quote stripping to avoid
+                # misinterpreting quoted strings like "[a,b]" as arrays)
                 if value.startswith("[") and value.endswith("]"):
                     # Parse simple array: [item1, item2]
                     inner = value[1:-1]
@@ -291,6 +287,11 @@ class PRManagerStep(BaseStep):
                         frontmatter[key] = items
                     else:
                         frontmatter[key] = []
+                # Handle quoted strings
+                elif value.startswith('"') and value.endswith('"'):
+                    frontmatter[key] = value[1:-1]
+                elif value.startswith("'") and value.endswith("'"):
+                    frontmatter[key] = value[1:-1]
                 else:
                     frontmatter[key] = value
 
@@ -316,6 +317,8 @@ class PRManagerStep(BaseStep):
                 data = json.loads(result.stdout)
                 return data.get("url")
         except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError):
+            # Non-critical: PR existence check is best-effort; proceed with
+            # None to let caller decide whether to create a new PR
             pass
         return None
 
@@ -573,8 +576,8 @@ class PRManagerStep(BaseStep):
 
         # Check if draft_pr_url already exists
         has_pr_url = False
-        for i, line in enumerate(lines[1:end_idx], start=1):
-            if line.startswith("draft_pr_url:"):
+        for i in range(1, end_idx):
+            if lines[i].startswith("draft_pr_url:"):
                 # Update existing entry
                 lines[i] = f"draft_pr_url: {pr_url}"
                 has_pr_url = True
@@ -791,8 +794,9 @@ class PRManagerStep(BaseStep):
                     timeout=self.GH_PR_TIMEOUT,
                     cwd=self.cwd,
                 )
-                # Ignore errors - labels might not exist
             except (subprocess.TimeoutExpired, OSError):
+                # Non-critical: Label removal is best-effort; labels may not
+                # exist or gh may timeout. Proceed with reviewer assignment.
                 pass
 
         # Add reviewers if configured
@@ -807,8 +811,9 @@ class PRManagerStep(BaseStep):
                     timeout=self.GH_PR_TIMEOUT,
                     cwd=self.cwd,
                 )
-                # Ignore errors - reviewers might not be valid
             except (subprocess.TimeoutExpired, OSError):
+                # Non-critical: Reviewer assignment is best-effort; users may
+                # not exist or gh may timeout. PR is already ready for review.
                 pass
 
         return StepResult.ok(

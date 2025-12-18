@@ -1628,3 +1628,130 @@ class TestPRManagerStepIntegration:
         assert result.data.get("skipped") is True
         assert "gh CLI not installed" in result.data.get("reason", "")
         assert len(result.warnings) > 0
+
+
+class TestPRManagerStepStorePrUrl:
+    """Unit tests for PRManagerStep._store_pr_url method edge cases."""
+
+    def test_store_pr_url_inserts_new_field(self, tmp_path):
+        """Test inserting draft_pr_url when field doesn't exist."""
+        readme = tmp_path / "README.md"
+        readme.write_text(
+            "---\ntitle: Test Project\nstatus: active\n---\n\n# Content\n",
+            encoding="utf-8",
+        )
+
+        step = PRManagerStep(str(tmp_path))
+        result = step._store_pr_url(readme, "https://github.com/test/repo/pull/123")
+
+        assert result.success is True
+        content = readme.read_text(encoding="utf-8")
+        assert "draft_pr_url: https://github.com/test/repo/pull/123" in content
+        # Verify frontmatter structure preserved
+        assert content.startswith("---\n")
+        assert "title: Test Project" in content
+
+    def test_store_pr_url_updates_existing_field(self, tmp_path):
+        """Test updating existing draft_pr_url field (the fixed bug)."""
+        readme = tmp_path / "README.md"
+        readme.write_text(
+            "---\ntitle: Test Project\ndraft_pr_url: https://github.com/old/url/pull/1\nstatus: active\n---\n\n# Content\n",
+            encoding="utf-8",
+        )
+
+        step = PRManagerStep(str(tmp_path))
+        result = step._store_pr_url(readme, "https://github.com/test/repo/pull/456")
+
+        assert result.success is True
+        content = readme.read_text(encoding="utf-8")
+        # New URL should be present
+        assert "draft_pr_url: https://github.com/test/repo/pull/456" in content
+        # Old URL should NOT be present
+        assert "https://github.com/old/url/pull/1" not in content
+        # Should only have one draft_pr_url line
+        assert content.count("draft_pr_url:") == 1
+
+    def test_store_pr_url_no_frontmatter(self, tmp_path):
+        """Test failure when README has no frontmatter."""
+        readme = tmp_path / "README.md"
+        readme.write_text("# No Frontmatter\n\nJust content.\n", encoding="utf-8")
+
+        step = PRManagerStep(str(tmp_path))
+        result = step._store_pr_url(readme, "https://github.com/test/repo/pull/123")
+
+        assert result.success is False
+        assert "no frontmatter" in result.message.lower()
+
+    def test_store_pr_url_malformed_frontmatter(self, tmp_path):
+        """Test failure when frontmatter has no closing ---."""
+        readme = tmp_path / "README.md"
+        readme.write_text(
+            "---\ntitle: Test\nstatus: active\n\n# Content without closing\n",
+            encoding="utf-8",
+        )
+
+        step = PRManagerStep(str(tmp_path))
+        result = step._store_pr_url(readme, "https://github.com/test/repo/pull/123")
+
+        assert result.success is False
+        assert "malformed frontmatter" in result.message.lower()
+
+    def test_store_pr_url_file_not_found(self, tmp_path):
+        """Test failure when README doesn't exist."""
+        readme = tmp_path / "nonexistent" / "README.md"
+
+        step = PRManagerStep(str(tmp_path))
+        result = step._store_pr_url(readme, "https://github.com/test/repo/pull/123")
+
+        assert result.success is False
+        assert "could not read" in result.message.lower()
+
+    def test_store_pr_url_preserves_multiline_content(self, tmp_path):
+        """Test that multiline frontmatter and content are preserved."""
+        original_content = """---
+title: Complex Project
+status: active
+labels:
+  - feature
+  - enhancement
+description: |
+  This is a multiline
+  description field.
+---
+
+# Heading
+
+Body content with **markdown**.
+"""
+        readme = tmp_path / "README.md"
+        readme.write_text(original_content, encoding="utf-8")
+
+        step = PRManagerStep(str(tmp_path))
+        result = step._store_pr_url(readme, "https://github.com/test/repo/pull/789")
+
+        assert result.success is True
+        content = readme.read_text(encoding="utf-8")
+        # URL should be inserted
+        assert "draft_pr_url: https://github.com/test/repo/pull/789" in content
+        # Original content preserved
+        assert "labels:" in content
+        assert "- feature" in content
+        assert "description: |" in content
+        assert "Body content with **markdown**." in content
+
+    def test_store_pr_url_write_error(self, tmp_path, monkeypatch):
+        """Test failure when write operation fails."""
+        readme = tmp_path / "README.md"
+        readme.write_text("---\ntitle: Test\n---\n# Content\n", encoding="utf-8")
+
+        step = PRManagerStep(str(tmp_path))
+
+        # Mock write_text to raise an error
+        def mock_write_text(*args, **kwargs):
+            raise OSError("Permission denied")
+
+        monkeypatch.setattr(Path, "write_text", mock_write_text)
+        result = step._store_pr_url(readme, "https://github.com/test/repo/pull/123")
+
+        assert result.success is False
+        assert "could not write" in result.message.lower()
