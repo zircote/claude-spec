@@ -1,0 +1,38 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+id: 20251218-no-legacy-aliases
+linked_commits:
+- 6a175c8
+status: accepted
+tags:
+- naming
+- simplicity
+title: No Legacy Aliases
+---
+
+# No Legacy Aliases
+
+## Status
+Accepted
+
+## Context
+During migration, we could provide /arch:* aliases that redirect to /cs:* commands.
+
+## Decision
+No aliases - clean break from old commands.
+
+## Consequences
+
+### Positive
+- Simpler codebase
+- No ambiguity about which commands are current
+- Forces complete migration
+
+### Negative
+- Existing workflows break immediately
+- Muscle memory adjustment required
+
+### Mitigation
+- /cs:migrate command updates CLAUDE.md references
