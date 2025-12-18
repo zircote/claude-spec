@@ -1,0 +1,38 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+id: 20251218-hidden-prompt-log-file
+linked_commits:
+- 81fab37
+status: accepted
+tags:
+- logging
+- naming
+title: Hidden Prompt Log File
+---
+
+# Hidden Prompt Log File
+
+## Status
+Accepted
+
+## Context
+Prompt log file naming options:
+- PROMPT_LOG.json (visible, all caps)
+- prompts.json (visible, lowercase)
+- .prompt-log.json (hidden)
+
+## Decision
+Use .prompt-log.json (hidden file).
+
+## Consequences
+
+### Positive
+- Less clutter in project directory listings
+- Clearly auxiliary/generated file
+- Won't appear in most file explorers by default
+
+### Negative
+- Could be missed during manual inspection
+- Need to use ls -a to see it
