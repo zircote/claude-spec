@@ -9,6 +9,7 @@ These tests validate search performance meets requirements:
 Run with: uv run pytest tests/memory/test_benchmark.py -v -s
 """
 
+import os
 import statistics
 import time
 from collections.abc import Callable
@@ -20,10 +21,19 @@ from memory.config import EMBEDDING_DIMENSIONS
 from memory.index import IndexService
 from memory.models import Memory
 
+# Detect CI environment (GitHub Actions, GitLab CI, etc.)
+IS_CI = any(
+    os.environ.get(var)
+    for var in ("CI", "GITHUB_ACTIONS", "GITLAB_CI", "CIRCLECI", "TRAVIS")
+)
+
+# CI multiplier for performance targets (CI runners are often slower/variable)
+CI_MULTIPLIER = 5 if IS_CI else 1
+
 # Performance targets (milliseconds)
-SEARCH_P95_TARGET_MS = 100  # 95th percentile search latency
-INSERT_P95_TARGET_MS = 50  # 95th percentile insert latency
-BATCH_INSERT_TARGET_MS = 500  # 100 memories batch insert
+SEARCH_P95_TARGET_MS = 100 * CI_MULTIPLIER  # 95th percentile search latency
+INSERT_P95_TARGET_MS = 50 * CI_MULTIPLIER  # 95th percentile insert latency
+BATCH_INSERT_TARGET_MS = 500 * CI_MULTIPLIER  # 100 memories batch insert
 
 
 def make_memory(idx: int, namespace: str = "decisions") -> Memory:
