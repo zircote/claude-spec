@@ -1,0 +1,50 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-git-notes-for-canonical-memory-storage
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- git
+- architecture
+title: Git Notes for Canonical Memory Storage
+---
+
+# Git Notes for Canonical Storage
+
+## Status
+Accepted
+
+## Context
+We need persistent storage for AI-generated memories that:
+- Survives across Claude Code sessions
+- Travels with the repository
+- Attaches to specific commits
+- Is version-controlled
+- Doesn't pollute commit history
+
+## Decision
+Use Git notes as the canonical storage layer for all memories.
+
+## Consequences
+
+### Positive
+- Memories are inherently distributed with repo
+- Each memory attaches to exactly one commit
+- Note namespaces provide logical separation
+- Requires Git notes sync configuration
+- Limited UI support in GitHub/GitLab (notes not displayed)
+
+### Negative
+- Requires Git notes sync configuration
+- Limited UI support in GitHub/GitLab
+
+## Alternatives Considered
+1. **Separate files (DECISIONS.md, LEARNINGS.md)**: Human-readable but manual maintenance, merge conflicts
+2. **SQLite database (committed)**: Structured but binary file conflicts, no commit coupling
+3. **External database**: Full query power but external dependency, sync complexity
+4. **Commit message metadata (trailers)**: Native to commits but immutable after push, limited size
