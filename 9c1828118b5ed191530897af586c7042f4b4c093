@@ -1,0 +1,40 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-shared-team-memory-via-git-notes-sync
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- collaboration
+title: Shared Team Memory via Git Notes Sync
+---
+
+# Shared Team Memory
+
+## Status
+Accepted
+
+## Context
+Memories could be personal (per-developer) or shared (team knowledge).
+
+## Decision
+All memories are shared and sync with the repository via Git notes push/pull.
+
+## Rationale
+- Knowledge preservation: Team inherits institutional knowledge
+- Onboarding: New members benefit from history
+- Consistency: Decisions don't get relitigated
+- Collaboration: Shared patterns emerge
+
+## Git Configuration
+git config --add remote.origin.push "refs/notes/cs/*:refs/notes/cs/*"
+git config --add remote.origin.fetch "refs/notes/cs/*:refs/notes/cs/*"
+
+## Consequences
+- Note conflicts possible (use cat_sort_uniq merge)
+- Privacy considerations for sensitive decisions
+- Everyone sees everyone's memories
