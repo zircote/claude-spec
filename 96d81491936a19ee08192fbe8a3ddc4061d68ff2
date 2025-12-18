@@ -1,0 +1,48 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+id: 20251218-strict-phase-separation-cs-p-never-implements
+linked_commits:
+- de63d73
+status: accepted
+tags:
+- workflow
+- safety
+title: Strict Phase Separation - cs-p Never Implements
+---
+
+# Strict Phase Separation - /cs:p NEVER Implements
+
+## Status
+Accepted
+
+## Context
+During specification work, Claude incorrectly proceeded to implementation after the user said "approve work", interpreting approval of the spec as authorization to implement. This highlighted a critical gap: no explicit boundary between planning and implementation phases.
+
+Options:
+1. Trust Claude to interpret user intent correctly (status quo)
+2. Add explicit guards in command files to enforce phase boundaries
+3. Require separate confirmation before implementation
+
+## Decision
+Enforce strict phase separation through command file modifications:
+- /cs:p includes post_approval_halt section that HALTS after spec approval
+- /cs:i is the ONLY authorized entry point for implementation
+- Plan approval explicitly does NOT authorize implementation
+
+## Consequences
+
+### Positive
+- Eliminates ambiguity between plan approval and implementation authorization
+- Prevents unauthorized implementation
+- User maintains explicit control over when implementation begins
+- Clear audit trail (user must explicitly run /cs:i)
+
+### Negative
+- Extra step required to start implementation
+- User cannot say "approve and implement" in one command
+
+### Neutral
+- Aligns with separation of concerns principle
+- Similar to how code review approval doesn't auto-merge
