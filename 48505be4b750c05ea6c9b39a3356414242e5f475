@@ -1,0 +1,49 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-use-claude-code-native-hook-system
+linked_commits:
+- de63d73
+status: accepted
+tags:
+- hooks
+- architecture
+title: Use Claude Code Native Hook System
+---
+
+# Use Claude Code Native Hook System
+
+## Status
+Accepted
+
+## Context
+We need a mechanism to execute pre and post steps around /cs:* commands. Options include:
+1. Claude Code's native hook system (SessionStart, Stop, UserPromptSubmit)
+2. Command wrapper scripts
+3. Embedded logic in command .md files
+
+## Decision
+Use Claude Code's native hook system with three hooks:
+- SessionStart for context loading
+- UserPromptSubmit for command detection and pre-steps
+- Stop for post-steps
+
+## Consequences
+
+### Positive
+- Leverages battle-tested Claude Code infrastructure
+- Hooks are declarative and configurable
+- Clean separation between command logic and lifecycle steps
+
+### Negative
+- Depends on Claude Code hook support (must verify availability)
+- State passing between hooks requires workaround (temp files)
+
+### Neutral
+- Existing prompt_capture hook already uses this pattern
+
+## Alternatives Considered
+1. **Command wrapper scripts**: Would require modifying every command file. Rejected for maintenance burden.
+2. **Embedded logic**: Already exists in p.md's mandatory_first_actions. Rejected because it's not configurable and duplicates across commands.
