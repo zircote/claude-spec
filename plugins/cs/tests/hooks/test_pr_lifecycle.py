@@ -686,3 +686,175 @@ class TestLifecycleConfigLoaderIntegration:
 
         # Reset cache to avoid polluting other tests
         config_loader.reset_config_cache()
+
+
+# =============================================================================
+# UNIT TESTS FOR _store_pr_url METHOD
+# =============================================================================
+
+
+class TestStorePRUrl:
+    """Unit tests for the _store_pr_url method."""
+
+    def test_store_pr_url_inserts_new_field(self, spec_project_dir: Path):
+        """Test _store_pr_url inserts draft_pr_url when it doesn't exist."""
+        step = PRManagerStep(str(spec_project_dir), {"operation": "create"})
+        readme_path = spec_project_dir / "README.md"
+
+        result = step._store_pr_url(readme_path, "https://github.com/owner/repo/pull/99")
+
+        assert result.success is True
+        assert "pr_url" in result.data
+
+        # Verify the URL was added to frontmatter
+        content = readme_path.read_text(encoding="utf-8")
+        assert "draft_pr_url: https://github.com/owner/repo/pull/99" in content
+        assert content.startswith("---")
+        assert content.count("---") >= 2
+
+    def test_store_pr_url_updates_existing_field(
+        self, spec_project_with_pr_url: Path
+    ):
+        """Test _store_pr_url updates existing draft_pr_url field."""
+        step = PRManagerStep(str(spec_project_with_pr_url), {"operation": "update"})
+        readme_path = spec_project_with_pr_url / "README.md"
+
+        # Verify old URL exists
+        old_content = readme_path.read_text(encoding="utf-8")
+        assert "draft_pr_url: https://github.com/owner/repo/pull/123" in old_content
+
+        # Update with new URL
+        result = step._store_pr_url(
+            readme_path, "https://github.com/owner/repo/pull/456"
+        )
+
+        assert result.success is True
+
+        # Verify the URL was updated (not duplicated)
+        new_content = readme_path.read_text(encoding="utf-8")
+        assert "draft_pr_url: https://github.com/owner/repo/pull/456" in new_content
+        assert "draft_pr_url: https://github.com/owner/repo/pull/123" not in new_content
+        assert new_content.count("draft_pr_url:") == 1
+
+    def test_store_pr_url_handles_missing_readme(self, tmp_path: Path):
+        """Test _store_pr_url fails gracefully when README doesn't exist."""
+        step = PRManagerStep(str(tmp_path), {"operation": "create"})
+        readme_path = tmp_path / "README.md"
+
+        result = step._store_pr_url(readme_path, "https://github.com/owner/repo/pull/99")
+
+        assert result.success is False
+        assert "Could not read README" in result.message
+
+    def test_store_pr_url_handles_no_frontmatter(self, tmp_path: Path):
+        """Test _store_pr_url fails when README has no frontmatter."""
+        readme_path = tmp_path / "README.md"
+        readme_path.write_text("# No Frontmatter\n\nJust content.", encoding="utf-8")
+
+        step = PRManagerStep(str(tmp_path), {"operation": "create"})
+        result = step._store_pr_url(readme_path, "https://github.com/owner/repo/pull/99")
+
+        assert result.success is False
+        assert "no frontmatter" in result.message.lower()
+
+    def test_store_pr_url_handles_malformed_frontmatter(self, tmp_path: Path):
+        """Test _store_pr_url fails when frontmatter is malformed (no closing ---)."""
+        readme_path = tmp_path / "README.md"
+        readme_path.write_text(
+            "---\nproject_name: Test\nstatus: active\n# Missing closing ---",
+            encoding="utf-8",
+        )
+
+        step = PRManagerStep(str(tmp_path), {"operation": "create"})
+        result = step._store_pr_url(readme_path, "https://github.com/owner/repo/pull/99")
+
+        assert result.success is False
+        assert "Malformed frontmatter" in result.message
+
+    def test_store_pr_url_preserves_content_and_formatting(
+        self, spec_project_dir: Path
+    ):
+        """Test _store_pr_url preserves existing content and formatting."""
+        step = PRManagerStep(str(spec_project_dir), {"operation": "create"})
+        readme_path = spec_project_dir / "README.md"
+
+        # Get original content
+        original_content = readme_path.read_text(encoding="utf-8")
+        original_lines = original_content.split("\n")
+
+        # Store PR URL
+        result = step._store_pr_url(readme_path, "https://github.com/owner/repo/pull/99")
+        assert result.success is True
+
+        # Get new content
+        new_content = readme_path.read_text(encoding="utf-8")
+        new_lines = new_content.split("\n")
+
+        # Verify all original lines are still present (except the section where we inserted)
+        # The body should be unchanged
+        original_body_start = None
+        for i, line in enumerate(original_lines):
+            if i > 0 and line.strip() == "---":
+                original_body_start = i + 1
+                break
+
+        new_body_start = None
+        for i, line in enumerate(new_lines):
+            if i > 0 and line.strip() == "---":
+                new_body_start = i + 1
+                break
+
+        assert original_body_start is not None
+        assert new_body_start is not None
+
+        # Body content should be identical
+        original_body = "\n".join(original_lines[original_body_start:])
+        new_body = "\n".join(new_lines[new_body_start:])
+        assert original_body == new_body
+
+    def test_store_pr_url_correct_line_indexing(self, tmp_path: Path):
+        """Test _store_pr_url correctly indexes lines when updating existing field."""
+        # Create README with multiple frontmatter fields
+        readme_content = """---
+project_id: SPEC-2025-01-01-001
+project_name: "Test Project"
+slug: test-project
+draft_pr_url: https://github.com/owner/repo/pull/123
+status: in-progress
+created: 2025-01-01T12:00:00Z
+---
+
+# Test Project
+
+Content here.
+"""
+        readme_path = tmp_path / "README.md"
+        readme_path.write_text(readme_content, encoding="utf-8")
+
+        step = PRManagerStep(str(tmp_path), {"operation": "update"})
+
+        # Update the PR URL
+        result = step._store_pr_url(
+            readme_path, "https://github.com/owner/repo/pull/999"
+        )
+
+        assert result.success is True
+
+        # Read the file and verify the correct line was updated
+        new_content = readme_path.read_text(encoding="utf-8")
+        lines = new_content.split("\n")
+
+        # Find the draft_pr_url line
+        pr_url_line_idx = None
+        for i, line in enumerate(lines):
+            if line.startswith("draft_pr_url:"):
+                pr_url_line_idx = i
+                break
+
+        assert pr_url_line_idx is not None
+        assert lines[pr_url_line_idx] == "draft_pr_url: https://github.com/owner/repo/pull/999"
+
+        # Verify other fields weren't affected
+        assert "project_id: SPEC-2025-01-01-001" in new_content
+        assert "status: in-progress" in new_content
+        assert new_content.count("draft_pr_url:") == 1
