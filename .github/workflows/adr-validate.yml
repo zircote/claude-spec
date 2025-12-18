@@ -38,6 +38,15 @@ jobs:
 
       - name: Install git-adr
         run: pip install git-adr==0.2.1
+
+      - name: Initialize git-adr if needed
+        run: |
+          # Initialize git-adr if not already initialized
+          if ! git adr list --format json >/dev/null 2>&1; then
+            echo "Initializing git-adr..."
+            git adr init --adr-dir docs/adr || true
+          fi
+
       - name: Validate ADR format
         id: validate
         run: |
@@ -122,6 +131,7 @@ jobs:
             }
 
       - name: Fail if validation errors
-        if: ${{ steps.validate.outputs.has_errors == 'true' }}        run: |
+        if: ${{ steps.validate.outputs.has_errors == 'true' }}
+        run: |
           echo "ADR validation failed. See PR comment for details."
           exit 1
