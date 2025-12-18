@@ -16,6 +16,7 @@ dependencies = [
 dev = [
     "ruff>=0.8.0",
     "mypy>=1.13.0",
+    "types-PyYAML>=6.0",
     "bandit>=1.8.0",
     "pytest>=8.0.0",
     "pytest-cov>=6.0.0",

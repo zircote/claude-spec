@@ -207,7 +207,7 @@ class CaptureService:
         timestamp = datetime.now(UTC)
 
         # Build metadata
-        metadata = {
+        metadata: dict[str, str | datetime | list[str] | None] = {
             "type": namespace,
             "spec": spec,
             "timestamp": timestamp,

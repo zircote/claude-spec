@@ -129,8 +129,8 @@ class RetrospectiveGeneratorStep(BaseStep):
 
             # Basic statistics
             total_entries = len(entries)
-            commands_used = {}
-            timestamps = []
+            commands_used: dict[str, int] = {}
+            timestamps: list[str] = []
 
             for entry in entries:
                 # Count commands

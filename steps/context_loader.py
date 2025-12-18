@@ -50,8 +50,8 @@ class ContextLoaderStep(BaseStep):
         if not CONTEXT_UTILS_AVAILABLE:
             return StepResult.fail("Context utilities not available")
 
-        context_parts = []
-        warnings = []
+        context_parts: list[str] = []
+        warnings: list[str] = []
 
         # Load CLAUDE.md files
         claude_md = load_claude_md(

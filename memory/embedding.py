@@ -162,7 +162,7 @@ class EmbeddingService:
 
         try:
             embeddings = self.model.encode(non_empty_texts)
-            result = [None] * len(texts)
+            result: list[list[float] | None] = [None] * len(texts)
 
             # Map embeddings back to original indices
             for i, emb in zip(non_empty_indices, embeddings, strict=True):
@@ -193,7 +193,8 @@ class EmbeddingService:
         Returns:
             Number of dimensions (e.g., 384 for all-MiniLM-L6-v2)
         """
-        return self.model.get_sentence_embedding_dimension()
+        dim = self.model.get_sentence_embedding_dimension()
+        return dim if dim is not None else EMBEDDING_DIMENSIONS
 
     def is_loaded(self) -> bool:
         """Check if the model is already loaded."""

@@ -1,5 +1,5 @@
 {
-  "name": "cs",
+  "name": "claude-spec",
   "version": "1.2.0",
   "description": "Project specification and implementation lifecycle management with pre/post steps",
   "author": {
@@ -15,25 +15,25 @@
     "implementation-tracking"
   ],
   "commands": [
-    "./plugins/cs/commands/c.md",
-    "./plugins/cs/commands/context.md",
-    "./plugins/cs/commands/fix.md",
-    "./plugins/cs/commands/i.md",
-    "./plugins/cs/commands/log.md",
-    "./plugins/cs/commands/memory.md",
-    "./plugins/cs/commands/migrate.md",
-    "./plugins/cs/commands/p.md",
-    "./plugins/cs/commands/recall.md",
-    "./plugins/cs/commands/remember.md",
-    "./plugins/cs/commands/review.md",
-    "./plugins/cs/commands/s.md",
-    "./plugins/cs/commands/wt/cleanup.md",
-    "./plugins/cs/commands/wt/create.md",
-    "./plugins/cs/commands/wt/setup.md",
-    "./plugins/cs/commands/wt/status.md"
+    "./commands/c.md",
+    "./commands/context.md",
+    "./commands/fix.md",
+    "./commands/i.md",
+    "./commands/log.md",
+    "./commands/memory.md",
+    "./commands/migrate.md",
+    "./commands/p.md",
+    "./commands/recall.md",
+    "./commands/remember.md",
+    "./commands/review.md",
+    "./commands/s.md",
+    "./commands/wt/cleanup.md",
+    "./commands/wt/create.md",
+    "./commands/wt/setup.md",
+    "./commands/wt/status.md"
   ],
   "skills": [
-    "./plugins/cs/skills/worktree-manager/SKILL.md"
+    "./skills/worktree-manager/SKILL.md"
   ],
-  "hooks": "./plugins/cs/hooks/hooks.json"
+  "hooks": "./hooks/hooks.json"
 }
