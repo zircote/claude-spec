@@ -1,0 +1,49 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-sqlite-plus-sqlite-vec-for-index-layer
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- database
+- search
+title: SQLite plus sqlite-vec for Index Layer
+---
+
+# SQLite + sqlite-vec for Index Layer
+
+## Status
+Accepted
+
+## Context
+Semantic search requires vector similarity operations. Options:
+- Cloud vector databases (Pinecone, Weaviate)
+- Self-hosted vector databases (Milvus, Qdrant)
+- Embedded solutions (FAISS, sqlite-vec)
+
+## Decision
+Use SQLite with the sqlite-vec extension for the vector index.
+
+## Rationale
+- Local-first: No external dependencies or API calls
+- Portable: Single file, cross-platform
+- Rebuildable: Index is derived data, can regenerate from notes
+- Sufficient scale: Handles thousands of vectors efficiently
+- SQL familiarity: Standard query patterns for metadata filtering
+
+## Consequences
+
+### Positive
+- Index lives in .cs-memory/index.db (gitignored)
+- Rebuild mechanism required for recovery
+- Limited to ~100k vectors before performance degrades
+- sqlite-vec extension must be installed
+
+## Alternatives Considered
+1. **FAISS**: Very fast but separate from metadata, no SQL integration
+2. **ChromaDB**: Purpose-built for AI but heavier dependency, less mature
+3. **sqlite-vss**: Similar but older, less maintained
