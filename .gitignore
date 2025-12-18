@@ -1,153 +1,28 @@
-# =============================================================================
-# claude-spec .gitignore
-# =============================================================================
-
-# -----------------------------------------------------------------------------
 # Python
-# -----------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-!plugins/cs/skills/worktree-manager/scripts/lib/
-!plugins/cs/hooks/lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 
 # Virtual environments
-.env
-.venv
-env/
+.venv/
 venv/
 ENV/
 
-# Python tools
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
-htmlcov/
-.coverage
-.coverage.*
-coverage.xml
-*.cover
-
-# -----------------------------------------------------------------------------
-# Node.js (if any tooling is added)
-# -----------------------------------------------------------------------------
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# -----------------------------------------------------------------------------
-# IDE and Editors
-# -----------------------------------------------------------------------------
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-*~
-.project
-.settings/
-*.sublime-workspace
-*.sublime-project
 
-# -----------------------------------------------------------------------------
-# macOS
-# -----------------------------------------------------------------------------
+# OS
 .DS_Store
-.AppleDouble
-.LSOverride
-._*
-.Spotlight-V100
-.Trashes
-
-# -----------------------------------------------------------------------------
-# Windows
-# -----------------------------------------------------------------------------
 Thumbs.db
-ehthumbs.db
-Desktop.ini
 
-# -----------------------------------------------------------------------------
-# Plugin Runtime Files
-# -----------------------------------------------------------------------------
-
-# Prompt logs (contain user interactions - sensitive)
-PROMPT_LOG.json
+# Prompt logs (should stay local, not in plugin)
 .prompt-log.json
-*.prompt-log.json
-
-# Prompt logging marker (ephemeral)
 .prompt-log-enabled
-
-# Worktree metadata (local to each worktree)
-.worktree-info
-
-# Worktree registry (user-specific)
-worktree-registry.json
-
-# Claude Code local settings (user-specific)
-.claude/
-
-# Temporary files created during operations
-*.tmp
-*.temp
-*.bak
-
-# -----------------------------------------------------------------------------
-# Spec Project Files (Should NOT be ignored in actual projects)
-# These patterns are here for the plugin repo only
-# -----------------------------------------------------------------------------
-
-# Example: Don't track sample/test spec directories
-docs/spec/active/test-*/
-docs/spec/active/example-*/
-
-# -----------------------------------------------------------------------------
-# Security
-# -----------------------------------------------------------------------------
-
-# Never commit secrets
-.env.local
-.env.*.local
-*.pem
-*.key
-credentials.json
-secrets.json
-*secret*
-*password*
-
-# AWS credentials
-.aws/
-
-# -----------------------------------------------------------------------------
-# Testing
-# -----------------------------------------------------------------------------
-.tox/
-.nox/
-.hypothesis/
-
-# -----------------------------------------------------------------------------
-# Build artifacts
-# -----------------------------------------------------------------------------
-*.log
-*.pid
-*.seed
 
 # Snyk Security Extension - AI Rules (auto-generated)
 .windsurf/rules/snyk_rules.md
+.cs-memory/

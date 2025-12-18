@@ -1,0 +1,81 @@
+{
+  "terminal": "ghostty",
+  "shell": "bash",
+  "claudeCommand": "claude --dangerously-skip-permissions",
+  "portPool": {
+    "start": 8100,
+    "end": 8199
+  },
+  "portsPerWorktree": 2,
+  "worktreeBase": "~/Projects/worktrees",
+  "registryPath": "~/.claude/worktree-registry.json",
+  "defaultCopyDirs": [".agents", ".env.example", ".env"],
+  "healthCheckTimeout": 30,
+  "healthCheckRetries": 6,
+  "lifecycle": {
+    "sessionStart": {
+      "enabled": true,
+      "loadContext": {
+        "claudeMd": true,
+        "gitState": true,
+        "projectStructure": true
+      }
+    },
+    "commands": {
+      "claude-spec:plan": {
+        "preSteps": [],
+        "postSteps": []
+      },
+      "claude-spec:complete": {
+        "preSteps": [
+          { "name": "security-review", "enabled": true, "timeout": 120 }
+        ],
+        "postSteps": [
+          { "name": "generate-retrospective", "enabled": true },
+          { "name": "archive-logs", "enabled": true },
+          { "name": "cleanup-markers", "enabled": true }
+        ]
+      },
+      "claude-spec:implement": {
+        "preSteps": [],
+        "postSteps": []
+      },
+      "claude-spec:status": {
+        "preSteps": [],
+        "postSteps": []
+      },
+      "claude-spec:log": {
+        "preSteps": [],
+        "postSteps": []
+      },
+      "claude-spec:worktree": {
+        "preSteps": [],
+        "postSteps": []
+      },
+      "claude-spec:memory-remember": {
+        "preSteps": [],
+        "postSteps": []
+      },
+      "claude-spec:memory-recall": {
+        "preSteps": [],
+        "postSteps": []
+      },
+      "claude-spec:memory-context": {
+        "preSteps": [],
+        "postSteps": []
+      },
+      "claude-spec:memory": {
+        "preSteps": [],
+        "postSteps": []
+      },
+      "claude-spec:code-review": {
+        "preSteps": [],
+        "postSteps": []
+      },
+      "claude-spec:code-fix": {
+        "preSteps": [],
+        "postSteps": []
+      }
+    }
+  }
+}
