@@ -1,0 +1,41 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+id: 20251218-configuration-via-worktree-manager-config-json
+linked_commits:
+- de63d73
+status: accepted
+tags:
+- configuration
+- architecture
+title: Configuration via worktree-manager config json
+---
+
+# Configuration via worktree-manager.config.json
+
+## Status
+Accepted
+
+## Context
+Configuration for pre/post steps could be stored in:
+1. Existing worktree-manager.config.json
+2. New dedicated lifecycle.json file
+3. Per-project .cs-config.json files
+
+## Decision
+Extend worktree-manager.config.json with a lifecycle section.
+
+## Consequences
+
+### Positive
+- Single config file to manage
+- Reuses existing config loading infrastructure
+- Users already familiar with this file
+
+### Negative
+- Config file grows larger
+- Per-project config not supported initially
+
+### Neutral
+- Can add per-project config support later
