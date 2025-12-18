@@ -1,0 +1,53 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-yaml-front-matter-plus-markdown-body-format
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- format
+title: YAML Front Matter plus Markdown Body Format
+---
+
+# YAML Front Matter + Markdown Body
+
+## Status
+Accepted
+
+## Context
+Notes need both machine-parseable metadata and human-readable content.
+
+## Decision
+Use YAML front matter (delimited by ---) for structured metadata, followed by Markdown body for content.
+
+## Rationale
+- Familiar format: Common in static site generators, docs
+- Machine parseable: YAML is structured, typed
+- Human readable: Markdown renders nicely
+- Flexible: Body can contain any Markdown structure
+- Tooling: Many parsers available
+
+## Format Example
+---
+type: decision
+spec: user-auth
+phase: architecture
+timestamp: 2025-12-14T10:30:00Z
+tags: [jwt, security]
+summary: Chose RS256 over HS256 for JWT signing
+---
+
+## Context
+[Human-readable context]
+
+## Decision
+[Human-readable decision]
+
+## Consequences
+- Parser needed for extraction
+- Validation rules for required fields
+- Round-trip preservation important
