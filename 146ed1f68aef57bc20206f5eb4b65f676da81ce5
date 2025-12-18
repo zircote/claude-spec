@@ -1,0 +1,51 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-cs-memory-supplements-prompt-capture
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- logging
+title: cs-memory Supplements Prompt Capture
+---
+
+# cs-memory Supplements (Not Replaces) Prompt Capture
+
+## Status
+Accepted
+
+## Context
+The claude-spec plugin has two mechanisms for preserving session context:
+1. Prompt capture (/cs:log): Raw logging of all user prompts to .prompt-log.json
+2. cs-memory: Structured capture of decisions, learnings, blockers, review findings as Git notes
+
+These serve different purposes and the question arose: should cs-memory replace prompt capture?
+
+## Decision
+cs-memory supplements prompt capture but does not fully replace it. The two systems coexist with different scopes:
+
+| System | Purpose | When to Use |
+|--------|---------|-------------|
+| cs-memory | Structured knowledge artifacts | Default, always enabled |
+| Prompt capture | Debug/troubleshooting, interaction pattern analysis | Optional, enable when needed |
+
+## Rationale
+cs-memory captures signal:
+- Decisions with context, rationale, alternatives
+- Learnings with insight and applicability
+- Review findings with severity, remediation, resolution tracking
+
+Prompt capture captures noise + signal:
+- Complete transcript (including false starts, corrections)
+- Chronological session narrative
+- Useful for debugging hooks, validating behavior
+
+## Consequences
+- cs-memory becomes the primary knowledge retrieval system
+- Prompt capture becomes an optional debug tool
+- Reduced storage requirements
+- /cs:log remains available for troubleshooting
