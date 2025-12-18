@@ -231,7 +231,8 @@ class IndexService:
         conn = self._get_connection()
         placeholders = ",".join("?" * len(memory_ids))
         cursor = conn.execute(
-            f"SELECT * FROM memories WHERE id IN ({placeholders})", memory_ids
+            f"SELECT * FROM memories WHERE id IN ({placeholders})",  # nosec B608
+            memory_ids,
         )
         return {row["id"]: self._row_to_memory(row) for row in cursor}
 
@@ -390,15 +391,16 @@ class IndexService:
         # Query with vector search
         # sqlite-vec requires 'k = ?' in the vec0 WHERE clause for KNN queries
         # We do a subquery to get KNN results, then filter with metadata
-        query = f"""
-            SELECT m.id, v.distance
-            FROM vec_memories v
-            JOIN memories m ON m.rowid = v.rowid
-            WHERE v.embedding MATCH ?
-              AND k = ?
-              AND {where_sql}
-            ORDER BY v.distance
-        """
+        # where_sql is built from hardcoded column names with parameterized values
+        query = (
+            f"SELECT m.id, v.distance "  # nosec B608
+            f"FROM vec_memories v "
+            f"JOIN memories m ON m.rowid = v.rowid "
+            f"WHERE v.embedding MATCH ? "
+            f"AND k = ? "
+            f"AND {where_sql} "
+            f"ORDER BY v.distance"
+        )
 
         # k and embedding params go first for vec0
         params = [json.dumps(embedding), limit] + params

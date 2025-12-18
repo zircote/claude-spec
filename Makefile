@@ -37,15 +37,15 @@ lint-fix:
 
 # Type check
 typecheck:
-	uv run mypy filters/ hooks/ analyzers/
+	uv run mypy filters/ hooks/ analyzers/ memory/ steps/ utils/
 
 # Security scan
 security:
-	uv run bandit -r filters/ hooks/ analyzers/ -ll
+	uv run bandit -r filters/ hooks/ analyzers/ memory/ steps/ utils/ -ll
 
 # Run tests with coverage
 test:
-	uv run pytest --cov=filters --cov=hooks --cov=analyzers --cov-report=term-missing -v
+	uv run pytest --cov=filters --cov=hooks --cov=analyzers --cov=memory --cov=steps --cov=utils --cov-report=term-missing -v
 
 # Shell script linting (exclude SC1091: can't follow dynamic $SCRIPT_DIR sources)
 shellcheck:
