@@ -1,0 +1,43 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+id: 20251218-worktree-commands-with-skill-triggers
+linked_commits:
+- 835add9
+status: accepted
+tags:
+- worktree
+- developer-experience
+title: Worktree Commands with Skill Triggers
+---
+
+# Worktree Commands Structure
+
+## Status
+Accepted
+
+## Context
+Worktree manager functionality could be exposed as:
+- Skill triggers only ("spin up worktrees")
+- Explicit commands (/cs:wt:*)
+- Both
+
+## Decision
+Both - skill triggers AND explicit commands.
+
+Commands:
+- /cs:wt:create - Create worktrees with agents
+- /cs:wt:status - View worktree status
+- /cs:wt:cleanup - Clean up worktrees
+
+## Consequences
+
+### Positive
+- Flexibility for different user preferences
+- Discoverability via /help
+- Natural language still works
+
+### Negative
+- More commands to maintain
+- Potential duplicate code paths
