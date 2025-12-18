@@ -1,0 +1,38 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+id: 20251218-project-directory-rename-to-docs-spec
+linked_commits:
+- 6a175c8
+status: accepted
+tags:
+- naming
+- structure
+title: Project Directory Rename to docs-spec
+---
+
+# Project Directory Rename
+
+## Status
+Accepted
+
+## Context
+Projects were stored in docs/architecture/active/. With the rename, options were:
+- Keep old location (backward compatible)
+- Rename to docs/spec/active/ (consistent branding)
+- Use hidden .claude-spec/ directory
+
+## Decision
+Rename to docs/spec/active/ with one-time migration via /cs:migrate.
+
+## Consequences
+
+### Positive
+- Consistent with claude-spec branding
+- Cleaner naming
+- docs/spec/completed/ for archives
+
+### Negative
+- Requires explicit migration step
+- Git history shows file moves (not deletes)
