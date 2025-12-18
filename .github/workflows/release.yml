@@ -29,7 +29,7 @@ jobs:
               if ($0 ~ "\\[" ver "\\]") { found=1; next }
             }
             found { print }
-          ' plugins/cs/CHANGELOG.md)
+          ' CHANGELOG.md)
 
           if [ -z "$NOTES" ]; then
             NOTES="Release $VERSION"
@@ -45,24 +45,33 @@ jobs:
       - name: Create plugin archive
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          cd plugins
-          zip -r "../cs-plugin-v${VERSION}.zip" cs/ \
-            -x "cs/tests/*" \
-            -x "cs/.venv/*" \
-            -x "cs/.pytest_cache/*" \
-            -x "cs/.mypy_cache/*" \
-            -x "cs/.ruff_cache/*" \
-            -x "cs/__pycache__/*" \
-            -x "cs/**/__pycache__/*" \
-            -x "*.pyc" \
-            -x "cs/uv.lock" \
-            -x "cs/.coverage"
+          zip -r "claude-spec-v${VERSION}.zip" \
+            .claude-plugin/ \
+            analyzers/ \
+            commands/ \
+            filters/ \
+            hooks/ \
+            memory/ \
+            skills/ \
+            steps/ \
+            templates/ \
+            utils/ \
+            pyproject.toml \
+            claude-spec.config.json \
+            LICENSE \
+            README.md \
+            CHANGELOG.md \
+            -x "**/__pycache__/*" \
+            -x "**/.pytest_cache/*" \
+            -x "**/.mypy_cache/*" \
+            -x "**/.ruff_cache/*" \
+            -x "*.pyc"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: "v${{ steps.version.outputs.version }}"
           body: ${{ steps.changelog.outputs.notes }}
-          files: cs-plugin-v${{ steps.version.outputs.version }}.zip
+          files: claude-spec-v${{ steps.version.outputs.version }}.zip
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: false

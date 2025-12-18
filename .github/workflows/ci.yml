@@ -13,10 +13,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
-    working-directory: plugins/cs
-
 jobs:
   quality:
     name: Code Quality
@@ -40,10 +36,10 @@ jobs:
         run: uv run ruff check .
 
       - name: Type check
-        run: uv run mypy filters/ hooks/ analyzers/
+        run: uv run mypy filters/ hooks/ analyzers/ memory/ steps/ utils/
 
       - name: Security scan
-        run: uv run bandit -r filters/ hooks/ analyzers/ -ll
+        run: uv run bandit -r filters/ hooks/ analyzers/ memory/ steps/ utils/ -ll
 
   shellcheck:
     name: Shell Script Lint
@@ -53,7 +49,6 @@ jobs:
 
       - name: Run shellcheck
         run: shellcheck -x -e SC1091 skills/worktree-manager/scripts/*.sh skills/worktree-manager/scripts/lib/*.sh
-        working-directory: plugins/cs
 
   test:
     name: Test (Python ${{ matrix.python-version }})
@@ -76,13 +71,13 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run tests with coverage
-        run: uv run pytest --cov=filters --cov=hooks --cov=analyzers --cov-report=term-missing --cov-report=xml -v
+        run: uv run pytest --cov=filters --cov=hooks --cov=analyzers --cov=memory --cov=steps --cov=utils --cov-report=term-missing --cov-report=xml -v
 
       - name: Upload coverage
         if: matrix.python-version == '3.11'
         uses: codecov/codecov-action@v5
         with:
-          files: plugins/cs/coverage.xml
+          files: coverage.xml
           flags: unittests
           fail_ci_if_error: false
         continue-on-error: true
