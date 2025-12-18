@@ -1,0 +1,40 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+id: 20251218-sessionstart-for-context-loading
+linked_commits:
+- de63d73
+status: accepted
+tags:
+- hooks
+- performance
+title: SessionStart for Context Loading
+---
+
+# SessionStart for Context Loading (Not Per-Command)
+
+## Status
+Accepted
+
+## Context
+Context loading (CLAUDE.md, git state, project structure) could happen:
+1. Once on session start (SessionStart hook)
+2. Before each /cs:* command (UserPromptSubmit hook)
+
+## Decision
+Load context once on session start via SessionStart hook.
+
+## Consequences
+
+### Positive
+- Context loaded immediately, no waiting when first command runs
+- Works even if user doesn't run /cs:* commands first
+- Lower latency for command execution
+
+### Negative
+- Context may become stale during long sessions
+- Context loaded even if user won't use cs commands
+
+### Neutral
+- Can add refresh mechanism later if needed
