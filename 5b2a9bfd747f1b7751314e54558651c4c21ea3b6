@@ -1,0 +1,35 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+id: 20251218-command-prefix-rename-to-cs
+linked_commits:
+- 6a175c8
+status: accepted
+tags:
+- naming
+- developer-experience
+title: Command Prefix Rename to cs
+---
+
+# Command Prefix Rename (/arch:* → /cs:*)
+
+## Status
+Accepted
+
+## Context
+The plugin needs a command prefix. Options were /arch:*, /spec:*, /cs:*, or /cspec:*.
+
+## Decision
+Use /cs:* prefix (short for claude-spec).
+
+## Consequences
+
+### Positive
+- Short, easy to type
+- Matches plugin name claude-spec
+- Distinct from any other Claude Code commands
+
+### Negative
+- Requires migration from /arch:*
+- Less descriptive than full words
