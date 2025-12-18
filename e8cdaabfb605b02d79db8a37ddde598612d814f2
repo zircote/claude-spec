@@ -1,0 +1,42 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-fail-open-design-for-all-hooks
+linked_commits:
+- de63d73
+status: accepted
+tags:
+- hooks
+- reliability
+title: Fail-Open Design for All Hooks
+---
+
+# Fail-Open Design for All Hooks
+
+## Status
+Accepted
+
+## Context
+When hooks encounter errors, they could:
+1. Fail-open (log error, continue with command)
+2. Fail-closed (block command execution)
+3. Prompt user to decide
+
+## Decision
+All hooks follow fail-open design - errors are logged to stderr but never block command execution.
+
+## Consequences
+
+### Positive
+- User workflow never blocked by hook failures
+- Aligns with existing prompt_capture.py pattern
+- Graceful degradation
+
+### Negative
+- User might miss important errors
+- Silent failures possible
+
+### Neutral
+- Errors logged to stderr for debugging
