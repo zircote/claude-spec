@@ -1,0 +1,45 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-index-as-derived-data-from-git-notes
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- architecture
+title: Index as Derived Data from Git Notes
+---
+
+# Index as Derived Data
+
+## Status
+Accepted
+
+## Context
+The SQLite index could be:
+- Source of truth (committed)
+- Derived data (gitignored, rebuilt from notes)
+
+## Decision
+Treat the index as derived data that can be rebuilt from Git notes at any time.
+
+## Rationale
+- No sync issues: Notes are authoritative
+- Recovery: Corruption is trivially fixable
+- Clean repo: No binary files committed
+- Flexibility: Index schema can evolve
+
+## Implementation
+.gitignore:
+  .cs-memory/
+
+Rebuild:
+  /cs:memory reindex
+
+## Consequences
+- Index must be rebuilt on clone
+- First-run experience needs rebuild
+- Notes must contain all necessary data
