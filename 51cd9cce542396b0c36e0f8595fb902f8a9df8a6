@@ -1,0 +1,43 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-auto-capture-at-100-percent-coverage
+linked_commits:
+- 5e7fb1f
+status: accepted
+tags:
+- memory
+- automation
+title: Auto-Capture at 100 Percent Coverage
+---
+
+# Auto-Capture at 100%
+
+## Status
+Accepted
+
+## Context
+Memory capture could be manual (explicit command), semi-automatic (prompted), or fully automatic.
+
+## Decision
+Implement fully automatic capture during /cs:p, /cs:i, /cs:c workflows with zero manual intervention required.
+
+## Rationale
+- Low friction: Developers don't have to remember to capture
+- Comprehensive: Nothing falls through the cracks
+- Consistent: Standard capture points across projects
+- High signal: Captures at meaningful moments
+
+## Capture Points
+| Command | Auto-Captures |
+|---------|---------------|
+| /cs:p | inception, elicitation, research, decisions |
+| /cs:i | progress, blockers, learnings, deviations |
+| /cs:c | retrospective, learnings, patterns |
+
+## Consequences
+- More memories generated (storage growth)
+- Potential for noise (need quality filters)
+- Must not slow down primary workflow
