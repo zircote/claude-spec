@@ -1,0 +1,46 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-custom-prompt-capture-vs-claude-code-native-logs
+linked_commits:
+- 81fab37
+status: accepted
+tags:
+- logging
+- architecture
+title: Custom Prompt Capture vs Claude Code Native Logs
+---
+
+# Custom Prompt Capture vs Claude Code Native Logs
+
+## Status
+Accepted
+
+## Context
+Claude Code may maintain internal session transcripts. The question was whether we could leverage those instead of maintaining a custom prompt capture system.
+
+### Investigation Findings
+1. No guaranteed local transcript access: Claude Code retains data server-side, not locally
+2. transcript_path hook parameter exists but is undocumented - internal implementation detail, subject to change
+3. Retention policies: Max 30 days (commercial), not suitable for project archives
+4. No content filtering: Claude Code doesn't filter secrets before storage
+
+## Decision
+Maintain custom prompt capture system within the plugin.
+
+## Consequences
+
+### Positive
+- Full control over log format and location
+- Content filtering (secrets, profanity) before storage
+- Project-local logs that persist with codebase
+- Not dependent on undocumented Claude Code internals
+
+### Negative
+- More code to maintain
+- Duplicate logging (ours + Claude's internal)
+
+### Neutral
+- Aligns with original design from SPEC-2025-12-12-001
