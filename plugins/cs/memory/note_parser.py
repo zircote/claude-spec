@@ -22,7 +22,7 @@ import re
 from datetime import datetime
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from .config import MAX_SUMMARY_LENGTH, NOTE_OPTIONAL_FIELDS, NOTE_REQUIRED_FIELDS
 from .exceptions import ParseError

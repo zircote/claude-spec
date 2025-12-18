@@ -199,7 +199,8 @@ class PatternDetector:
             tags = list(mem.tags) if mem.tags else []
             for i, tag1 in enumerate(tags):
                 for tag2 in tags[i + 1 :]:
-                    pair = tuple(sorted([tag1, tag2]))
+                    sorted_pair = sorted([tag1, tag2])
+                    pair: tuple[str, str] = (sorted_pair[0], sorted_pair[1])
                     tag_pairs[pair] += 1
 
         # Find significant pairs

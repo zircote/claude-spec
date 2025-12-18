@@ -116,9 +116,6 @@ class CaptureService:
     7. Release lock
     """
 
-    # Class-level flag to track if git sync has been configured this session
-    _sync_configured: bool = False
-
     def __init__(
         self,
         git_ops: GitOps | None = None,
@@ -136,6 +133,8 @@ class CaptureService:
         self.git_ops = git_ops or GitOps()
         self.embedding_service = embedding_service or EmbeddingService()
         self.index_service = index_service or IndexService()
+        # Instance-level flag to track if git sync has been configured for this instance
+        self._sync_configured: bool = False
 
     def _ensure_sync_configured(self) -> None:
         """
@@ -144,18 +143,17 @@ class CaptureService:
         This is idempotent - safe to call multiple times. Only actually
         configures git on first capture, then skips on subsequent calls.
         """
-        if CaptureService._sync_configured:
+        if self._sync_configured:
             return
 
         # Auto-configure git notes sync (push, fetch, rewriteRef, merge)
         # This is idempotent - won't duplicate if already configured
         self.git_ops.configure_sync()
-        CaptureService._sync_configured = True
+        self._sync_configured = True
 
-    @classmethod
-    def reset_sync_configured(cls) -> None:
+    def reset_sync_configured(self) -> None:
         """Reset the sync configuration flag (for testing)."""
-        cls._sync_configured = False
+        self._sync_configured = False
 
     def capture(
         self,
@@ -206,8 +204,8 @@ class CaptureService:
 
         timestamp = datetime.now(UTC)
 
-        # Build metadata
-        metadata = {
+        # Build metadata (explicit typing for mixed value types)
+        metadata: dict[str, Any] = {
             "type": namespace,
             "spec": spec,
             "timestamp": timestamp,

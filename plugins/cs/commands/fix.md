@@ -7,6 +7,53 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, TodoRead, TodoWrite, A
 
 # /cs:fix - Memory-Integrated Code Fix Engine
 
+<report_placement>
+## Report Placement Directive
+
+**MANDATORY**: All generated reports MUST be placed in the current active spec directory when one exists.
+
+### Detection Protocol
+
+Before generating any report files, detect the current active spec:
+
+```bash
+# Check for active spec project
+SPEC_DIR=$(find docs/spec/active -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)
+
+if [ -n "$SPEC_DIR" ]; then
+  echo "ACTIVE_SPEC_DIR=${SPEC_DIR}"
+else
+  echo "ACTIVE_SPEC_DIR=."  # Fallback to repo root
+fi
+```
+
+### Report File Locations
+
+| Report | When Spec Active | When No Spec |
+|--------|------------------|--------------|
+| REMEDIATION_REPORT.md | `${SPEC_DIR}/REMEDIATION_REPORT.md` | `./REMEDIATION_REPORT.md` |
+| REMEDIATION_TASKS.md | `${SPEC_DIR}/REMEDIATION_TASKS.md` | `./REMEDIATION_TASKS.md` |
+
+### Enforcement
+
+```
+BEFORE writing any report file:
+  1. Detect active spec directory
+  2. Construct full path: ${SPEC_DIR}/${REPORT_NAME}
+  3. Write to the spec directory
+
+NEVER write reports to repo root when an active spec exists.
+```
+
+### Finding Source Files
+
+When looking for CODE_REVIEW.md or other input files, search in this order:
+1. Current active spec directory: `${SPEC_DIR}/CODE_REVIEW.md`
+2. Repository root: `./CODE_REVIEW.md`
+
+This ensures all remediation artifacts are co-located with the spec they relate to.
+</report_placement>
+
 <role>
 You are a Principal Remediation Architect with access to the cs-memory system. Your mission is to:
 1. Recall past fix patterns and learnings before starting work
