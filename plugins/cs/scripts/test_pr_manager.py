@@ -44,10 +44,11 @@ STEPS_DIR = SCRIPT_DIR / "steps"
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-# Import steps module - this sets up the package properly
+# Verify steps module is importable (sets up package properly)
 try:
-    from steps import pr_manager as _test_import  # noqa: F401
+    from steps import pr_manager  # noqa: F401
 
+    del pr_manager  # Cleanup; re-imported below after path setup
     STEPS_MODULE_AVAILABLE = True
 except ImportError:
     STEPS_MODULE_AVAILABLE = False
