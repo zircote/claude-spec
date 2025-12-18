@@ -1,0 +1,45 @@
+---
+date: '2025-12-18'
+deciders:
+- Claude
+id: 20251218-temp-file-for-hook-state-passing
+linked_commits:
+- de63d73
+status: accepted
+tags:
+- hooks
+- state-management
+title: Temp File for Hook State Passing
+---
+
+# Temp File for Hook State Passing
+
+## Status
+Accepted
+
+## Context
+Hooks are stateless processes. To pass command context from UserPromptSubmit to Stop hook, options include:
+1. CLAUDE_ENV_FILE environment variable
+2. Temporary state file (.cs-session-state.json)
+3. Reading from transcript file
+
+## Decision
+Use temporary state file .cs-session-state.json in project directory.
+
+## Consequences
+
+### Positive
+- Simple and debuggable
+- Can be inspected during development
+- Cleaned up by post-step
+
+### Negative
+- Creates temporary file
+- Requires file system access
+
+### Neutral
+- CLAUDE_ENV_FILE could be added as alternative later
+
+## Alternatives Considered
+1. **CLAUDE_ENV_FILE**: More elegant but less debuggable. Could be added as enhancement.
+2. **Transcript file**: Complex to parse, may change format.
