@@ -1,0 +1,45 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-user-config-location-at-claude-directory
+linked_commits:
+- 835add9
+status: accepted
+tags:
+- configuration
+- user-experience
+title: User Config Location at claude Directory
+---
+
+# User Config Location
+
+## Status
+Accepted
+
+## Context
+The worktree-manager skill needs a stable location for user configuration that survives plugin updates. The current location (plugins/cs/skills/worktree-manager/config.json) is overwritten when the plugin updates.
+
+## Decision
+Store user configuration at ~/.claude/worktree-manager.config.json.
+
+## Consequences
+
+### Positive
+- Follows Claude Code's existing pattern for user-level config
+- Survives plugin updates
+- Centralized with other Claude configs
+- Easy to back up
+
+### Negative
+- Requires migration for existing users (minor)
+- Another file in ~/.claude/ directory
+
+### Neutral
+- Scripts need modification to look in new location
+
+## Alternatives Considered
+1. **~/.config/worktree-manager/config.json**: XDG standard, but doesn't follow Claude's pattern
+2. **~/.worktree-manager.json**: Home directory pollution
+3. **Environment variables**: More complex, harder to persist
