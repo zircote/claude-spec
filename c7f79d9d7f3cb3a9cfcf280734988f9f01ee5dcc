@@ -1,0 +1,44 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+id: 20251218-interactive-setup-via-askuserquestion
+linked_commits:
+- 835add9
+status: accepted
+tags:
+- configuration
+- user-experience
+title: Interactive Setup via AskUserQuestion
+---
+
+# Interactive Setup via AskUserQuestion
+
+## Status
+Accepted
+
+## Context
+First-time users need to configure worktree-manager, but editing JSON files manually is tedious and error-prone.
+
+## Decision
+Use Claude's AskUserQuestion tool to interactively gather configuration preferences during first-time setup or when /cs:wt:setup is run.
+
+## Consequences
+
+### Positive
+- User-friendly experience
+- Validates choices against known options
+- Leverages Claude's native UI capabilities
+- No external dependencies
+
+### Negative
+- Requires Claude Code context (can't run standalone)
+- Limited to pre-defined options plus "Other"
+
+### Neutral
+- Setup only runs when needed (missing config or explicit command)
+
+## Alternatives Considered
+1. **CLI prompts (readline/fzf)**: Requires additional tools, different UX
+2. **Web UI**: Overkill for simple config
+3. **Just use defaults**: Loses personalization benefit
