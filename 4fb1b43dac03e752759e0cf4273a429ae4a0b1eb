@@ -1,0 +1,43 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+id: 20251218-dynamic-agent-catalog-integration
+linked_commits:
+- 81fab37
+status: accepted
+tags:
+- agents
+- architecture
+title: Dynamic Agent Catalog Integration
+---
+
+# Dynamic Agent Catalog Integration
+
+## Status
+Accepted
+
+## Context
+Plugin needs to reference specialist agents. Options:
+- Bundle agent definitions in plugin
+- Assume host has agents, document as prerequisite
+- Dynamically read from host's ~/.claude/agents/
+
+## Decision
+Dynamically read from host's ~/.claude/agents/ and CLAUDE.md.
+
+## Consequences
+
+### Positive
+- No duplication of agent definitions
+- Plugin stays smaller
+- Host can customize agents
+- Automatic access to any new agents
+
+### Negative
+- Plugin depends on host configuration
+- Behavior varies based on host setup
+
+### Mitigation
+- Document required host configuration in README
+- Graceful degradation if agents not found
