@@ -1,0 +1,51 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-namespace-per-type-organization-for-memory
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- architecture
+title: Namespace-per-Type Organization for Memory
+---
+
+# Namespace-per-Type Organization
+
+## Status
+Accepted
+
+## Context
+Memories have different types (decisions, learnings, blockers). Options:
+- Single namespace, type in metadata
+- Separate namespace per type
+
+## Decision
+Use separate Git notes namespaces for each memory type.
+
+## Rationale
+- Isolation: Different sync/retention policies possible
+- Query efficiency: Type filtering at storage level
+- Clarity: refs/notes/cs/decisions is self-documenting
+- Git operations: Can list/manage types independently
+
+## Namespaces
+refs/notes/cs/
+    inception
+    elicitation
+    research
+    decisions
+    progress
+    blockers
+    reviews
+    learnings
+    retrospective
+    patterns
+
+## Consequences
+- Multiple refs to sync
+- Git config lists all namespaces
+- Index must query across namespaces
