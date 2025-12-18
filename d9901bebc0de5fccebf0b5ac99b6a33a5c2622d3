@@ -1,0 +1,52 @@
+---
+date: '2025-12-18'
+deciders:
+- User
+- Claude
+id: 20251218-code-review-findings-as-commit-anchored-notes
+linked_commits:
+- df0af93
+status: accepted
+tags:
+- memory
+- code-review
+title: Code Review Findings as Commit-Anchored Notes
+---
+
+# Code Review Findings as Commit-Anchored Notes
+
+## Status
+Accepted
+
+## Context
+The existing /cr command produces CODE_REVIEW.md, REVIEW_SUMMARY.md, and REMEDIATION_TASKS.md artifacts. These are markdown files that exist independently of Git history.
+
+## Decision
+Code review findings are captured as Git notes in the cs/reviews namespace, attached to the commit being reviewed. This provides:
+1. Semantic searchability via embeddings
+2. Pattern detection across reviews
+3. Resolution tracking (status: open -> resolved)
+4. Team-wide knowledge sharing via Git notes sync
+
+## Format
+---
+type: review_finding
+severity: critical|high|medium|low
+category: security|performance|architecture|quality|tests|documentation
+file: <file-path>
+line: <line-number>
+summary: <one-line description>
+status: open|resolved
+---
+<full finding details with remediation guidance>
+
+## Rationale
+- Commit anchoring: Findings attach to the code state that caused them
+- Pattern detection: Searching cs/reviews reveals recurring issues
+- Resolution tracking: Status updates preserve remediation history
+- Supplements artifacts: CODE_REVIEW.md still generated for human consumption
+
+## Consequences
+- Each finding becomes a separate note
+- Resolution requires updating existing notes
+- Review patterns can inform proactive suggestions
