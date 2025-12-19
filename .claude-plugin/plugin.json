@@ -33,6 +33,5 @@
   ],
   "skills": [
     "./skills/worktree-manager/SKILL.md"
-  ],
-  "hooks": "./hooks/hooks.json"
+  ]
 }
