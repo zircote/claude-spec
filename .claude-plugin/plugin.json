@@ -1,6 +1,6 @@
 {
   "name": "claude-spec",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Project specification and implementation lifecycle management with pre/post steps",
   "author": {
     "name": "Claude Spec Contributors"
@@ -15,22 +15,21 @@
     "implementation-tracking"
   ],
   "commands": [
-    "./commands/c.md",
-    "./commands/context.md",
-    "./commands/fix.md",
-    "./commands/i.md",
+    "./commands/code-fix.md",
+    "./commands/code-review.md",
+    "./commands/complete.md",
+    "./commands/implement.md",
     "./commands/log.md",
+    "./commands/memory-context.md",
+    "./commands/memory-recall.md",
+    "./commands/memory-remember.md",
     "./commands/memory.md",
-    "./commands/migrate.md",
-    "./commands/p.md",
-    "./commands/recall.md",
-    "./commands/remember.md",
-    "./commands/review.md",
-    "./commands/s.md",
-    "./commands/wt/cleanup.md",
-    "./commands/wt/create.md",
-    "./commands/wt/setup.md",
-    "./commands/wt/status.md"
+    "./commands/plan.md",
+    "./commands/status.md",
+    "./commands/worktree-cleanup.md",
+    "./commands/worktree-create.md",
+    "./commands/worktree-setup.md",
+    "./commands/worktree-status.md"
   ],
   "skills": [
     "./skills/worktree-manager/SKILL.md"
