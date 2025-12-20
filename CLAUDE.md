@@ -8,16 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Test Commands
 
-All commands run from `plugins/cs/` directory:
-
 ```bash
-cd plugins/cs
-
 # Install dependencies
 make install          # or: uv sync
 
 # Run all CI checks (recommended before commits)
-make ci               # format-check + lint + typecheck + security + shellcheck + test
+make ci               # format-check + lint + typecheck + security + test
 
 # Individual checks
 make format           # Format code with ruff
@@ -27,11 +23,9 @@ make lint-fix         # Lint and auto-fix
 make typecheck        # Type check with mypy
 make security         # Security scan with bandit
 make test             # Run tests with coverage
-make shellcheck       # Lint shell scripts
 
 # Run single test
 uv run pytest tests/test_pipeline.py -v
-uv run pytest tests/test_hook.py::test_main_with_logging_enabled -v
 
 # Clean generated files
 make clean
@@ -42,154 +36,43 @@ make clean
 ### Plugin Structure
 
 ```
-plugins/cs/
-├── commands/           # Slash command definitions (markdown)
-│   ├── p.md           # /p - Strategic project planning
-│   ├── i.md           # /i - Implementation progress tracking
-│   ├── s.md           # /s - Status monitoring
-│   ├── c.md           # /c - Project close-out
-│   ├── log.md         # /log - Prompt capture toggle
-│   ├── remember.md    # /remember - Memory capture
-│   ├── recall.md      # /recall - Memory search
-│   ├── context.md     # /context - Load spec memories
-│   ├── memory.md      # /memory - Memory admin
-│   └── wt/            # Worktree commands
-├── memory/            # cs-memory Git-native memory system
-│   ├── models.py      # Data models (Memory, CaptureResult, etc.)
-│   ├── config.py      # Configuration constants
-│   ├── git_ops.py     # Git notes operations
-│   ├── note_parser.py # YAML front matter parsing
-│   ├── capture.py     # Memory capture service
-│   ├── recall.py      # Search/recall service
-│   ├── embedding.py   # sentence-transformers embeddings
-│   ├── index.py       # SQLite + sqlite-vec index
-│   ├── USER_GUIDE.md  # End-user documentation
-│   └── DEVELOPER_GUIDE.md  # Developer integration guide
-├── filters/           # Content filtering pipeline
-│   ├── pipeline.py    # Secret detection + truncation
-│   ├── log_entry.py   # Log entry schema (dataclass)
-│   └── log_writer.py  # Atomic JSON file writer
-├── hooks/
-│   ├── hooks.json         # Hook registration for Claude Code
-│   ├── session_start.py   # SessionStart hook - loads context
-│   ├── command_detector.py # UserPromptSubmit hook - detects /* commands
-│   ├── post_command.py    # Stop hook - runs post-steps
-│   ├── prompt_capture.py  # UserPromptSubmit hook - logs prompts
-│   └── lib/
-│       └── config_loader.py  # Lifecycle configuration loader
-├── steps/              # Pre/post step modules
-│   ├── base.py         # StepResult, BaseStep classes
-│   ├── context_loader.py    # Load CLAUDE.md, git state, structure
-│   ├── security_reviewer.py # Run bandit security scan
-│   ├── log_archiver.py      # Archive prompt logs to completed/
-│   ├── marker_cleaner.py    # Clean up temp files
-│   └── retrospective_gen.py # Generate RETROSPECTIVE.md
-├── analyzers/
-│   ├── log_analyzer.py    # Log file analysis
-│   └── analyze_cli.py     # CLI for retrospective analysis
-├── skills/worktree-manager/  # Worktree automation (config at ~/.claude/claude-spec.config.json)
-└── tests/             # Pytest test suite (600+ tests)
-```
-
-### cs-memory Module
-
-The memory module (`plugins/cs/memory/`) provides Git-native persistent memory:
-
-**Key Files:**
-- `models.py` - Frozen dataclasses: `Memory`, `MemoryResult`, `CaptureResult`, `HydrationLevel`
-- `capture.py` - `CaptureService` with auto-sync configuration
-- `recall.py` - `RecallService` for semantic search
-- `git_ops.py` - `GitOps` for Git notes operations
-- `index.py` - `IndexService` using SQLite + sqlite-vec
-- `note_parser.py` - YAML front matter parsing, memory ID generation
-
-**Memory ID Format:** `<namespace>:<short_sha>:<timestamp_ms>`
-- Example: `decisions:abc123d:1702560000000`
-- Timestamp ensures uniqueness when multiple memories attach to the same commit
-
-**Auto-Configuration:** On first capture, git is configured for notes sync:
-- Push/fetch refspecs: `refs/notes/cs/*:refs/notes/cs/*`
-- Rewrite ref: `refs/notes/cs/*` (preserves notes during rebase)
-- Merge strategy: `cat_sort_uniq`
-
-**Auto-Capture:** Memories are automatically captured during `/*` commands:
-- `/p` - Inception, elicitation, research, decisions
-- `/i` - Progress, blockers, learnings, deviations
-- `/c` - Retrospective, learnings, patterns
-- `/review` - Review findings, recurring patterns
-
-Specialized capture methods: `capture_review()`, `capture_retrospective()`, `capture_pattern()`
-
-Control via environment variable:
-```bash
-export CS_AUTO_CAPTURE_ENABLED=false  # Disable auto-capture
+.claude-plugin/
+├── plugin.json         # Plugin manifest
+commands/
+├── plan.md             # /plan - Strategic project planning
+├── implement.md        # /implement - Implementation progress tracking
+├── status.md           # /status - Status monitoring
+├── complete.md         # /complete - Project close-out
+├── worktree-setup.md   # /worktree-setup - Configuration wizard
+├── worktree-create.md  # /worktree-create - Create worktrees
+├── worktree-status.md  # /worktree-status - Worktree status
+└── worktree-cleanup.md # /worktree-cleanup - Clean up worktrees
+filters/
+├── pipeline.py         # Secret detection + truncation
+├── log_entry.py        # Log entry schema (dataclass)
+└── log_writer.py       # Atomic JSON file writer
+analyzers/
+├── log_analyzer.py     # Log file analysis
+└── analyze_cli.py      # CLI for retrospective analysis
+steps/
+├── base.py             # StepResult, BaseStep classes
+├── context_loader.py   # Load CLAUDE.md, git state, structure
+├── security_reviewer.py # Run bandit security scan
+├── log_archiver.py     # Archive prompt logs to completed/
+├── marker_cleaner.py   # Clean up temp files
+└── retrospective_gen.py # Generate RETROSPECTIVE.md
+skills/worktree-manager/ # Worktree automation skill
+tests/                   # Pytest test suite
 ```
 
 ### Data Flow
 
-1. **SessionStart Hook** (`hooks/session_start.py`):
-   - Fires when Claude Code session starts
-   - Checks if project is claude-spec managed (has docs/spec/ or .prompt-log-enabled)
-   - Loads context: CLAUDE.md files, git state, project structure
-   - Outputs context to stdout (added to Claude's initial memory)
-   - Respects lifecycle config for which context types to load
-
-2. **UserPromptSubmit Hooks**:
-   - `hooks/command_detector.py` (runs first):
-     - Detects /* commands in user prompts
-     - Saves command state to `.cs-session-state.json`
-     - Triggers pre-steps (e.g., security review for /c)
-     - Always returns `{"decision": "approve"}`
-   - `hooks/prompt_capture.py` (runs second):
-     - Checks for `.prompt-log-enabled` marker at project root
-     - Filters secrets via `filters/pipeline.py`
-     - Appends to `.prompt-log.json` at project root
-     - Always returns `{"decision": "approve"}` (never blocks)
-
-3. **Stop Hook** (`hooks/post_command.py`):
-   - Fires when Claude Code session ends
-   - Reads command state from `.cs-session-state.json`
-   - Triggers post-steps (e.g., log archival, retrospective gen for /c)
-   - Cleans up session state file
-   - Returns `{"continue": false}`
-
-4. **Filter Pipeline** (`filters/pipeline.py`):
+1. **Filter Pipeline** (`filters/pipeline.py`):
    - Pre-compiled regex patterns for 15+ secret types (AWS, GitHub, API keys, etc.)
    - Order: secrets -> truncation
    - Returns `FilterResult` with statistics
 
-### Lifecycle Configuration
-
-Pre/post steps are configured via `~/.claude/claude-spec.config.json`:
-
-```json
-{
-  "lifecycle": {
-    "sessionStart": {
-      "enabled": true,
-      "loadContext": {
-        "claudeMd": true,
-        "gitState": true,
-        "projectStructure": true
-      }
-    },
-    "commands": {
-      "claude-spec:complete": {
-        "preSteps": [
-          { "name": "security-review", "enabled": true, "timeout": 120 }
-        ],
-        "postSteps": [
-          { "name": "generate-retrospective", "enabled": true },
-          { "name": "archive-logs", "enabled": true },
-          { "name": "cleanup-markers", "enabled": true }
-        ]
-      }
-    }
-  }
-}
-```
-
-5. **Log Writer** (`filters/log_writer.py`):
+2. **Log Writer** (`filters/log_writer.py`):
    - Atomic writes with file locking (`fcntl.flock`)
    - Creates backup before modifications
    - JSON array format with `LogEntry` schema
@@ -198,35 +81,15 @@ Pre/post steps are configured via `~/.claude/claude-spec.config.json`:
 
 ```
 project-root/
-├── .prompt-log-enabled   # Marker at root to capture first prompt
-├── .prompt-log.json      # Log file at root (archived to completed/)
-├── .cs-memory/           # Memory index (gitignored)
-│   ├── index.db          # SQLite + sqlite-vec index
-│   └── models/           # Cached embedding model
 └── docs/spec/
     ├── active/           # In-progress projects
     │   └── YYYY-MM-DD-slug/
     │       ├── README.md, REQUIREMENTS.md, ARCHITECTURE.md
     │       └── IMPLEMENTATION_PLAN.md, PROGRESS.md
-    └── completed/        # Archived with RETROSPECTIVE.md + .prompt-log.json
+    └── completed/        # Archived with RETROSPECTIVE.md
 ```
 
 ## Key Patterns
-
-### Hook Input/Output Contract
-
-```python
-# Input (stdin JSON)
-{
-    "hook_event_name": "UserPromptSubmit",
-    "prompt": "string",       # NOTE: "prompt", not "user_prompt"
-    "session_id": "string",
-    "cwd": "string"
-}
-
-# Output (stdout JSON)
-{"decision": "approve"}  # Hook never blocks
-```
 
 ### Secret Detection
 
@@ -259,29 +122,14 @@ def test_something(temp_project_dir, monkeypatch):
 ## Plugin Command Workflow
 
 ```
-/p "idea"  ->  Plan with Socratic elicitation
+/plan "idea"  ->  Plan with Socratic elicitation
        |
-/i slug    ->  Track implementation (PROGRESS.md)
+/implement slug ->  Track implementation (PROGRESS.md)
        |
-/s         ->  Monitor status
+/status        ->  Monitor status
        |
-/c slug    ->  Close out with retrospective
+/complete slug ->  Close out with retrospective
 ```
-
-Enable logging with `/log on` before `/p` for prompt capture during planning.
-
-### Memory Commands
-
-| Command | Description |
-|---------|-------------|
-| `/remember <type> <summary>` | Capture a memory (decision, learning, blocker, progress, pattern) |
-| `/recall <query>` | Semantic search across memories |
-| `/context [spec]` | Load all memories for a spec |
-| `/memory status` | View memory statistics and index health |
-| `/memory reindex` | Rebuild index from Git notes |
-| `/memory verify` | Check index consistency |
-| `/memory gc` | Remove orphaned entries |
-| `/memory export` | Export memories to JSON |
 
 ### Worktree Commands
 
@@ -294,71 +142,12 @@ Enable logging with `/log on` before `/p` for prompt capture during planning.
 
 ## Active Spec Projects
 
-(None - all projects completed)
+(None - project completed)
 
-## Completed Spec Projects
+## Recent Completed Spec Project
 
-- `docs/spec/completed/2025-12-15-memory-auto-capture/` - Memory Auto-Capture Implementation
-  - Completed: 2025-12-15
+- `docs/spec/active/2025-12-19-remove-memory-hooks/` - Remove Memory and Hook Components
+  - Completed: 2025-12-19
   - Outcome: success
-  - Effort: 2.5 hours (17 tasks across 4 phases)
-  - Quality: 634 tests passing, 87% coverage maintained
-  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, IMPLEMENTATION_PLAN.md, RETROSPECTIVE.md
-  - Key changes:
-    - 3 new capture methods: `capture_review()`, `capture_retrospective()`, `capture_pattern()`
-    - Auto-capture integration in `/p`, `/i`, `/c`, `/review` commands
-    - CaptureAccumulator model for tracking captures during command execution
-    - CS_AUTO_CAPTURE_ENABLED environment variable for user control
-    - Command file cleanup: 400+ lines of pseudo-code replaced with executable integration
-    - validate_auto_capture_namespace() wiring AUTO_CAPTURE_NAMESPACES config
-
-- `docs/spec/completed/2025-12-14-cs-memory/` - Git-Native Memory System for claude-spec
-  - Completed: 2025-12-15
-  - Outcome: success
-  - Effort: 12 hours (vs 40-80 planned, -70% variance)
-  - Quality: 9.0/10 (post code review remediation)
-  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, IMPLEMENTATION_PLAN.md, DECISIONS.md
-  - Key changes:
-    - Git notes storage + SQLite/sqlite-vec semantic search
-    - 4 new commands: /remember, /recall, /context, /memory
-    - Memory ID format: `namespace:sha:timestamp_ms` (supports multiple per commit)
-    - Auto-configuration of git notes sync on first capture
-    - 600 tests passing (84 new memory tests)
-    - Comprehensive code review: 45 findings remediated
-
-- `docs/spec/completed/2025-12-13-pre-post-steps-commands/` - Pre and Post Steps for cs:* Commands
-  - Completed: 2025-12-13
-  - Outcome: success
-  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
-  - Key changes: Lifecycle hook system (SessionStart, UserPromptSubmit, Stop), 230 tests, 96% coverage
-
-- `docs/spec/completed/2025-12-13-worktree-config-install/` - Worktree Manager Configuration Installation
-  - Completed: 2025-12-13
-  - Outcome: success
-  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
-  - Key changes: User config at ~/.claude/claude-spec.config.json, prompt log at project root
-
-- `docs/spec/completed/2025-12-12-quality-release-ci-github-act/` - Quality Release CI/CD with GitHub Actions
-  - Completed: 2025-12-13
-  - Outcome: success
-  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
-
-- `docs/spec/completed/2025-12-12-test-and-validate-command-au/` - Test and Validate Command
-  - Completed: 2025-12-13
-  - Outcome: success
-  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
-
-- `docs/spec/completed/2025-12-12-prompt-capture-log/` - Prompt Capture Logging
-  - Completed: 2025-12-12
-  - Outcome: partial (hooks integration needs validation)
-  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
-
-- `docs/spec/completed/2025-12-12-arch-lifecycle-automation/` - Architecture Lifecycle Automation
-  - Completed: 2025-12-12
-  - Outcome: success
-  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
-
-- `docs/spec/completed/2025-12-12-claude-spec-plugin/` - Claude Spec Plugin (initial)
-  - Completed: 2025-12-12
-  - Outcome: success
-  - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, RETROSPECTIVE.md
+  - Branch: plan/remove-memory-hooks
+  - Key changes: Removed memory/, hooks/, memory commands, hook tests, updated all documentation

@@ -4,12 +4,11 @@ This document describes the internal architecture of the claude-spec plugin.
 
 ## Overview
 
-claude-spec is a Claude Code plugin that provides structured project specification and implementation lifecycle management. It consists of four major subsystems:
+claude-spec is a Claude Code plugin that provides structured project specification and implementation lifecycle management. It consists of three major subsystems:
 
 1. **Command System** — Slash commands for user interaction
-2. **Hook System** — Event handlers for prompt capture
-3. **Filter Pipeline** — Content processing and secret detection
-4. **Worktree Manager** — Git worktree automation
+2. **Filter Pipeline** — Content processing and secret detection
+3. **Worktree Manager** — Git worktree automation
 
 ## System Architecture
 
@@ -18,23 +17,17 @@ claude-spec is a Claude Code plugin that provides structured project specificati
 │                              Claude Code CLI                                 │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
-                    ┌─────────────────┼─────────────────┐
-                    ▼                 ▼                 ▼
-            ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
-            │   Commands    │ │     Hooks     │ │    Skills     │
-            │   (/*)     │ │ (UserPrompt)  │ │  (worktree)   │
-            └───────────────┘ └───────────────┘ └───────────────┘
-                    │                 │                 │
-                    │                 ▼                 │
-                    │         ┌───────────────┐        │
-                    │         │    Filters    │        │
-                    │         │  (pipeline)   │        │
-                    │         └───────────────┘        │
-                    │                 │                 │
-                    ▼                 ▼                 ▼
+                    ┌─────────────────┴─────────────────┐
+                    ▼                                   ▼
+            ┌───────────────┐                   ┌───────────────┐
+            │   Commands    │                   │    Skills     │
+            │   (/*)        │                   │  (worktree)   │
+            └───────────────┘                   └───────────────┘
+                    │                                   │
+                    ▼                                   ▼
             ┌─────────────────────────────────────────────────────┐
             │                   File System                        │
-            │  docs/spec/  │  .prompt-log.json  │  worktree-reg   │
+            │       docs/spec/       │       worktree-registry    │
             └─────────────────────────────────────────────────────┘
 ```
 
@@ -42,27 +35,13 @@ claude-spec is a Claude Code plugin that provides structured project specificati
 
 ### 1. Plugin Metadata
 
-**Location:** `plugins/cs/.claude-plugin/plugin.json`
+**Location:** `.claude-plugin/plugin.json`
 
 ```json
 {
-  "name": "cs",
-  "version": "1.0.0",
+  "name": "claude-spec",
+  "version": "2.0.0",
   "description": "Project specification and lifecycle management"
-}
-```
-
-The plugin is registered in a marketplace at `.claude-plugin/marketplace.json`:
-
-```json
-{
-  "name": "claude-spec-marketplace",
-  "plugins": [
-    {
-      "name": "cs",
-      "path": "./plugins/cs"
-    }
-  ]
 }
 ```
 
@@ -72,8 +51,9 @@ Commands are Markdown files with YAML frontmatter. Claude Code parses these and 
 
 **Command Resolution:**
 ```
-/p → plugins/cs/commands/p.md
-/wt:create → plugins/cs/commands/wt/create.md
+/plan → commands/plan.md
+/implement → commands/implement.md
+/worktree-create → commands/worktree-create.md
 ```
 
 **Frontmatter Schema:**
@@ -111,65 +91,9 @@ $ARGUMENTS
 </edge_cases>
 ```
 
-### 3. Hook System
+### 3. Filter Pipeline
 
-**Registration:** `plugins/cs/hooks/hooks.json`
-
-```json
-{
-  "hooks": [
-    {
-      "event": "UserPromptSubmit",
-      "script": "./prompt_capture.py"
-    }
-  ]
-}
-```
-
-**Event Flow:**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ User types prompt and presses Enter                             │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ Claude Code triggers UserPromptSubmit event                     │
-│ Sends JSON to stdin: {"type": "UserPromptSubmit", "prompt": ...}│
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ prompt_capture.py receives via stdin                            │
-│ 1. Parse JSON                                                   │
-│ 2. Check for .prompt-log-enabled marker                         │
-│ 3. If enabled: filter → log → respond                           │
-│ 4. Always output: {"decision": "approve"}                       │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ Claude Code continues with user prompt                          │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Critical Design Decision:**
-
-The hook is **non-blocking** — it always returns `{"decision": "approve"}`. This ensures:
-1. User workflow is never interrupted
-2. Logging failures don't block work
-3. Import errors fail silently
-
-```python
-def pass_through() -> Dict[str, Any]:
-    """Return a pass-through response that allows the prompt to proceed."""
-    return {"decision": "approve"}
-```
-
-### 4. Filter Pipeline
-
-**Location:** `plugins/cs/filters/`
+**Location:** `filters/`
 
 **Module Structure:**
 ```
@@ -184,19 +108,19 @@ filters/
 
 ```
 ┌───────────────┐    ┌───────────────┐    ┌───────────────┐
-│ Raw Prompt    │───▶│ Secret Filter │───▶│  Truncation   │
+│ Raw Content   │───▶│ Secret Filter │───▶│  Truncation   │
 └───────────────┘    └───────────────┘    └───────────────┘
                                                    │
                                                    ▼
 ┌───────────────────────────────────────────────────────────┐
-│ FilteredPrompt                                             │
-│ {                                                          │
-│   "filtered_prompt": "...[SECRET:aws_access_key]...",     │
-│   "original_length": 1234,                                │
-│   "was_truncated": false,                                  │
-│   "secrets_found": ["aws_access_key"],                    │
-│   "filter_timestamp": "2025-12-12T..."                    │
-│ }                                                          │
+│ FilteredContent                                           │
+│ {                                                         │
+│   "filtered_content": "...[SECRET:aws_access_key]...",   │
+│   "original_length": 1234,                               │
+│   "was_truncated": false,                                │
+│   "secrets_found": ["aws_access_key"],                   │
+│   "filter_timestamp": "2025-12-12T..."                   │
+│ }                                                         │
 └───────────────────────────────────────────────────────────┘
 ```
 
@@ -212,7 +136,7 @@ filters/
 | JWT | `ey...\.ey...` | `[SECRET:jwt]` |
 | Database URI | `postgres(ql)?://...` | `[SECRET:database_url]` |
 
-### 5. Log Writer
+### 4. Log Writer
 
 **Atomic Write Pattern:**
 
@@ -234,26 +158,9 @@ This ensures:
 - Data is persisted before lock release
 - NDJSON format (one JSON object per line)
 
-### 6. Log Entry Schema
+### 5. Worktree Manager
 
-**NDJSON Format:**
-```json
-{"timestamp": "2025-12-12T10:30:00Z", "session_id": "abc123", "prompt": "...", "command": "/p", "filter_info": {...}}
-{"timestamp": "2025-12-12T10:31:00Z", "session_id": "abc123", "prompt": "...", "command": null, "filter_info": {...}}
-```
-
-**Fields:**
-| Field | Type | Description |
-|-------|------|-------------|
-| `timestamp` | ISO 8601 | When prompt was captured |
-| `session_id` | string | UUID for this Claude Code session |
-| `prompt` | string | Filtered user prompt |
-| `command` | string? | Detected /* command or null |
-| `filter_info` | object | Filtering metadata |
-
-### 7. Worktree Manager
-
-**Location:** `plugins/cs/skills/worktree-manager/`
+**Location:** `skills/worktree-manager/`
 
 **Components:**
 ```
@@ -338,18 +245,18 @@ esac
 
 ## Data Flow Diagrams
 
-### Planning Flow (/p)
+### Planning Flow (/plan)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ User: /p "implement user authentication"                     │
+│ User: /plan "implement user authentication"                    │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ Phase 0: Worktree Check                                         │
 │ IF on protected branch (main, master, develop):                 │
-│   → Recommend /wt:create                                     │
+│   → Recommend /worktree-create                                  │
 │   → STOP (user restarts in worktree)                           │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -358,7 +265,6 @@ esac
 │ Phase 1: Socratic Elicitation                                   │
 │ - Ask 3-4 questions per round                                   │
 │ - Continue until 7 clarity checkpoints met                      │
-│ - Enable prompt logging                                         │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -382,7 +288,7 @@ esac
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Document Sync Flow (/i)
+### Document Sync Flow (/implement)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -422,22 +328,6 @@ esac
 
 ## Error Handling
 
-### Hook Error Strategy
-
-```python
-def main():
-    try:
-        # ... hook logic
-    except Exception as e:
-        # Log to stderr (visible in debug mode)
-        print(f"Error: {e}", file=sys.stderr)
-        # Always approve to not block user
-        print(json.dumps({"decision": "approve"}))
-        sys.exit(0)  # Don't exit with error
-```
-
-**Rationale:** Hooks must never block user workflow. Any error should fail open.
-
 ### File Operation Errors
 
 ```python
@@ -446,7 +336,7 @@ class LogWriter:
         try:
             # ... atomic write
         except IOError as e:
-            # Log but don't raise - prompt capture is optional
+            # Log but don't raise
             print(f"Log write failed: {e}", file=sys.stderr)
 ```
 
@@ -470,7 +360,7 @@ fi
 
 ### 1. Secret Filtering
 
-All prompts pass through the filter pipeline before logging. Secrets are detected using regex patterns and replaced with type markers.
+Content passes through the filter pipeline before any logging. Secrets are detected using regex patterns and replaced with type markers.
 
 **Limitations:**
 - Pattern-based detection may miss custom secret formats
@@ -489,44 +379,18 @@ All prompts pass through the filter pipeline before logging. Secrets are detecte
 - Shell scripts quote all variables
 - No dynamic code execution or string-to-code conversion
 
-## Performance Considerations
-
-### Hook Performance
-
-The hook is invoked on every user prompt. Performance targets:
-
-| Operation | Target | Actual |
-|-----------|--------|--------|
-| JSON parse | < 1ms | ~0.5ms |
-| Marker check | < 5ms | ~2ms |
-| Filter pipeline | < 10ms | ~5ms |
-| Log write | < 20ms | ~10ms |
-| **Total** | < 50ms | ~18ms |
-
-### Log File Growth
-
-Each prompt adds ~500-2000 bytes to the log. For typical sessions:
-
-| Session Length | Prompts | Log Size |
-|---------------|---------|----------|
-| Short (30 min) | ~20 | ~20 KB |
-| Medium (2 hr) | ~80 | ~80 KB |
-| Long (8 hr) | ~300 | ~300 KB |
-
-Logs are per-project and cleared on close-out.
-
 ## Extensibility
 
 ### Adding New Commands
 
-1. Create `plugins/cs/commands/newcmd.md`
+1. Create `commands/newcmd.md`
 2. Add YAML frontmatter
 3. Define role, protocol, edge cases
-4. Reinstall plugin
+4. Register in `.claude-plugin/plugin.json`
 
 ### Adding Secret Patterns
 
-Edit `plugins/cs/filters/pipeline.py`:
+Edit `filters/pipeline.py`:
 
 ```python
 SECRET_PATTERNS = [
@@ -537,7 +401,7 @@ SECRET_PATTERNS = [
 
 ### Adding Terminal Support
 
-Edit `plugins/cs/skills/worktree-manager/scripts/launch-agent.sh`:
+Edit `skills/worktree-manager/scripts/launch-agent.sh`:
 
 ```bash
 case "$TERMINAL" in
@@ -550,8 +414,7 @@ esac
 
 ## Future Considerations
 
-1. **Test Suite** — Add unit tests for filters, integration tests for commands
-2. **Metrics Aggregation** — Cross-project analytics from retrospectives
-3. **Remote Registry** — Sync worktree registry across machines
-4. **Custom Templates** — User-defined project templates
-5. **Webhook Integration** — Post events to external systems
+1. **Metrics Aggregation** — Cross-project analytics from retrospectives
+2. **Remote Registry** — Sync worktree registry across machines
+3. **Custom Templates** — User-defined project templates
+4. **Webhook Integration** — Post events to external systems
