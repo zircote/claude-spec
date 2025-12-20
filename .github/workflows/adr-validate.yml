@@ -96,7 +96,7 @@ jobs:
 
       - name: Post validation results
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const hasErrors = '${{ steps.validate.outputs.has_errors }}' === 'true';
