@@ -1,4 +1,4 @@
-.PHONY: install format format-check lint lint-fix typecheck security test shellcheck ci clean help bump-patch bump-minor bump-major
+.PHONY: install format format-check lint lint-fix typecheck security test shellcheck ci clean help version bump-patch bump-minor bump-major
 
 # Default target
 help:
@@ -16,6 +16,7 @@ help:
 	@echo "  clean        - Clean generated files"
 	@echo ""
 	@echo "Version Management:"
+	@echo "  version      - Show current version and version files"
 	@echo "  bump-patch   - Bump patch version (0.0.X)"
 	@echo "  bump-minor   - Bump minor version (0.X.0)"
 	@echo "  bump-major   - Bump major version (X.0.0)"
@@ -68,6 +69,15 @@ clean:
 	rm -rf .pytest_cache .mypy_cache .ruff_cache .coverage coverage.xml htmlcov/
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+
+# Show current version and version files
+version:
+	@VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
+	echo "Version: $$VERSION" && \
+	echo "" && \
+	echo "Locations:" && \
+	echo "  pyproject.toml:3   - version = \"$$VERSION\"" && \
+	echo "  pyproject.toml:79  - current_version = \"$$VERSION\" (bump-my-version)"
 
 # Version management with bump-my-version
 bump-patch:
