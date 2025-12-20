@@ -4,14 +4,26 @@ All notable changes to the claude-spec plugin will be documented in this file.
 
 ## [Unreleased]
 
+### Removed
+- **Memory System**: Removed entire `memory/` module (Git-native memory with semantic search)
+  - Removed commands: `/remember`, `/recall`, `/context`, `/memory`
+  - Removed dependencies: `sentence-transformers`, `sqlite-vec`
+  - Memory functionality being replaced by external system
+- **Hook System**: Removed all lifecycle hooks
+  - Removed `hooks/` directory (session_start.py, command_detector.py, post_command.py, prompt_capture.py)
+  - Removed `hooks.json` registration
+  - Hooks being replaced by external system
+- **Prompt Capture**: Removed `/log` command and prompt capture functionality
+- **Code Review Commands**: Removed `/code-review` and `/code-fix` commands
+- **Memory Spec Projects**: Removed related completed spec documentation
+
 ### Changed
 - **Config File Rename**: `worktree-manager.config.json` → `claude-spec.config.json`
   - User config now at `~/.claude/claude-spec.config.json`
   - Default config moved from `skills/worktree-manager/config.template.json` to plugin root `./claude-spec.config.json`
   - Auto-migration: old config path is automatically renamed to new path on first load
   - Command keys updated: `cs:*` → `claude-spec:*` (e.g., `cs:c` → `claude-spec:complete`)
-- **Command Detection**: Updated `COMMAND_PATTERNS` to match new `/claude-spec:*` command format
-- **Added lifecycle entries** for memory commands and code review commands
+- **Simplified Architecture**: Plugin now focuses on Commands, Filters, and Worktree Manager only
 
 ## [1.1.0] - 2025-12-13
 

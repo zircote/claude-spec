@@ -1,7 +1,7 @@
 {
   "name": "claude-spec",
-  "version": "1.2.1",
-  "description": "Project specification and implementation lifecycle management with pre/post steps",
+  "version": "2.0.0",
+  "description": "Project specification and implementation lifecycle management",
   "author": {
     "name": "Claude Spec Contributors"
   },
@@ -11,19 +11,11 @@
     "planning",
     "specification",
     "worktree",
-    "prompt-capture",
     "implementation-tracking"
   ],
   "commands": [
-    "./commands/code-fix.md",
-    "./commands/code-review.md",
     "./commands/complete.md",
     "./commands/implement.md",
-    "./commands/log.md",
-    "./commands/memory-context.md",
-    "./commands/memory-recall.md",
-    "./commands/memory-remember.md",
-    "./commands/memory.md",
     "./commands/plan.md",
     "./commands/status.md",
     "./commands/worktree-cleanup.md",

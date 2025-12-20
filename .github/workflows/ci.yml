@@ -36,10 +36,10 @@ jobs:
         run: uv run ruff check .
 
       - name: Type check
-        run: uv run mypy filters/ hooks/ analyzers/ memory/ steps/ utils/
+        run: uv run mypy filters/ analyzers/ steps/
 
       - name: Security scan
-        run: uv run bandit -r filters/ hooks/ analyzers/ memory/ steps/ utils/ -ll
+        run: uv run bandit -r filters/ analyzers/ steps/ -ll
 
   shellcheck:
     name: Shell Script Lint
@@ -71,7 +71,7 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run tests with coverage
-        run: uv run pytest --cov=filters --cov=hooks --cov=analyzers --cov=memory --cov=steps --cov=utils --cov-report=term-missing --cov-report=xml -v
+        run: uv run pytest --cov=filters --cov=analyzers --cov=steps --cov-report=term-missing --cov-report=xml -v
 
       - name: Upload coverage
         if: matrix.python-version == '3.11'

@@ -26,7 +26,7 @@ Thank you for your interest in contributing to claude-spec! This document provid
 
 - **Claude Code CLI** — Install from [claude.ai/code](https://claude.ai/code)
 - **Git** — Version 2.20+
-- **Python 3.8+** — For hooks and filters
+- **Python 3.8+** — For filters and analyzers
 - **jq** — For shell script JSON processing (`brew install jq`)
 
 ### Fork and Clone
@@ -67,39 +67,39 @@ claude-spec/
 ├── .claude-plugin/               # Root marketplace configuration
 │   └── marketplace.json
 │
-├── plugins/cs/                   # Main plugin directory
-│   ├── .claude-plugin/
-│   │   └── plugin.json           # Plugin metadata
-│   │
-│   ├── hooks/                    # Event handlers
-│   │   ├── hooks.json            # Hook registration
-│   │   └── prompt_capture.py     # Main hook implementation
-│   │
-│   ├── filters/                  # Content processing
-│   │   ├── __init__.py
-│   │   ├── pipeline.py           # Secret detection & filtering
-│   │   ├── log_entry.py          # Log entry schema
-│   │   └── log_writer.py         # Atomic file operations
-│   │
-│   ├── commands/                 # Slash commands
-│   │   ├── p.md                  # /p - Planning
-│   │   ├── i.md                  # /i - Implementation
-│   │   ├── s.md                  # /s - Status
-│   │   ├── c.md                  # /c - Close-out
-│   │   ├── log.md                # /log - Logging control
-│   │   ├── migrate.md            # /migrate - Migration
-│   │   └── wt/                   # Worktree subcommands
-│   │       ├── create.md
-│   │       ├── status.md
-│   │       └── cleanup.md
-│   │
-│   ├── skills/                   # Skills (invokable behaviors)
-│   │   └── worktree-manager/
-│   │       ├── SKILL.md
-│   │       ├── config.json
-│   │       └── scripts/
-│   │
-│   └── templates/                # Project artifact templates
+├── .claude-plugin/               # Plugin metadata
+│   └── plugin.json
+│
+├── filters/                      # Content processing
+│   ├── __init__.py
+│   ├── pipeline.py               # Secret detection & filtering
+│   ├── log_entry.py              # Log entry schema
+│   └── log_writer.py             # Atomic file operations
+│
+├── analyzers/                    # Log analysis
+│   ├── log_analyzer.py           # Log file analysis
+│   └── analyze_cli.py            # CLI for retrospective analysis
+│
+├── commands/                     # Slash commands
+│   ├── plan.md                   # /plan - Planning
+│   ├── implement.md              # /implement - Implementation
+│   ├── status.md                 # /status - Status
+│   ├── complete.md               # /complete - Close-out
+│   ├── worktree-create.md        # /worktree-create
+│   ├── worktree-status.md        # /worktree-status
+│   ├── worktree-cleanup.md       # /worktree-cleanup
+│   └── worktree-setup.md         # /worktree-setup
+│
+├── skills/                       # Skills (invokable behaviors)
+│   └── worktree-manager/
+│       ├── SKILL.md
+│       ├── config.json
+│       └── scripts/
+│
+├── steps/                        # Pre/post step modules
+│   └── *.py
+│
+└── tests/                        # Test suite
 │
 └── docs/                         # Documentation
     └── ARCHITECTURE.md           # Technical architecture
@@ -154,7 +154,7 @@ Then create a Pull Request on GitHub.
 
 ## Coding Standards
 
-### Python (hooks, filters)
+### Python (filters, analyzers)
 
 ```python
 # Use type hints
@@ -187,7 +187,7 @@ SECRET_PATTERNS = [...]
 - Follow PEP 8
 - Use type hints throughout
 - Document functions with docstrings
-- Handle errors explicitly, don't fail silently in hooks
+- Handle errors explicitly, don't fail silently
 
 ### Markdown Commands
 
@@ -311,21 +311,6 @@ Variables:
 3. Walk through the full workflow:
    - Planning → Implementation → Status → Close-out
 4. Verify document generation and sync
-
-### Hook Testing
-
-Test the prompt capture hook:
-
-```bash
-# Simulate hook input
-echo '{"type":"UserPromptSubmit","prompt":"test prompt"}' | \
-  python3 plugins/cs/hooks/prompt_capture.py
-```
-
-Expected output:
-```json
-{"decision": "approve"}
-```
 
 ### Filter Testing
 

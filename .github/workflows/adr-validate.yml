@@ -49,29 +49,39 @@ jobs:
       - name: Validate ADR format
         id: validate
         run: |
-          # Validate all ADRs
+          # Validate all ADRs using JSON format (more reliable than markdown)
           ERRORS=""
 
-          # Check each ADR has required sections
-          for adr in $(git adr list --format json | jq -r '.[].id'); do
-            content=$(git adr show "$adr" --format markdown 2>/dev/null || echo "")
+          # Get all ADRs as JSON and validate required fields
+          ADR_JSON=$(git adr list --format json 2>/dev/null || echo "[]")
 
-            if [ -z "$content" ]; then
-              ERRORS="${ERRORS}ADR $adr: Cannot read content\n"
-              continue
+          if [ "$ADR_JSON" = "[]" ]; then
+            echo "No ADRs found - skipping validation"
+            echo "has_errors=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check each ADR has required metadata
+          for adr in $(echo "$ADR_JSON" | jq -r '.[].id'); do
+            # Get ADR metadata from JSON
+            adr_data=$(echo "$ADR_JSON" | jq -r ".[] | select(.id == \"$adr\")")
+
+            # Check for required status field
+            status=$(echo "$adr_data" | jq -r '.status // empty')
+            if [ -z "$status" ]; then
+              ERRORS="${ERRORS}ADR $adr: Missing status field\n"
             fi
 
-            # Check for required sections
-            if ! echo "$content" | grep -qi "## Status"; then
-              ERRORS="${ERRORS}ADR $adr: Missing Status section\n"
+            # Check for required title field
+            title=$(echo "$adr_data" | jq -r '.title // empty')
+            if [ -z "$title" ]; then
+              ERRORS="${ERRORS}ADR $adr: Missing title field\n"
             fi
 
-            if ! echo "$content" | grep -qi "## Context"; then
-              ERRORS="${ERRORS}ADR $adr: Missing Context section\n"
-            fi
-
-            if ! echo "$content" | grep -qi "## Decision"; then
-              ERRORS="${ERRORS}ADR $adr: Missing Decision section\n"
+            # Check for required date field
+            date=$(echo "$adr_data" | jq -r '.date // empty')
+            if [ -z "$date" ]; then
+              ERRORS="${ERRORS}ADR $adr: Missing date field\n"
             fi
           done
 

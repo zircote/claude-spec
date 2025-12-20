@@ -9,15 +9,12 @@ A comprehensive Claude Code plugin for project specification and implementation 
   - `/i` - Implementation progress tracking with document sync
   - `/s` - Portfolio and project status monitoring
   - `/c` - Project close-out and archival
-  - `/log` - Prompt capture toggle
   - `/migrate` - Migration from legacy `/arch:*` commands
 
 - **`/claude-spec:worktree-*` Worktree Commands** - Git worktree automation
   - `/claude-spec:worktree-create` - Create worktrees with Claude agents
   - `/claude-spec:worktree-status` - View worktree status
   - `/claude-spec:worktree-cleanup` - Clean up worktrees
-
-- **Prompt Capture** - Session logging for traceability and retrospectives
 
 - **Parallel Agent Orchestration** - Built-in directives for parallel specialist agent usage
 
@@ -94,15 +91,6 @@ Generates RETROSPECTIVE.md, archives to `docs/spec/completed/`.
 /claude-spec:worktree-cleanup feature/auth
 ```
 
-### Prompt Capture
-
-```
-/log on      # Enable prompt capture
-/log off     # Disable prompt capture
-/log status  # Check status
-/log show    # View captured prompts
-```
-
 ### Migration from /arch:*
 
 ```
@@ -145,8 +133,7 @@ docs/spec/
 │       ├── PROGRESS.md
 │       ├── DECISIONS.md
 │       ├── RESEARCH_NOTES.md
-│       ├── CHANGELOG.md
-│       └── .prompt-log-enabled
+│       └── CHANGELOG.md
 └── completed/        # Archived projects
     └── YYYY-MM-DD-slug/
         └── (same + RETROSPECTIVE.md)
@@ -156,7 +143,7 @@ docs/spec/
 
 - Claude Code CLI
 - Git (for worktree operations)
-- Python 3 (for hooks)
+- Python 3 (for filters and analyzers)
 - jq (for registry operations)
 - Terminal app (iTerm2, Ghostty, tmux, etc.)
 
