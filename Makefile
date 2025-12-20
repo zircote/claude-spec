@@ -1,4 +1,4 @@
-.PHONY: install format format-check lint lint-fix typecheck security test shellcheck ci clean help version bump-patch bump-minor bump-major
+.PHONY: install format format-check lint lint-fix typecheck security test shellcheck ci clean help version bump-patch bump-minor bump-major release
 
 # Default target
 help:
@@ -20,6 +20,7 @@ help:
 	@echo "  bump-patch   - Bump patch version (0.0.X)"
 	@echo "  bump-minor   - Bump minor version (0.X.0)"
 	@echo "  bump-major   - Bump major version (X.0.0)"
+	@echo "  release      - Create and push release tag (bumps if tag exists)"
 
 # Install dependencies (including dev tools: ruff, mypy, pytest, etc.)
 install:
@@ -88,3 +89,20 @@ bump-minor:
 
 bump-major:
 	uv run bump-my-version bump major
+
+# Create release: check if tag exists, bump if needed, push tag
+release:
+	@VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
+	TAG="v$$VERSION" && \
+	if git rev-parse "$$TAG" >/dev/null 2>&1; then \
+		echo "Tag $$TAG already exists. Bumping patch version..." && \
+		uv run bump-my-version bump patch && \
+		VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
+		TAG="v$$VERSION"; \
+	fi && \
+	echo "Creating release $$TAG..." && \
+	git tag -a "$$TAG" -m "Release $$TAG" && \
+	git push origin "$$TAG" && \
+	echo "" && \
+	echo "Release $$TAG pushed successfully!" && \
+	echo "GitHub Actions will create the release automatically."
