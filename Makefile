@@ -1,4 +1,4 @@
-.PHONY: install format format-check lint lint-fix typecheck security test shellcheck ci clean help
+.PHONY: install format format-check lint lint-fix typecheck security test shellcheck ci clean help bump-patch bump-minor bump-major
 
 # Default target
 help:
@@ -14,6 +14,11 @@ help:
 	@echo "  shellcheck   - Lint shell scripts"
 	@echo "  ci           - Run all CI checks (mirrors GitHub Actions)"
 	@echo "  clean        - Clean generated files"
+	@echo ""
+	@echo "Version Management:"
+	@echo "  bump-patch   - Bump patch version (0.0.X)"
+	@echo "  bump-minor   - Bump minor version (0.X.0)"
+	@echo "  bump-major   - Bump major version (X.0.0)"
 
 # Install dependencies (including dev tools: ruff, mypy, pytest, etc.)
 install:
@@ -63,3 +68,13 @@ clean:
 	rm -rf .pytest_cache .mypy_cache .ruff_cache .coverage coverage.xml htmlcov/
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+
+# Version management with bump-my-version
+bump-patch:
+	uv run bump-my-version bump patch
+
+bump-minor:
+	uv run bump-my-version bump minor
+
+bump-major:
+	uv run bump-my-version bump major
