@@ -1,4 +1,4 @@
-.PHONY: install format format-check lint lint-fix typecheck security test shellcheck ci clean help bump-patch bump-minor bump-major
+.PHONY: install format format-check lint lint-fix typecheck security test shellcheck ci clean help version bump-patch bump-minor bump-major release
 
 # Default target
 help:
@@ -16,9 +16,11 @@ help:
 	@echo "  clean        - Clean generated files"
 	@echo ""
 	@echo "Version Management:"
+	@echo "  version      - Show current version and version files"
 	@echo "  bump-patch   - Bump patch version (0.0.X)"
 	@echo "  bump-minor   - Bump minor version (0.X.0)"
 	@echo "  bump-major   - Bump major version (X.0.0)"
+	@echo "  release      - Create and push release tag (bumps if tag exists)"
 
 # Install dependencies (including dev tools: ruff, mypy, pytest, etc.)
 install:
@@ -69,6 +71,15 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
 
+# Show current version and version files
+version:
+	@VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
+	echo "Version: $$VERSION" && \
+	echo "" && \
+	echo "Locations:" && \
+	echo "  pyproject.toml:3   - version = \"$$VERSION\"" && \
+	echo "  pyproject.toml:79  - current_version = \"$$VERSION\" (bump-my-version)"
+
 # Version management with bump-my-version
 bump-patch:
 	uv run bump-my-version bump patch
@@ -78,3 +89,22 @@ bump-minor:
 
 bump-major:
 	uv run bump-my-version bump major
+
+# Create release: check if tag exists, bump until unused tag found, push tag
+release:
+	@VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
+	TAG="v$$VERSION" && \
+	while git rev-parse "$$TAG" >/dev/null 2>&1; do \
+		echo "Tag $$TAG already exists. Bumping patch version..." && \
+		uv run bump-my-version bump patch --no-tag --no-commit && \
+		VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
+		TAG="v$$VERSION"; \
+	done && \
+	echo "Creating release $$TAG..." && \
+	git add pyproject.toml && \
+	git commit -m "chore: bump version to $$TAG" && \
+	git tag -a "$$TAG" -m "Release $$TAG" && \
+	git push origin HEAD "$$TAG" && \
+	echo "" && \
+	echo "Release $$TAG pushed successfully!" && \
+	echo "GitHub Actions will create the release automatically."
