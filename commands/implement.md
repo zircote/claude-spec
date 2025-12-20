@@ -558,9 +558,6 @@ Step 3: CI Validation
     ✓ pytest: 47 passed (2 new tests)
 
 Quality gate passed. Marking Task 2.3 complete.
-
-Memory captured:
-  ✓ review:abc123d:1702560000 - "Input validation pattern for capture"
 ```
 </quality_gate>
 
@@ -697,7 +694,7 @@ Documentation gate passed. Proceeding to project completion.
 </documentation_gate>
 
 <artifact_verification>
-### 🚨 Artifact Verification Gate (CRITICAL)
+### Artifact Verification Gate (CRITICAL)
 
 **NEVER TRUST CLAIMS. ALWAYS VERIFY.**
 
@@ -726,7 +723,7 @@ From subagent response, identify:
 # For each claimed file, verify it exists
 for file in ${CLAIMED_FILES}; do
   if [ ! -f "$file" ]; then
-    echo "🚨 RED ALERT: Claimed file does not exist: $file"
+    echo "RED ALERT: Claimed file does not exist: $file"
     VERIFICATION_FAILED=true
   fi
 done
@@ -737,13 +734,13 @@ done
 ```bash
 # Check file is not empty
 if [ ! -s "$file" ]; then
-  echo "🚨 RED ALERT: File exists but is empty: $file"
+  echo "RED ALERT: File exists but is empty: $file"
   VERIFICATION_FAILED=true
 fi
 
 # Check for stub/placeholder content
 if grep -q "TODO\|PLACEHOLDER\|NotImplemented\|pass$" "$file"; then
-  echo "⚠️ WARNING: File contains stub content: $file"
+  echo "WARNING: File contains stub content: $file"
 fi
 ```
 
@@ -753,7 +750,7 @@ fi
 # If file claimed to be modified, verify it has uncommitted changes
 git diff --name-only | grep -q "$file"
 if [ $? -ne 0 ]; then
-  echo "🚨 RED ALERT: File claimed modified but no changes: $file"
+  echo "RED ALERT: File claimed modified but no changes: $file"
   VERIFICATION_FAILED=true
 fi
 ```
@@ -766,7 +763,7 @@ if [[ "$file" == *test* ]]; then
   # Run the specific test file
   pytest "$file" --collect-only 2>/dev/null
   if [ $? -ne 0 ]; then
-    echo "🚨 RED ALERT: Test file does not run: $file"
+    echo "RED ALERT: Test file does not run: $file"
     VERIFICATION_FAILED=true
   fi
 fi
@@ -794,7 +791,7 @@ IF VERIFICATION_PASSES:
 When artifacts are missing but claimed complete:
 
 ```
-🚨 RED ALERT: ARTIFACT VERIFICATION FAILED
+RED ALERT: ARTIFACT VERIFICATION FAILED
 
 Subagent claimed completion but artifacts do not exist:
   - Missing: src/components/NewFeature.tsx
@@ -834,7 +831,7 @@ Before accepting ANY subagent work:
 [Verification gate runs]
 Verifying claimed artifacts...
   ✓ src/auth/handler.py exists (245 lines)
-  🚨 tests/test_auth.py DOES NOT EXIST
+  RED ALERT: tests/test_auth.py DOES NOT EXIST
   ✓ docs/auth.md exists (but only 2 lines - stub)
 
 RED ALERT: Verification failed
