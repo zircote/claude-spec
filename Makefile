@@ -90,21 +90,17 @@ bump-minor:
 bump-major:
 	uv run bump-my-version bump major
 
-# Create release: check if tag exists, bump until unused tag found, push tag
+# Create release: if current version tag exists, bump patch and release
 release:
 	@VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
 	TAG="v$$VERSION" && \
-	while git rev-parse "$$TAG" >/dev/null 2>&1; do \
-		echo "Tag $$TAG already exists. Bumping patch version..." && \
-		uv run bump-my-version bump patch --no-tag --no-commit && \
-		VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
-		TAG="v$$VERSION"; \
-	done && \
+	if git rev-parse "$$TAG" >/dev/null 2>&1; then \
+		echo "Tag $$TAG already exists. Run 'make bump-patch' first, then 'make release'." && \
+		exit 1; \
+	fi && \
 	echo "Creating release $$TAG..." && \
-	git add pyproject.toml && \
-	git commit -m "chore: bump version to $$TAG" && \
 	git tag -a "$$TAG" -m "Release $$TAG" && \
-	git push origin HEAD "$$TAG" && \
+	git push origin "$$TAG" && \
 	echo "" && \
 	echo "Release $$TAG pushed successfully!" && \
 	echo "GitHub Actions will create the release automatically."
