@@ -90,8 +90,8 @@ bump-minor:
 bump-major:
 	uv run bump-my-version bump major
 
-# Create release: if current version tag exists, bump patch and release
-release:
+# Create release: run CI checks, then if current version tag exists, bump patch and release
+release: ci
 	@VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
 	TAG="v$$VERSION" && \
 	if git rev-parse "$$TAG" >/dev/null 2>&1; then \
