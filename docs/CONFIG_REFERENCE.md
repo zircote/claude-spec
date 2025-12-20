@@ -134,7 +134,14 @@ Each command can have `preSteps` and `postSteps` arrays:
 | `claude-spec:complete` | `/claude-spec:complete` |
 | `claude-spec:implement` | `/claude-spec:implement` |
 | `claude-spec:status` | `/claude-spec:status` |
+| `claude-spec:log` | `/claude-spec:log` |
 | `claude-spec:worktree` | `/claude-spec:worktree-*` |
+| `claude-spec:memory-remember` | `/claude-spec:memory-remember` |
+| `claude-spec:memory-recall` | `/claude-spec:memory-recall` |
+| `claude-spec:memory-context` | `/claude-spec:memory-context` |
+| `claude-spec:memory` | `/claude-spec:memory` |
+| `claude-spec:code-review` | `/claude-spec:code-review` |
+| `claude-spec:code-fix` | `/claude-spec:code-fix` |
 
 ## Available Steps
 
@@ -236,7 +243,7 @@ Only override what you need:
 
 ## Configuration Loading
 
-The config loader implements:
+The config loader (`hooks/lib/config_loader.py`) implements:
 
 1. **User Config Check**: Look for `~/.claude/claude-spec.config.json`
 2. **Auto-Migration**: If old path exists (`~/.claude/worktree-manager.config.json`), rename to new path
