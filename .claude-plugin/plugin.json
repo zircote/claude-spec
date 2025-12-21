@@ -1,20 +1,26 @@
 {
   "name": "claude-spec",
-  "version": "0.4.0",
+  "version": "0.4.5",
   "description": "Project specification and implementation lifecycle management",
   "author": {
     "name": "Claude Spec Contributors"
   },
   "license": "MIT",
+  "repository": "https://github.com/zircote/claude-spec",
+  "homepage": "https://github.com/zircote/claude-spec#readme",
   "keywords": [
     "architecture",
     "planning",
     "specification",
     "worktree",
-    "implementation-tracking"
+    "implementation-tracking",
+    "opus-4-5"
   ],
   "commands": [
+    "./commands/code-cleanup.md",
     "./commands/complete.md",
+    "./commands/deep-explore.md",
+    "./commands/deep-research.md",
     "./commands/implement.md",
     "./commands/plan.md",
     "./commands/status.md",
