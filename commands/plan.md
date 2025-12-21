@@ -12,6 +12,67 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, WebSearch, WebFetch, T
 
 **DO NOT read the project seed. DO NOT start problem-solving. Execute these steps FIRST:**
 
+<context_override_prohibition>
+### 🚨 CRITICAL: Protocol Takes Precedence Over Session Context
+
+**Prior session context does NOT override this protocol.**
+
+Even if:
+- A previous session said "no worktree needed"
+- The user previously indicated branch preferences
+- Earlier in this conversation a different approach was discussed
+- Memory context suggests an alternative workflow
+
+**These instructions MUST be followed exactly as written.**
+
+If a genuine conflict exists between protocol and user context:
+1. **DO NOT** make unilateral decisions to skip protocol steps
+2. **USE AskUserQuestion** to explicitly ask the user
+3. **Document** the deviation in the planning artifacts if user approves override
+
+**Violations of this rule are protocol failures, regardless of justification.**
+</context_override_prohibition>
+
+### Step 0: Parse Argument Type
+
+Before checking the branch, classify the argument to determine the appropriate workflow:
+
+```bash
+ARG="$ARGUMENTS"
+
+if [ -f "$ARG" ]; then
+  ARG_TYPE="existing_file"
+  echo "ARG_TYPE=existing_file"
+  echo "FILE_PATH=${ARG}"
+elif [[ "$ARG" =~ ^docs/spec/ ]] || [[ "$ARG" =~ ^SPEC-[0-9]{4} ]]; then
+  ARG_TYPE="project_reference"
+  echo "ARG_TYPE=project_reference"
+  echo "PROJECT_REF=${ARG}"
+else
+  ARG_TYPE="new_seed"
+  echo "ARG_TYPE=new_seed"
+fi
+```
+
+**Argument Type Decision Gate:**
+
+```
+IF ARG_TYPE == "existing_file":
+  → This is an EXISTING plan file being passed
+  → PROCEED to <migration_protocol> section
+  → DO NOT create new worktree or project scaffold
+  → DO NOT treat file contents as a new project seed
+
+IF ARG_TYPE == "project_reference":
+  → This references an existing spec project
+  → REDIRECT to /claude-spec:implement or /claude-spec:status
+  → DO NOT create new project
+
+IF ARG_TYPE == "new_seed":
+  → This is a new project idea (default behavior)
+  → PROCEED to Step 1: Check Current Branch
+```
+
 ### Step 1: Check Current Branch
 ```bash
 BRANCH=$(git branch --show-current 2>/dev/null || echo "NO_GIT")
@@ -478,6 +539,124 @@ worktree:
 ```
 
 </worktree_enforcement>
+
+<migration_protocol>
+## Plan File Migration Protocol
+
+**Triggered when**: `ARG_TYPE == "existing_file"` (Step 0 detected a file path argument)
+
+When the user passes an existing plan file to `/claude-spec:plan`, this is a **migration request**, not a new project seed.
+
+### Migration Workflow
+
+1. **Read the existing plan file** to understand its contents
+2. **Ask user how to proceed** using AskUserQuestion:
+
+```
+Use AskUserQuestion with:
+  header: "Migration"
+  question: "I detected an existing plan file. How would you like to proceed?"
+  multiSelect: false
+  options:
+    - label: "Migrate to spec structure"
+      description: "Create formal spec documents from this plan in docs/spec/active/"
+    - label: "Resume planning"
+      description: "Continue developing this plan where it left off"
+    - label: "Review only"
+      description: "Just review and summarize the plan contents"
+    - label: "Start fresh"
+      description: "Use this as inspiration for a new project (creates new worktree)"
+```
+
+### Migration to Spec Structure
+
+When user selects "Migrate to spec structure":
+
+1. **Parse the existing plan** for:
+   - Project name and description
+   - Requirements (functional and non-functional)
+   - Architecture decisions
+   - Implementation phases/tasks
+   - Research findings
+
+2. **Generate project identifiers**:
+   ```bash
+   DATE=$(date +%Y-%m-%d)
+   SLUG=[derive-from-plan-title]
+   PROJECT_ID="SPEC-${DATE}-001"
+   ```
+
+3. **Create spec directory structure**:
+   ```bash
+   mkdir -p "docs/spec/active/${DATE}-${SLUG}"
+   ```
+
+4. **Generate formal documents** by transforming plan content into:
+   - `README.md` - Project metadata
+   - `REQUIREMENTS.md` - PRD format
+   - `ARCHITECTURE.md` - Technical design
+   - `IMPLEMENTATION_PLAN.md` - Phased tasks
+   - `DECISIONS.md` - ADRs from plan decisions
+   - `CHANGELOG.md` - Record migration
+
+5. **Record migration in CHANGELOG.md**:
+   ```markdown
+   ## [1.0.0] - ${DATE}
+
+   ### Added
+   - Initial project specification created
+   - Migrated from informal plan at `${ORIGINAL_FILE_PATH}`
+   ```
+
+6. **Update CLAUDE.md** if exists with new active project
+
+### Key Differences from New Project Flow
+
+| Aspect | New Project | Migration |
+|--------|-------------|-----------|
+| Worktree | Create if on protected branch | Optional (user choice) |
+| Elicitation | Full Socratic questioning | Skip - extract from existing plan |
+| Research | Parallel subagents | Skip unless gaps identified |
+| Documents | Generate from scratch | Transform existing content |
+
+### Post-Migration Actions
+
+After migration is complete:
+
+1. **Show migration summary**:
+   ```
+   Migration complete!
+
+   Source: ${ORIGINAL_FILE_PATH}
+   Destination: docs/spec/active/${DATE}-${SLUG}/
+
+   Documents created:
+   - README.md (project metadata)
+   - REQUIREMENTS.md (PRD)
+   - ARCHITECTURE.md (technical design)
+   - IMPLEMENTATION_PLAN.md (phased tasks)
+   - DECISIONS.md (ADRs)
+   - CHANGELOG.md (history)
+
+   **Next step**: Review the migrated documents and run `/claude-spec:implement` when ready.
+   ```
+
+2. **Offer to delete or archive original**:
+   ```
+   Use AskUserQuestion with:
+     header: "Cleanup"
+     question: "What would you like to do with the original plan file?"
+     multiSelect: false
+     options:
+       - label: "Keep both"
+         description: "Leave the original file as-is"
+       - label: "Archive original"
+         description: "Move to docs/spec/archive/"
+       - label: "Delete original"
+         description: "Remove the original file (spec docs are the source of truth now)"
+   ```
+
+</migration_protocol>
 
 <initialization_protocol>
 ## Phase 0: Project Initialization (think)
