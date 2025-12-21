@@ -24,3 +24,12 @@ summary: '...for skills/agents''}, {''content'': ''Consult claude-code-guide for
 ---
 
 ...for skills/agents'}, {'content': 'Consult claude-code-guide for best practices', 'status': 'completed', 'activeForm': 'Consulting documentation'}, {'content': 'Provide comprehensive remediation...
+
+---
+type: progress
+timestamp: '2025-12-21T05:12:02.843225+00:00'
+summary: '...`lib/` subdirectory. This suggests the hooks were removed as mentioned
+  in the CLAUDE.md recent co'
+---
+
+...`lib/` subdirectory. This suggests the hooks were removed as mentioned in the CLAUDE.md recent completed spec project: "Remove Memory and Hook Components". So there\'s no hooks configuration to add...
