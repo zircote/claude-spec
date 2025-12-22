@@ -17,3 +17,23 @@ Add a new `/claude-spec:approve` command that:
 
 1. **Displays a plan summary** for final review
 2....
+
+---
+type: progress
+timestamp: '2025-12-22T23:21:22.001221+00:00'
+summary: '...continue work'
+tags:
+- auto-captured
+- post-tool-use
+- file:self-fix-issue-body.md
+---
+
+...continue work
+
+This friction means obvious bugs often go unreported or unfixed.
+
+## Proposed Solution
+
+Add a `/claude-spec:bugfix` command (or skill) that enables self-healing by:
+
+1. Detecting...
