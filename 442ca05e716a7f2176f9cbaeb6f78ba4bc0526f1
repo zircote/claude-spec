@@ -37,3 +37,28 @@ This friction means obvious bugs often go unreported or unfixed.
 Add a `/claude-spec:bugfix` command (or skill) that enables self-healing by:
 
 1. Detecting...
+
+---
+type: progress
+timestamp: '2025-12-22T23:21:22.024566+00:00'
+summary: '...|'
+tags:
+- auto-captured
+- post-tool-use
+- file:self-fix-issue-body.md
+---
+
+...|
+        v
+[Return to original project context]
+        |
+        v
+Continue working (with workaround if needed)
+```
+
+## Implementation Details
+
+### Step 1: Locate Plugin Source
+
+```bash
+# Find...
