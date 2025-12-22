@@ -62,3 +62,24 @@ Continue working (with workaround if needed)
 
 ```bash
 # Find...
+
+---
+type: progress
+timestamp: '2025-12-22T23:21:22.048601+00:00'
+summary: '.../claude-spec:bugfix*"'
+tags:
+- auto-captured
+- post-tool-use
+- file:self-fix-issue-body.md
+---
+
+.../claude-spec:bugfix*"
+```
+
+### Step 5: Return to Context
+
+- Report PR URL to user
+- Suggest workaround if fix isn't immediately available
+- Optionally apply local patch while PR is pending
+
+## Acceptance...
