@@ -4,6 +4,13 @@ All notable changes to the claude-spec plugin will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **plan.md**: Normalize relative file paths to absolute before worktree context switch
+- **plan.md**: Update PROJECT_ID regex to match full format `SPEC-YYYY-MM-DD-SEQ`
+- **plan.md**: Clarify worktree creation is conditional on user selecting "Start fresh"
+- **plan.md**: Replace invalid placeholder `[derive-from-plan-title]` with bash function call
+- **plan.md**: Add sequence number increment logic for same-date project creation
+
 ### Removed
 - **Memory System**: Removed entire `memory/` module (Git-native memory with semantic search)
   - Removed commands: `/remember`, `/recall`, `/context`, `/memory`
