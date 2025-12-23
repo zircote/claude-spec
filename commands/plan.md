@@ -41,10 +41,14 @@ Before checking the branch, classify the argument to determine the appropriate w
 ARG="$ARGUMENTS"
 
 if [ -f "$ARG" ]; then
+  # Normalize file path to an absolute path so it remains valid across worktrees
+  if [ "${ARG#/}" = "$ARG" ]; then
+    ARG="$(cd "$(dirname "$ARG")" && pwd)/$(basename "$ARG")"
+  fi
   ARG_TYPE="existing_file"
   echo "ARG_TYPE=existing_file"
   echo "FILE_PATH=${ARG}"
-elif [[ "$ARG" =~ ^docs/spec/ ]] || [[ "$ARG" =~ ^SPEC-[0-9]{4} ]]; then
+elif [[ "$ARG" =~ ^docs/spec/ ]] || [[ "$ARG" =~ ^SPEC-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{3}$ ]]; then
   ARG_TYPE="project_reference"
   echo "ARG_TYPE=project_reference"
   echo "PROJECT_REF=${ARG}"
@@ -60,7 +64,7 @@ fi
 IF ARG_TYPE == "existing_file":
   → This is an EXISTING plan file being passed
   → PROCEED to <migration_protocol> section
-  → DO NOT create new worktree or project scaffold
+  → DO NOT create new project scaffold or new worktree unless user selects "Start fresh" option
   → DO NOT treat file contents as a new project seed
 
 IF ARG_TYPE == "project_reference":
@@ -582,13 +586,33 @@ When user selects "Migrate to spec structure":
 2. **Generate project identifiers**:
    ```bash
    DATE=$(date +%Y-%m-%d)
-   SLUG=[derive-from-plan-title]
-   PROJECT_ID="SPEC-${DATE}-001"
+   BASE_ID="SPEC-${DATE}"
+
+   # Derive a URL/filename-safe slug from the plan title (implementation-specific)
+   SLUG=$(derive_slug_from_plan_title)
+
+   # Determine next available sequence number for this DATE (SPEC-[YYYY]-[MM]-[DD]-[SEQ])
+   if [ -d "docs/spec/active" ]; then
+     LAST_SEQ=$(
+       find "docs/spec/active" -maxdepth 1 -type d -name "${BASE_ID}-[0-9][0-9][0-9]-*" 2>/dev/null \
+       | sed -E "s|.*/${BASE_ID}-([0-9]{3})-.*|\1|" \
+       | sort \
+       | tail -n 1
+     )
+   fi
+
+   if [ -z "${LAST_SEQ:-}" ]; then
+     SEQ="001"
+   else
+     SEQ=$(printf "%03d" $((10#${LAST_SEQ} + 1)))
+   fi
+
+   PROJECT_ID="${BASE_ID}-${SEQ}"
    ```
 
 3. **Create spec directory structure**:
    ```bash
-   mkdir -p "docs/spec/active/${DATE}-${SLUG}"
+   mkdir -p "docs/spec/active/${PROJECT_ID}-${SLUG}"
    ```
 
 4. **Generate formal documents** by transforming plan content into:
