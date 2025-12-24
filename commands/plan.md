@@ -79,7 +79,11 @@ Before checking the branch, classify the argument to determine the appropriate w
 ```bash
 ARG="$ARGUMENTS"
 
-if [ -f "$ARG" ]; then
+# Check for no arguments FIRST (triggers GitHub Issues workflow)
+if [ -z "$ARG" ]; then
+  ARG_TYPE="no_args"
+  echo "ARG_TYPE=no_args"
+elif [ -f "$ARG" ]; then
   # Normalize file path to an absolute path so it remains valid across worktrees
   if [ "${ARG#/}" = "$ARG" ]; then
     ARG="$(cd "$(dirname "$ARG")" && pwd)/$(basename "$ARG")"
@@ -100,6 +104,12 @@ fi
 **Argument Type Decision Gate:**
 
 ```
+IF ARG_TYPE == "no_args":
+  → No arguments provided - trigger GitHub Issues workflow
+  → PROCEED to <github_issues_workflow> section
+  → Fetch issues from current repository and let user select
+  → DO NOT proceed with standard planning flow
+
 IF ARG_TYPE == "existing_file":
   → This is an EXISTING plan file being passed
   → PROCEED to <migration_protocol> section
@@ -720,6 +730,680 @@ After migration is complete:
    ```
 
 </migration_protocol>
+
+<github_issues_workflow>
+## GitHub Issues Workflow
+
+**Triggered when**: `ARG_TYPE == "no_args"` (Step 0 detected no arguments provided)
+
+When the user runs `/claude-spec:plan` with no arguments, this workflow fetches GitHub issues from the current repository, allows selection, creates worktrees, and evaluates completeness.
+
+### Prerequisites Check
+
+**Execute these checks IMMEDIATELY when entering this workflow:**
+
+```bash
+# Step 1: Check gh CLI installed
+if ! command -v gh &>/dev/null; then
+  echo "GH_STATUS=not_installed"
+else
+  echo "GH_STATUS=installed"
+fi
+
+# Step 2: Check authentication status
+if ! gh auth status &>/dev/null 2>&1; then
+  echo "GH_AUTH=not_authenticated"
+else
+  echo "GH_AUTH=authenticated"
+fi
+
+# Step 3: Get repository info
+REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null)
+if [ -z "$REPO" ]; then
+  echo "GH_REPO=not_found"
+else
+  echo "GH_REPO=$REPO"
+fi
+```
+
+**Prerequisites Decision Gate:**
+
+```
+IF GH_STATUS == "not_installed":
+  → Display error message:
+    "❌ GitHub CLI (`gh`) is not installed.
+
+    Install it from https://cli.github.com/ or via:
+    - macOS: brew install gh
+    - Ubuntu: sudo apt install gh
+    - Windows: winget install GitHub.cli
+
+    After installing, run: gh auth login"
+  → STOP - Cannot proceed without gh CLI
+
+IF GH_AUTH == "not_authenticated":
+  → Display error message:
+    "❌ GitHub CLI is not authenticated.
+
+    Run: gh auth login
+
+    This will open a browser to authenticate with your GitHub account."
+  → STOP - Cannot proceed without authentication
+
+IF GH_REPO == "not_found":
+  → Display error message:
+    "❌ Not in a GitHub repository or no remote configured.
+
+    Ensure you are in a git repository with a GitHub remote.
+    Check with: git remote -v
+
+    If no remote exists, add one with:
+    git remote add origin https://github.com/owner/repo.git"
+  → STOP - Cannot proceed without repository
+
+IF all checks pass:
+  → Store REPO for subsequent operations
+  → PROCEED to Filter Selection
+```
+
+**On any failure:** Display the specific error message and halt. Do NOT proceed to issue fetching.
+
+### Filter Selection (Optional)
+
+Before fetching issues, optionally filter by labels or assignee:
+
+```
+Use AskUserQuestion with:
+  header: "Filters"
+  question: "Would you like to filter issues?"
+  multiSelect: false
+  options:
+    - label: "All open issues"
+      description: "Show all open issues in the repository"
+    - label: "Filter by labels"
+      description: "Only show issues with specific labels (bug, enhancement, etc.)"
+    - label: "Assigned to me"
+      description: "Only show issues assigned to your GitHub account"
+    - label: "Filter by labels + assigned to me"
+      description: "Combine both filters"
+```
+
+**If user selects "Filter by labels" or "Filter by labels + assigned to me":**
+
+First, fetch available labels from the repository:
+
+```bash
+# Get repository labels
+LABELS_JSON=$(gh label list --repo "$REPO" --json name,description --limit 50)
+```
+
+Then present label selection:
+
+```
+Use AskUserQuestion with:
+  header: "Labels"
+  question: "Select labels to filter by:"
+  multiSelect: true
+  options:
+    - label: "[label.name]"
+      description: "[label.description or 'No description']"
+    ... (repeat for each label, max 4 per question)
+```
+
+Common labels to show first (if they exist):
+- `bug` - Bug reports
+- `enhancement` / `feature` - Feature requests
+- `documentation` / `docs` - Documentation changes
+- `good first issue` - Beginner-friendly issues
+- `help wanted` - Issues seeking contributors
+
+Store the selected labels as comma-separated `LABEL_FILTER`.
+
+**If user selects "Assigned to me":**
+Set `ASSIGNEE_FILTER="@me"`
+
+### Issue Fetching
+
+Fetch open issues from the repository based on filter selection:
+
+```bash
+# Build the gh issue list command based on filters
+GH_CMD="gh issue list --repo \"$REPO\" --state open --json number,title,labels,assignees,body,url --limit 30"
+
+# Add label filters if specified (comma-separated list from user)
+# Example: LABEL_FILTER="bug,enhancement"
+if [ -n "${LABEL_FILTER:-}" ]; then
+  IFS=',' read -ra LABELS <<< "$LABEL_FILTER"
+  for label in "${LABELS[@]}"; do
+    GH_CMD+=" --label \"$label\""
+  done
+fi
+
+# Add assignee filter if specified
+# ASSIGNEE_FILTER="@me" or specific username
+if [ -n "${ASSIGNEE_FILTER:-}" ]; then
+  GH_CMD+=" --assignee \"$ASSIGNEE_FILTER\""
+fi
+
+# Execute and capture output
+ISSUES_JSON=$(eval "$GH_CMD")
+ISSUE_COUNT=$(echo "$ISSUES_JSON" | jq 'length')
+
+echo "ISSUE_COUNT=$ISSUE_COUNT"
+```
+
+**Issue Fetch Decision Gate:**
+
+```
+IF ISSUE_COUNT == 0:
+  → Display message:
+    "No open issues found matching your filters.
+
+    Options:
+    - Try with different filters
+    - Create a new issue on GitHub
+    - Run /claude-spec:plan with a project idea instead"
+  → Use AskUserQuestion to offer:
+    - "Try different filters" → Return to Filter Selection
+    - "Provide project idea" → Prompt for seed and proceed to standard planning
+    - "Exit" → STOP
+
+IF ISSUE_COUNT > 0:
+  → PROCEED to Issue Selection
+  → Display: "Found {ISSUE_COUNT} open issues"
+```
+
+### Issue Selection
+
+Transform fetched issues into AskUserQuestion format and present for multi-select:
+
+**Parse issues from JSON:**
+
+```bash
+# Extract issue data for presentation
+# Each issue has: number, title, labels, assignees, body, url
+for issue in $(echo "$ISSUES_JSON" | jq -c '.[]'); do
+  NUMBER=$(echo "$issue" | jq -r '.number')
+  TITLE=$(echo "$issue" | jq -r '.title')
+  LABELS=$(echo "$issue" | jq -r '[.labels[].name] | join(", ") // "none"')
+  ASSIGNEE=$(echo "$issue" | jq -r '.assignees[0].login // "Unassigned"')
+
+  # Truncate title if too long (max 60 chars for display)
+  if [ ${#TITLE} -gt 60 ]; then
+    TITLE="${TITLE:0:57}..."
+  fi
+
+  echo "ISSUE: #$NUMBER - $TITLE | Labels: $LABELS | Assignee: $ASSIGNEE"
+done
+```
+
+**Present issues via AskUserQuestion:**
+
+Since AskUserQuestion supports max 4 options per question, paginate if needed:
+
+```
+# First batch (issues 1-4)
+Use AskUserQuestion with:
+  header: "Issues (1/N)"
+  question: "Select issues to work on (batch 1 of N):"
+  multiSelect: true
+  options:
+    - label: "#42 - Fix authentication bug on mobile dev..."
+      description: "Labels: bug, security | Assignee: @johndoe"
+    - label: "#38 - Add dark mode support for user inter..."
+      description: "Labels: enhancement | Assignee: Unassigned"
+    - label: "#35 - Update API documentation for v2 endp..."
+      description: "Labels: documentation | Assignee: @janedoe"
+    - label: "#31 - Refactor payment processing module"
+      description: "Labels: chore, refactor | Assignee: @me"
+
+# Continue with subsequent batches if more than 4 issues...
+# Repeat for issues 5-8, 9-12, etc.
+```
+
+**Pagination Strategy:**
+
+```
+IF ISSUE_COUNT <= 4:
+  → Single AskUserQuestion call with all issues
+
+IF ISSUE_COUNT > 4 AND ISSUE_COUNT <= 8:
+  → Two AskUserQuestion calls
+  → Aggregate selections from both
+
+IF ISSUE_COUNT > 8:
+  → Multiple AskUserQuestion calls (batches of 4)
+  → Between batches, display: "You've selected N issues so far. Continue to next batch?"
+  → Option to stop early: "Done selecting" option in each batch after first
+```
+
+**Selection Validation:**
+
+```
+IF user selected 0 issues:
+  → Display: "No issues selected."
+  → Use AskUserQuestion:
+    - "Select issues" → Return to Issue Selection
+    - "Provide project idea" → Prompt for seed and proceed to standard planning
+    - "Exit" → STOP
+
+IF user selected 1+ issues:
+  → Store SELECTED_ISSUES array
+  → Display: "Selected {N} issues for worktree creation"
+  → PROCEED to Branch Name Generation
+```
+
+### Branch Name Generation
+
+For each selected issue, generate a branch name following conventional commit patterns:
+
+**Label-to-Prefix Mapping:**
+
+```bash
+get_branch_prefix() {
+  local labels="$1"  # Comma-separated: "bug, security, priority-high"
+
+  # Priority order: bug > docs > chore > feat (default)
+  # Check for bug-related labels
+  if echo "$labels" | grep -qiE '\bbug\b|\bdefect\b|\bfix\b'; then
+    echo "bug"
+    return
+  fi
+
+  # Check for documentation labels
+  if echo "$labels" | grep -qiE '\bdocumentation\b|\bdocs\b'; then
+    echo "docs"
+    return
+  fi
+
+  # Check for chore/maintenance labels
+  if echo "$labels" | grep -qiE '\bchore\b|\bmaintenance\b|\brefactor\b|\btechnical-debt\b'; then
+    echo "chore"
+    return
+  fi
+
+  # Default to feat for enhancement/feature or unknown
+  echo "feat"
+}
+```
+
+**Branch Name Generation:**
+
+```bash
+generate_branch_name() {
+  local issue_number="$1"
+  local title="$2"
+  local labels="$3"
+
+  # Get prefix from labels
+  local prefix=$(get_branch_prefix "$labels")
+
+  # Slugify title: lowercase, replace non-alphanumeric with hyphens, collapse multiples
+  local slug=$(echo "$title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
+
+  # Truncate slug to max 40 chars
+  slug="${slug:0:40}"
+
+  # Format: prefix/issue-number-slug
+  echo "${prefix}/${issue_number}-${slug}"
+}
+
+# Example outputs:
+# "bug" label + #42 + "Fix authentication bug" → bug/42-fix-authentication-bug
+# "enhancement" label + #38 + "Add dark mode" → feat/38-add-dark-mode
+# "documentation" label + #35 + "Update API docs" → docs/35-update-api-docs
+# no labels + #31 + "Refactor module" → feat/31-refactor-module
+```
+
+**Branch Name Preview:**
+
+Before creating worktrees, show the user what will be created:
+
+```
+Planned worktrees:
+1. bug/42-fix-authentication-bug-on-mobile
+2. feat/38-add-dark-mode-support
+3. docs/35-update-api-documentation
+
+Use AskUserQuestion with:
+  header: "Confirm"
+  question: "Create these worktrees?"
+  multiSelect: false
+  options:
+    - label: "Yes, create all"
+      description: "Create worktrees for all {N} selected issues"
+    - label: "Modify selection"
+      description: "Go back and change issue selection"
+    - label: "Cancel"
+      description: "Exit without creating worktrees"
+```
+
+### Worktree Creation
+
+For each confirmed issue, create a worktree:
+
+**Worktree Creation Process:**
+
+```bash
+create_issue_worktree() {
+  local issue_json="$1"
+  local worktree_base="$2"
+  local repo_name="$3"
+
+  # Parse issue data
+  local number=$(echo "$issue_json" | jq -r '.number')
+  local title=$(echo "$issue_json" | jq -r '.title')
+  local labels=$(echo "$issue_json" | jq -r '[.labels[].name] | join(", ")')
+  local body=$(echo "$issue_json" | jq -r '.body // ""')
+  local url=$(echo "$issue_json" | jq -r '.url')
+
+  # Generate branch name
+  local branch=$(generate_branch_name "$number" "$title" "$labels")
+  local worktree_slug=$(echo "$branch" | tr '/' '-')
+  local worktree_path="${worktree_base}/${repo_name}/${worktree_slug}"
+
+  # Create worktree directory
+  mkdir -p "${worktree_base}/${repo_name}"
+
+  # Create git worktree
+  git worktree add -b "$branch" "$worktree_path" HEAD
+
+  # Save issue context for the agent
+  cat > "${worktree_path}/.issue-context.json" << EOF
+{
+  "number": $number,
+  "title": $(echo "$title" | jq -Rs .),
+  "url": "$url",
+  "body": $(echo "$body" | jq -Rs .),
+  "labels": [$(echo "$labels" | sed 's/, /", "/g' | sed 's/^/"/;s/$/"/')],
+  "fetched_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
+  echo "WORKTREE_CREATED: $worktree_path"
+  echo "BRANCH: $branch"
+}
+```
+
+**Parallel Creation for Multiple Issues:**
+
+```bash
+# Pre-allocate ports for all worktrees before creation
+WORKTREE_COUNT=${#SELECTED_ISSUES[@]}
+PORTS=$(${CLAUDE_PLUGIN_ROOT}/skills/worktree-manager/scripts/allocate-ports.sh $((WORKTREE_COUNT * 2)))
+
+# Create worktrees in sequence (git worktree add is not parallel-safe)
+for issue in "${SELECTED_ISSUES[@]}"; do
+  create_issue_worktree "$issue" "$WORKTREE_BASE" "$REPO_NAME"
+done
+```
+
+**Registry Update:**
+
+After each worktree creation, register in global registry:
+
+```bash
+# Register each worktree
+${CLAUDE_PLUGIN_ROOT}/skills/worktree-manager/scripts/register.sh \
+  "$PROJECT_NAME" \
+  "$BRANCH" \
+  "$WORKTREE_SLUG" \
+  "$WORKTREE_PATH" \
+  "$(pwd)" \
+  "$ALLOCATED_PORTS" \
+  "Issue #$NUMBER: $TITLE"
+```
+
+### Completeness Evaluation
+
+For each selected issue, evaluate if it has sufficient detail for planning:
+
+**Evaluation Criteria (AI Assessment):**
+
+Analyze the issue body for these elements:
+
+1. **Clear problem statement** (weight: high)
+   - Does the issue explain what needs to be done?
+   - Is the request understandable without external context?
+
+2. **Context/Background** (weight: medium)
+   - Is there enough information about why this matters?
+   - Are related systems/features mentioned?
+
+3. **Scope indicators** (weight: medium)
+   - Are boundaries mentioned (what's in/out of scope)?
+   - Is the size of change estimable?
+
+4. **Acceptance criteria** (weight: high for features/bugs)
+   - Are there success conditions or expected outcomes?
+   - For bugs: Are reproduction steps provided?
+
+5. **Technical hints** (weight: low)
+   - Any pointers to relevant code, files, or systems?
+
+**Generate Assessment:**
+
+For each issue, produce:
+
+```
+Completeness Assessment for Issue #42: Fix authentication bug
+
+VERDICT: NEEDS_CLARIFICATION
+
+PRESENT:
+✓ Clear problem statement (authentication fails on mobile)
+✓ Bug label indicates issue type
+✓ Assignee suggests ownership
+
+MISSING:
+✗ Steps to reproduce
+✗ Expected vs actual behavior
+✗ Browser/device information
+✗ Error messages or logs
+
+RECOMMENDATION: Request reproduction steps and environment details
+before creating detailed implementation plan.
+```
+
+**Present Options via AskUserQuestion:**
+
+```
+Use AskUserQuestion with:
+  header: "Issue #42"
+  question: "This issue needs clarification. How would you like to proceed?"
+  multiSelect: false
+  options:
+    - label: "Proceed anyway"
+      description: "Start planning with available information, may need to make assumptions"
+    - label: "Post clarification request"
+      description: "Draft and post a comment asking for missing details"
+    - label: "Add details inline"
+      description: "Provide additional context yourself before proceeding"
+    - label: "Skip this issue"
+      description: "Remove from selection, don't create worktree"
+```
+
+**Decision Flow:**
+
+```
+IF VERDICT == "COMPLETE":
+  → Briefly show assessment
+  → Auto-proceed to worktree creation
+  → No user intervention needed
+
+IF VERDICT == "NEEDS_CLARIFICATION":
+  → Show full assessment
+  → Present AskUserQuestion with all 4 options
+  → Handle user choice
+
+IF VERDICT == "MINIMAL":
+  → Show assessment with warning
+  → Recommend "Post clarification" or "Skip"
+  → Present AskUserQuestion
+```
+
+### Comment Posting (if requested)
+
+When user selects "Post clarification request":
+
+**Draft Comment Generation:**
+
+```
+Generate a professional, polite comment that:
+1. Thanks the author for opening the issue
+2. Lists specific missing information
+3. Asks concrete, answerable questions
+4. Explains why this information helps
+
+Example draft:
+
+---
+Thanks for opening this issue.
+
+To help us plan an effective solution, could you please provide:
+
+1. **Steps to reproduce**: What actions lead to the authentication failure?
+2. **Expected behavior**: What should happen after login on mobile?
+3. **Actual behavior**: What error or behavior do you see instead?
+4. **Environment**: Which mobile browser and OS version are you using?
+
+This information will help us understand the scope and prioritize accordingly.
+---
+```
+
+**Show Draft and Confirm:**
+
+```
+Display the draft comment, then:
+
+Use AskUserQuestion with:
+  header: "Comment"
+  question: "Post this comment to Issue #42?"
+  multiSelect: false
+  options:
+    - label: "Post as-is"
+      description: "Post this comment to GitHub immediately"
+    - label: "Edit first"
+      description: "Modify the comment before posting (provide edits in 'Other')"
+    - label: "Cancel"
+      description: "Don't post, proceed without clarification"
+```
+
+**Post Comment:**
+
+```bash
+post_clarification_comment() {
+  local repo="$1"
+  local issue_number="$2"
+  local comment_body="$3"
+
+  # Post the comment
+  gh issue comment "$issue_number" --repo "$repo" --body "$comment_body"
+
+  if [ $? -eq 0 ]; then
+    echo "COMMENT_POSTED: Issue #$issue_number"
+  else
+    echo "COMMENT_FAILED: Issue #$issue_number"
+    echo "You can manually post the comment from the GitHub web interface."
+  fi
+}
+```
+
+**After Posting:**
+
+```
+Comment posted successfully to Issue #42.
+
+URL: https://github.com/owner/repo/issues/42#issuecomment-123456
+
+Use AskUserQuestion with:
+  header: "Next"
+  question: "How would you like to proceed with Issue #42?"
+  multiSelect: false
+  options:
+    - label: "Create worktree anyway"
+      description: "Proceed with planning while waiting for response"
+    - label: "Wait for response"
+      description: "Skip this issue for now, revisit when clarified"
+```
+
+### Agent Launch
+
+For each worktree where user chose to proceed, launch a Claude agent in a new terminal:
+
+**Build Initial Prompt:**
+
+```bash
+build_issue_prompt() {
+  local issue_number="$1"
+  local issue_title="$2"
+  local worktree_path="$3"
+
+  # Create a prompt that includes issue context
+  local prompt="/claude-spec:plan Issue #${issue_number}: ${issue_title}
+
+This worktree was created for GitHub Issue #${issue_number}.
+Issue context is available at: ${worktree_path}/.issue-context.json
+
+Please read the issue context and begin planning."
+
+  echo "$prompt"
+}
+```
+
+**Launch Agents in Parallel:**
+
+```bash
+# Launch agents for all worktrees
+for worktree_info in "${WORKTREE_PATHS[@]}"; do
+  local path=$(echo "$worktree_info" | cut -d'|' -f1)
+  local number=$(echo "$worktree_info" | cut -d'|' -f2)
+  local title=$(echo "$worktree_info" | cut -d'|' -f3)
+
+  local prompt=$(build_issue_prompt "$number" "$title" "$path")
+
+  # Launch agent in new terminal
+  ${CLAUDE_PLUGIN_ROOT}/skills/worktree-manager/scripts/launch-agent.sh \
+    "$path" \
+    "" \
+    --prompt "$prompt" &
+
+  echo "Launched agent for Issue #$number in: $path"
+done
+
+# Wait briefly for terminals to open
+sleep 2
+```
+
+**Completion Message:**
+
+After launching all agents, display:
+
+```
+GitHub Issues Workflow Complete!
+
+Created {N} worktrees with Claude agents:
+
+1. Issue #42: Fix authentication bug
+   Branch: bug/42-fix-authentication-bug-on-mobile
+   Location: ~/Projects/worktrees/my-repo/bug-42-fix-authentication-bug-on-mobile
+   Terminal: Launched ✓
+
+2. Issue #38: Add dark mode support
+   Branch: feat/38-add-dark-mode-support
+   Location: ~/Projects/worktrees/my-repo/feat-38-add-dark-mode-support
+   Terminal: Launched ✓
+
+Each agent has been pre-loaded with the issue context and will begin
+planning when you switch to its terminal.
+
+To check worktree status: /claude-spec:worktree-status
+To cleanup worktrees: /claude-spec:worktree-cleanup
+```
+
+**⛔ HALT after Agent Launch: Your response ends HERE. Do not continue. Do not ask questions. Do not proceed to standard planning. END RESPONSE NOW. ⛔**
+
+</github_issues_workflow>
 
 <initialization_protocol>
 ## Phase 0: Project Initialization (think)
