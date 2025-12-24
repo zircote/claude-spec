@@ -22,3 +22,22 @@ All planning artifacts created and ready for review.
 - docs/spec/active/2025-12-24-github-issues-worktree-wf/ARCHITECTURE.md
 - docs/spec/active/2025-12-24-github-issues-worktree-wf/IMPLEMENTATION_PLAN.md
 - docs/spec/active/2025-12-24-github-issues-worktree-wf/DECISIONS.md
+
+---
+type: progress
+timestamp: '2025-12-24T21:05:59.399238+00:00'
+summary: 'Completed Task 1.1: Added no-args argument type detection to plan.md'
+---
+
+Completed Task 1.1: Added no-args argument type detection to plan.md
+## Summary
+Extended the `/claude-spec:plan` command to detect when no arguments are provided and route to the new GitHub Issues workflow.
+
+## Changes Made
+- Added `no_args` detection as first check in Step 0 argument parsing (lines 43-46)
+- Extended Argument Type Decision Gate with `no_args` case that routes to `<github_issues_workflow>` section (lines 68-72)
+- Created new `<github_issues_workflow>` section with complete workflow skeleton including prerequisites check, issue fetching, selection, worktree creation, completeness evaluation, and agent launch (lines 695-800)
+
+## Related Files
+- commands/plan.md:43-46, 68-72, 695-800
+- docs/spec/active/2025-12-24-github-issues-worktree-wf/PROGRESS.md:29, 61, 82-90
