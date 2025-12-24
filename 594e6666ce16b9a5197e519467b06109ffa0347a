@@ -1,0 +1,13 @@
+---
+type: patterns
+timestamp: '2025-12-24T17:01:33.418248+00:00'
+summary: '...`--state open` is default |'
+tags:
+- auto-captured
+- post-tool-use
+- file:REQUIREMENTS.md
+---
+
+...`--state open` is default |
+| FR-004 | Present issues via AskUserQuestion | Consistent UX pattern | Issues shown as selectable options with title/number |
+| FR-005 | Create worktree per selected...
