@@ -13,3 +13,21 @@ tags:
 **Description:** Both files contain similar pattern matching and analysis logic for prompt logs.
 
 **Impact:** Maintenance burden, risk of divergent...
+
+---
+type: patterns
+timestamp: '2025-12-24T18:55:11.102504+00:00'
+summary: '...High coupling, difficult to modify independently.'
+tags:
+- auto-captured
+- post-tool-use
+- file:CODE_REVIEW.md
+---
+
+...High coupling, difficult to modify independently.
+
+**Remediation:** Use artifact registry pattern for inter-step communication.
+
+### QUAL-004: Complex Conditional in Pipeline (MEDIUM)
+
+**File:**...
