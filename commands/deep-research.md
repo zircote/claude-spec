@@ -23,7 +23,7 @@ SYNOPSIS
     /claude-spec:deep-research <research-topic|codebase-path|url>
 
 DESCRIPTION
-    Deep research command optimized for Opus 4.5. Conducts comprehensive, multi-phase investigation of any subject matter, codebase, or technical domain using extended thinking, subagent orchestration, LS
+    Deep research command optimized for Opus 4.5. Conducts comprehensive, multi-phase investigation of any subject matter, codebase, or technical domain using extended thinking, subagent orchestration, LSP semantic analysis when available, and structured analysis workflows.
 
 OPTIONS
     --help, -h                Show this help message
