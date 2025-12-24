@@ -1,0 +1,17 @@
+---
+type: progress
+timestamp: '2025-12-24T17:03:35.176980+00:00'
+summary: '...Feature is additive (existing `/plan <seed>` flow unchanged)'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...Feature is additive (existing `/plan <seed>` flow unchanged)
+- If issues detected, document workaround to use explicit seed
+- No database migrations to revert
+
+## Future Considerations
+
+1. **Cross-repo...
