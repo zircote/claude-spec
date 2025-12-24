@@ -547,3 +547,25 @@ tags:
 ---
 
 Now let me update the PROGRESS.md to reflect all completed tasks:
+
+---
+type: progress
+timestamp: '2025-12-24T18:52:57.086371+00:00'
+summary: '...Here''s a summary:
+
+  ## Implementation Summary
+
+  **GitHub Issues Worktree Workflow** has been imp...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...Here's a summary:
+
+## Implementation Summary
+
+**GitHub Issues Worktree Workflow** has been implemented in `commands/plan.md`. The feature enables:
+
+### How It Works
+1. Run `/claude-spec:plan` with...
