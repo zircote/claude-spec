@@ -5208,3 +5208,15 @@ tags:
 ---
 
 Excellent! All 268 tests pass. Now let me update the REMEDIATION_TASKS.md with all the fixes completed so far:
+
+---
+type: progress
+timestamp: '2025-12-24T20:25:26.097279+00:00'
+summary: '...todo list and add a note about Task 2.1 being already partially done
+  (Filter Selection UI was ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...todo list and add a note about Task 2.1 being already partially done (Filter Selection UI was implemented as part of Phase 1):
