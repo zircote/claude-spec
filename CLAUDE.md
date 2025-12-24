@@ -151,3 +151,34 @@ def test_something(temp_project_dir, monkeypatch):
   - Outcome: success
   - Branch: plan/remove-memory-hooks
   - Key changes: Removed memory/, hooks/, memory commands, hook tests, updated all documentation
+
+## Code Intelligence (LSP)
+
+### Navigation & Understanding
+- Use LSP `goToDefinition` before modifying unfamiliar functions, classes, or modules
+- Use LSP `findReferences` before refactoring any symbol to understand full impact
+- Use LSP `documentSymbol` to get file structure overview before major edits
+- Prefer LSP navigation over grep—it resolves through imports and re-exports
+
+### Verification Workflow
+- Check LSP diagnostics after each edit to catch type errors immediately
+- Run `mypy .` for project-wide type verification (this project uses mypy)
+- Verify imports resolve correctly via LSP after adding new dependencies
+
+### Pre-Edit Checklist
+- [ ] Navigate to definition to understand implementation
+- [ ] Find all references to assess change impact
+- [ ] Review type annotations via hover before modifying function signatures
+- [ ] Check class/protocol definitions before implementing
+
+### Error Handling
+- If LSP reports errors, fix them before proceeding to next task
+- Treat type errors as blocking—this project enforces strict type checking
+- Use LSP diagnostics output to guide fixes, not guesswork
+
+### LSP Hooks Installed
+The `.claude/hooks.json` file configures automatic quality checks:
+- `format-on-edit`: Runs `ruff format` after Python file edits
+- `lint-check-on-edit`: Runs `ruff check` to show lint errors
+- `typecheck-on-edit`: Runs `mypy` to catch type errors
+- `pre-commit-quality-gate`: Runs full `make ci` before git commits (blocking)
