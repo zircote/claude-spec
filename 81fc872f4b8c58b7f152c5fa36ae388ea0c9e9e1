@@ -3735,3 +3735,23 @@ tags:
 
 ### How It Works
 1. Run `/claude-spec:plan` with...
+
+---
+type: progress
+timestamp: '2025-12-24T20:04:36.514150+00:00'
+summary: '...github_issues.sh |
+
+  | Commands | 11 | commands/*.md |
+
+  | Spec Docs | 50+ | docs/spec/active/, do...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...github_issues.sh |
+| Commands | 11 | commands/*.md |
+| Spec Docs | 50+ | docs/spec/active/, docs/spec/completed/ |
+
+**Primary Language**: Python + Bash
+**LSP Available**: ✅ Yes (semantic analysis enabled)
