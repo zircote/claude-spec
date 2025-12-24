@@ -248,3 +248,18 @@ tags:
         # Use a realistic JWT structure that matches the pattern
         # JWT pattern: ey[17+ chars].ey[17+ chars/\\_-].[10+ chars/\\_-]
         # A real JWT...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:49:42.595313+00:00'
+summary: '...payloads."""'
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...payloads."""
+        # Use a realistic JWT structure that matches the pattern
+        # JWT pattern: ey[17+ chars].ey[17+ chars/\\_-].[10+ chars/\\_-]
+        # A real JWT with XSS in the payload...
