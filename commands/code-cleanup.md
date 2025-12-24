@@ -21,10 +21,10 @@ NAME
     code-cleanup - Comprehensive code review and remediation using paralle...
 
 SYNOPSIS
-    /claude-spec:code-cleanup 
+    /claude-spec:code-cleanup [path|--focus=security|--focus=performance|--focus=maintainability|--quick|--all]
 
 DESCRIPTION
-    Comprehensive code review and remediation using parallel specialist agents. Uses LSP semantic analysis when available for precise code navigation. Executes in two sequential steps - review then fix. P
+    Comprehensive code review and remediation using parallel specialist agents. Uses LSP semantic analysis when available for precise code navigation. Executes in two sequential steps - review then fix. Produces actionable findings prioritized by severity with clear remediation paths.
 
 OPTIONS
     --help, -h                Show this help message

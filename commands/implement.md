@@ -23,7 +23,7 @@ SYNOPSIS
     /claude-spec:implement [project-id|project-slug]
 
 DESCRIPTION
-    Implementation progress tracker for spec projects. Creates and maintains PROGRESS.md checkpoint file, tracks task completion, syncs state to planning documents. Part of the /claude-spec suite - use /c
+    Implementation progress tracker for spec projects. Creates and maintains PROGRESS.md checkpoint file, tracks task completion, syncs state to planning documents. Part of the /claude-spec suite - use /claude-spec:plan to plan, /claude-spec:status for status, /claude-spec:complete to complete.
 
 OPTIONS
     --help, -h                Show this help message

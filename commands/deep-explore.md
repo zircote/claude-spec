@@ -23,7 +23,7 @@ SYNOPSIS
     /claude-spec:deep-explore <path|pattern|question>
 
 DESCRIPTION
-    Exhaustive codebase exploration command optimized for Opus 4.5. Conducts comprehensive, thorough investigation of codebases with maximum file reading depth. Uses "very thorough" exploration level, par
+    Exhaustive codebase exploration command optimized for Opus 4.5. Conducts comprehensive, thorough investigation of codebases with maximum file reading depth. Uses "very thorough" exploration level, parallel subagents, LSP semantic navigation when available, and explicitly avoids assumptions by reading all relevant files before forming conclusions.
 
 OPTIONS
     --help, -h                Show this help message

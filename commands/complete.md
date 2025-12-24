@@ -23,7 +23,7 @@ SYNOPSIS
     /claude-spec:complete <project-path|project-id>
 
 DESCRIPTION
-    Close out a completed spec project. Moves artifacts to completed/, generates retrospective, updates CLAUDE.md. Part of the /claude-spec suite - use /claude-spec:plan to plan, /claude-spec:status for s
+    Close out a completed spec project. Moves artifacts to completed/, generates retrospective, updates CLAUDE.md. Part of the /claude-spec suite - use /claude-spec:plan to plan, /claude-spec:status for status.
 
 OPTIONS
     --help, -h                Show this help message
