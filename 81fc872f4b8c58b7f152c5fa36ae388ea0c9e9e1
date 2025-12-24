@@ -278,3 +278,20 @@ tags:
         result = filter_pipeline(jwt)
         # JWT pattern should match the overall structure
         self.assertGreater(result.secret_count, 0)...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:50:53.284404+00:00'
+summary: '...instead of silent suppression'
+tags:
+- auto-captured
+- post-tool-use
+- file:REMEDIATION_TASKS.md
+---
+
+...instead of silent suppression
+  - Fixed: 2025-12-24
+
+- [x] **SFH-002** Incomplete sed escape pattern (missing pipe) ✅ FIXED
+  - File: `scripts/github-issues/build-issue-prompt.sh:62-63`
+  - Action:...
