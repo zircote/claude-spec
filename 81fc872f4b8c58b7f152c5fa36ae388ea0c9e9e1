@@ -31,3 +31,18 @@ tags:
 ### QUAL-004: Complex Conditional in Pipeline (MEDIUM)
 
 **File:**...
+
+---
+type: patterns
+timestamp: '2025-12-24T18:56:54.647657+00:00'
+summary: '...Validate branch name format before git commands'
+tags:
+- auto-captured
+- post-tool-use
+- file:create-issue-worktree.sh
+---
+
+...Validate branch name format before git commands
+    # Branch names must match: prefix/number-slug pattern
+    if ! [[ "$branch" =~ ^[a-z]+/[0-9]+-[a-z0-9-]+$ ]]; then
+        echo "Error: Invalid branch...
