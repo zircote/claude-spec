@@ -379,3 +379,25 @@ Instead of a fixed pattern, user wants branch names to match the issue type:
 
 ## Rationale
 Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T19:58:00.221285+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  User wants conventional commit-style branch prefi...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
