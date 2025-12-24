@@ -382,3 +382,20 @@ tags:
 
 ...────────────────────────`
 The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:04:36.255767+00:00'
+summary: '...should preserve stderr for debugging.
+
+  2. **build-issue-prompt.sh:61-62**: The sed escape patt...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...should preserve stderr for debugging.
+
+2. **build-issue-prompt.sh:61-62**: The sed escape pattern `s/[&/\]/\\&/g` is missing the pipe character `|` which is our sed delimiter.
+
+Let me fix both...
