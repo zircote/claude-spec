@@ -1,0 +1,15 @@
+---
+type: patterns
+timestamp: '2025-12-24T19:47:25.381680+00:00'
+summary: '...Architecture`'
+tags:
+- auto-captured
+- post-tool-use
+- file:code-cleanup.md
+---
+
+...Architecture`
+     - Report: '[N/M] Fixed: [FILE:LINE] - [description] [x]'
+
+  Output: Files modified, pattern applied, tests passing, checkbox updated"
+)
