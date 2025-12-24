@@ -1,4 +1,4 @@
-.PHONY: install format format-check lint lint-fix typecheck security test shellcheck ci clean help version bump-patch bump-minor bump-major release
+.PHONY: install format format-check lint lint-fix typecheck security test shellcheck ci clean help version bump-patch bump-minor bump-major release release-patch release-minor release-major
 
 # Default target
 help:
@@ -16,11 +16,14 @@ help:
 	@echo "  clean        - Clean generated files"
 	@echo ""
 	@echo "Version Management:"
-	@echo "  version      - Show current version and version files"
-	@echo "  bump-patch   - Bump patch version (0.0.X)"
-	@echo "  bump-minor   - Bump minor version (0.X.0)"
-	@echo "  bump-major   - Bump major version (X.0.0)"
-	@echo "  release      - Create and push release tag (bumps if tag exists)"
+	@echo "  version       - Show current version and version files"
+	@echo "  bump-patch    - Bump patch version (0.0.X)"
+	@echo "  bump-minor    - Bump minor version (0.X.0)"
+	@echo "  bump-major    - Bump major version (X.0.0)"
+	@echo "  release       - Create and push release tag"
+	@echo "  release-patch - Bump patch, run CI, and release"
+	@echo "  release-minor - Bump minor, run CI, and release"
+	@echo "  release-major - Bump major, run CI, and release"
 
 # Install dependencies (including dev tools: ruff, mypy, pytest, etc.)
 install:
@@ -90,7 +93,7 @@ bump-minor:
 bump-major:
 	uv run bump-my-version bump major
 
-# Create release: run CI checks, then if current version tag exists, bump patch and release
+# Create release: run CI checks, then create and push tag
 release: ci
 	@VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
 	TAG="v$$VERSION" && \
@@ -104,3 +107,13 @@ release: ci
 	echo "" && \
 	echo "Release $$TAG pushed successfully!" && \
 	echo "GitHub Actions will create the release automatically."
+
+# Combined bump + release targets
+release-patch: bump-patch release
+	@echo "Patch release complete!"
+
+release-minor: bump-minor release
+	@echo "Minor release complete!"
+
+release-major: bump-major release
+	@echo "Major release complete!"
