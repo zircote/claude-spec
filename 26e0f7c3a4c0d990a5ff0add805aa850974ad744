@@ -1,0 +1,603 @@
+---
+type: learnings
+timestamp: '2025-12-24T18:34:56.284646+00:00'
+summary: User wants conventional commit-style branch prefixes
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T18:36:51.769057+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  User wants conventional commit-style branch prefi...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T18:36:52.181847+00:00'
+summary: '...proceeds to the new workflow section
+
+  `─────────────────────────────────────────────────`
+
+  Now ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...proceeds to the new workflow section
+`─────────────────────────────────────────────────`
+
+Now I understand exactly what needs to be done. Let me implement Task 1.1 by:
+1. Adding `no_args` detection...
+
+---
+type: learnings
+timestamp: '2025-12-24T18:46:35.799453+00:00'
+summary: User wants conventional commit-style branch prefixes
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T18:48:18.855861+00:00'
+summary: User wants conventional commit-style branch prefixes
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T18:52:56.555539+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  User wants conventional commit-style branch prefi...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T18:52:57.182593+00:00'
+summary: '...proceeds to the new workflow section
+
+  `─────────────────────────────────────────────────`
+
+  Now ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...proceeds to the new workflow section
+`─────────────────────────────────────────────────`
+
+Now I understand exactly what needs to be done. Let me implement Task 1.1 by:
+1. Adding `no_args` detection...
+
+---
+type: learnings
+timestamp: '2025-12-24T19:00:13.840815+00:00'
+summary: User wants conventional commit-style branch prefixes
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T19:19:47.349046+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  User wants conventional commit-style branch prefi...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T19:19:48.066907+00:00'
+summary: '...proceeds to the new workflow section
+
+  `─────────────────────────────────────────────────`
+
+  Now ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...proceeds to the new workflow section
+`─────────────────────────────────────────────────`
+
+Now I understand exactly what needs to be done. Let me implement Task 1.1 by:
+1. Adding `no_args` detection...
+
+---
+type: learnings
+timestamp: '2025-12-24T19:23:33.177760+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  User wants conventional commit-style branch prefi...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T19:23:33.954531+00:00'
+summary: '...proceeds to the new workflow section
+
+  `─────────────────────────────────────────────────`
+
+  Now ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...proceeds to the new workflow section
+`─────────────────────────────────────────────────`
+
+Now I understand exactly what needs to be done. Let me implement Task 1.1 by:
+1. Adding `no_args` detection...
+
+---
+type: learnings
+timestamp: '2025-12-24T19:33:25.989899+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  User wants conventional commit-style branch prefi...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T19:33:26.877424+00:00'
+summary: '...proceeds to the new workflow section
+
+  `─────────────────────────────────────────────────`
+
+  Now ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...proceeds to the new workflow section
+`─────────────────────────────────────────────────`
+
+Now I understand exactly what needs to be done. Let me implement Task 1.1 by:
+1. Adding `no_args` detection...
+
+---
+type: learnings
+timestamp: '2025-12-24T19:44:32.220982+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  User wants conventional commit-style branch prefi...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T19:44:33.275231+00:00'
+summary: '...proceeds to the new workflow section
+
+  `─────────────────────────────────────────────────`
+
+  Now ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...proceeds to the new workflow section
+`─────────────────────────────────────────────────`
+
+Now I understand exactly what needs to be done. Let me implement Task 1.1 by:
+1. Adding `no_args` detection...
+
+---
+type: learnings
+timestamp: '2025-12-24T19:51:34.192661+00:00'
+summary: User wants conventional commit-style branch prefixes
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T19:56:12.112663+00:00'
+summary: User wants conventional commit-style branch prefixes
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T19:57:06.056401+00:00'
+summary: User wants conventional commit-style branch prefixes
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T19:57:36.874171+00:00'
+summary: User wants conventional commit-style branch prefixes
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T19:58:00.221285+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  User wants conventional commit-style branch prefi...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T19:58:01.624934+00:00'
+summary: '...proceeds to the new workflow section
+
+  `─────────────────────────────────────────────────`
+
+  Now ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...proceeds to the new workflow section
+`─────────────────────────────────────────────────`
+
+Now I understand exactly what needs to be done. Let me implement Task 1.1 by:
+1. Adding `no_args` detection...
+
+---
+type: learnings
+timestamp: '2025-12-24T20:04:35.215394+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  User wants conventional commit-style branch prefi...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T20:04:36.650531+00:00'
+summary: '...proceeds to the new workflow section
+
+  `─────────────────────────────────────────────────`
+
+  Now ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...proceeds to the new workflow section
+`─────────────────────────────────────────────────`
+
+Now I understand exactly what needs to be done. Let me implement Task 1.1 by:
+1. Adding `no_args` detection...
+
+---
+type: learnings
+timestamp: '2025-12-24T20:12:27.057192+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  User wants conventional commit-style branch prefi...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T20:12:28.608972+00:00'
+summary: '...proceeds to the new workflow section
+
+  `─────────────────────────────────────────────────`
+
+  Now ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...proceeds to the new workflow section
+`─────────────────────────────────────────────────`
+
+Now I understand exactly what needs to be done. Let me implement Task 1.1 by:
+1. Adding `no_args` detection...
+
+---
+type: learnings
+timestamp: '2025-12-24T20:25:24.481219+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  User wants conventional commit-style branch prefi...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T20:25:26.057308+00:00'
+summary: '...proceeds to the new workflow section
+
+  `─────────────────────────────────────────────────`
+
+  Now ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...proceeds to the new workflow section
+`─────────────────────────────────────────────────`
+
+Now I understand exactly what needs to be done. Let me implement Task 1.1 by:
+1. Adding `no_args` detection...
+
+---
+type: learnings
+timestamp: '2025-12-24T20:36:00.355037+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  User wants conventional commit-style branch prefi...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T20:36:01.993910+00:00'
+summary: '...proceeds to the new workflow section
+
+  `─────────────────────────────────────────────────`
+
+  Now ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...proceeds to the new workflow section
+`─────────────────────────────────────────────────`
+
+Now I understand exactly what needs to be done. Let me implement Task 1.1 by:
+1. Adding `no_args` detection...
+
+---
+type: learnings
+timestamp: '2025-12-24T20:41:04.229306+00:00'
+summary: User wants conventional commit-style branch prefixes
+---
+
+User wants conventional commit-style branch prefixes
+## Context
+Instead of a fixed pattern, user wants branch names to match the issue type:
+- `feat/123-description` for enhancements
+- `bug/123-description` for bugs
+- `chore/123-description` for maintenance
+- `docs/123-description` for documentation
+
+## Rationale
+Aligns with conventional commits workflow and provides semantic meaning in branch names.
