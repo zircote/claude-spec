@@ -1,0 +1,83 @@
+---
+type: progress
+timestamp: '2025-12-24T17:03:35.176980+00:00'
+summary: '...Feature is additive (existing `/plan <seed>` flow unchanged)'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...Feature is additive (existing `/plan <seed>` flow unchanged)
+- If issues detected, document workaround to use explicit seed
+- No database migrations to revert
+
+## Future Considerations
+
+1. **Cross-repo...
+
+---
+type: progress
+timestamp: '2025-12-24T17:05:10.097280+00:00'
+summary: '...examples'
+tags:
+- auto-captured
+- post-tool-use
+- file:IMPLEMENTATION_PLAN.md
+---
+
+...examples
+- [ ] Update help output in plan.md
+
+## Launch Checklist
+
+- [ ] All P0 requirements implemented
+- [ ] Error handling comprehensive
+- [ ] Documentation complete
+- [ ] Manual testing passed
+-...
+
+---
+type: progress
+timestamp: '2025-12-24T17:07:11.399405+00:00'
+summary: Specification complete for GitHub Issues Worktree Workflow
+---
+
+Specification complete for GitHub Issues Worktree Workflow
+## Context
+All planning artifacts created and ready for review.
+
+## Deliverables
+- REQUIREMENTS.md: 11 P0, 5 P1, 4 P2 requirements with user stories
+- ARCHITECTURE.md: 10 components, data models, security design
+- IMPLEMENTATION_PLAN.md: 4 phases, 20 tasks, dependency graph
+- DECISIONS.md: 8 ADRs with alternatives considered
+- README.md: Updated with summary and status
+- CHANGELOG.md: Version 1.0.0 documented
+
+## Related Files
+- docs/spec/active/2025-12-24-github-issues-worktree-wf/README.md
+- docs/spec/active/2025-12-24-github-issues-worktree-wf/REQUIREMENTS.md
+- docs/spec/active/2025-12-24-github-issues-worktree-wf/ARCHITECTURE.md
+- docs/spec/active/2025-12-24-github-issues-worktree-wf/IMPLEMENTATION_PLAN.md
+- docs/spec/active/2025-12-24-github-issues-worktree-wf/DECISIONS.md
+
+---
+type: progress
+timestamp: '2025-12-24T18:22:48.934136+00:00'
+summary: '...[REQUIREMENTS.md](./REQUIREMENTS.md)'
+tags:
+- auto-captured
+- post-tool-use
+- file:PROGRESS.md
+---
+
+...[REQUIREMENTS.md](./REQUIREMENTS.md)
+
+---
+
+## Task Status
+
+| ID | Description | Status | Started | Completed | Notes |
+|----|-------------|--------|---------|-----------|-------|
+| 1.1 | Add Argument...
