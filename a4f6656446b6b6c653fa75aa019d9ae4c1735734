@@ -85,3 +85,18 @@ Extended the `/claude-spec:plan` command to detect when no arguments are provide
 ## Related Files
 - commands/plan.md:43-46, 68-72, 695-800
 - docs/spec/active/2025-12-24-github-issues-worktree-wf/PROGRESS.md:29, 61, 82-90
+
+---
+type: progress
+timestamp: '2025-12-24T19:37:38.799000+00:00'
+summary: '...completed_project(cwd: Path, context: str = "base") -> Path | None:'
+tags:
+- auto-captured
+- post-tool-use
+- file:base.py
+---
+
+...completed_project(cwd: Path, context: str = "base") -> Path | None:
+    """Find the most recently modified completed project directory.
+
+    Looks in docs/spec/completed/ for project directories and returns...
