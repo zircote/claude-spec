@@ -100,3 +100,18 @@ tags:
     """Find the most recently modified completed project directory.
 
     Looks in docs/spec/completed/ for project directories and returns...
+
+---
+type: progress
+timestamp: '2025-12-24T19:37:38.825565+00:00'
+summary: '..."""Find the most recently modified completed project directory.'
+tags:
+- auto-captured
+- post-tool-use
+- file:base.py
+---
+
+..."""Find the most recently modified completed project directory.
+
+    Looks in docs/spec/completed/ for project directories and returns
+    the one with the most recent modification time....
