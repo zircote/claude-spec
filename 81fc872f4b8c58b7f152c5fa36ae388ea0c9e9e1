@@ -621,3 +621,20 @@ tags:
 **Impact:** Misleading project status.
 
 **Remediation:** Update to reflect current...
+
+---
+type: progress
+timestamp: '2025-12-24T18:57:51.014052+00:00'
+summary: '...spec:plan` without arguments'
+tags:
+- auto-captured
+- post-tool-use
+- file:CLAUDE.md
+---
+
+...spec:plan` without arguments
+  - Scripts: `scripts/github-issues/` (6 scripts, 47 tests)
+
+## Recent Completed Spec Projects
+
+- `docs/spec/completed/2025-12-19-remove-memory-hooks/` - Remove Memory and...
