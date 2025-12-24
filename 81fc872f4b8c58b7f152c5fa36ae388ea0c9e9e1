@@ -218,3 +218,18 @@ tags:
         self.assertGreater(result.secret_count, 0)
 
 if...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:49:36.217985+00:00'
+summary: '...AKIAIOSFODNN7EXAMPLE)"'''
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...AKIAIOSFODNN7EXAMPLE)"'
+        result = filter_pipeline(text)
+        # The aws_secret_key pattern should match (key in quotes context)
+        self.assertGreater(result.secret_count, 0)
