@@ -45,7 +45,7 @@ class MarkerCleanerStep(BaseStep):
                     cleaned.append(filename)
                 except Exception as e:
                     sys.stderr.write(
-                        f"marker_cleaner: Failed to remove {filename}: {e}\n"
+                        f"marker_cleaner: Failed to remove {filename}: {e}\n",
                     )
                     failed.append(filename)
 
@@ -57,7 +57,8 @@ class MarkerCleanerStep(BaseStep):
             )
         else:
             result = StepResult.ok(
-                f"Cleaned {len(cleaned)} marker files", cleaned=cleaned
+                f"Cleaned {len(cleaned)} marker files",
+                cleaned=cleaned,
             )
 
         # Log what was cleaned for visibility

@@ -1,18 +1,18 @@
 """Tests for analyze_cli module."""
 
 import json
-import os
 import sys
 import tempfile
 import unittest
 from io import StringIO
+from pathlib import Path
 from unittest.mock import patch
 
 # Add parent directory for imports
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
-if PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, PLUGIN_ROOT)
+SCRIPT_DIR = Path(__file__).resolve().parent
+PLUGIN_ROOT = SCRIPT_DIR.parent
+if str(PLUGIN_ROOT) not in sys.path:
+    sys.path.insert(0, str(PLUGIN_ROOT))
 
 from analyzers.analyze_cli import format_json, format_metrics_table, main
 from analyzers.log_analyzer import LogAnalysis
@@ -189,7 +189,7 @@ class TestMain(unittest.TestCase):
     def test_json_format(self):
         """Test JSON output format."""
         # Create a log file
-        log_path = os.path.join(self.temp_dir, ".prompt-log.json")
+        log_path = Path(self.temp_dir) / ".prompt-log.json"
         entry = {
             "timestamp": "2025-01-01T10:00:00+00:00",
             "session_id": "test-123",
@@ -203,7 +203,7 @@ class TestMain(unittest.TestCase):
             },
             "metadata": {"content_length": 11},
         }
-        with open(log_path, "w") as f:
+        with log_path.open("w") as f:
             f.write(json.dumps(entry) + "\n")
 
         with patch("sys.argv", ["analyze_cli.py", self.temp_dir, "--format", "json"]):
@@ -216,7 +216,7 @@ class TestMain(unittest.TestCase):
 
     def test_text_format(self):
         """Test text output format."""
-        log_path = os.path.join(self.temp_dir, ".prompt-log.json")
+        log_path = Path(self.temp_dir) / ".prompt-log.json"
         entry = {
             "timestamp": "2025-01-01T10:00:00+00:00",
             "session_id": "test-123",
@@ -230,7 +230,7 @@ class TestMain(unittest.TestCase):
             },
             "metadata": {"content_length": 11},
         }
-        with open(log_path, "w") as f:
+        with log_path.open("w") as f:
             f.write(json.dumps(entry) + "\n")
 
         with patch("sys.argv", ["analyze_cli.py", self.temp_dir, "--format", "text"]):
@@ -241,7 +241,7 @@ class TestMain(unittest.TestCase):
 
     def test_metrics_only(self):
         """Test metrics-only flag."""
-        log_path = os.path.join(self.temp_dir, ".prompt-log.json")
+        log_path = Path(self.temp_dir) / ".prompt-log.json"
         entry = {
             "timestamp": "2025-01-01T10:00:00+00:00",
             "session_id": "test-123",
@@ -255,7 +255,7 @@ class TestMain(unittest.TestCase):
             },
             "metadata": {"content_length": 11},
         }
-        with open(log_path, "w") as f:
+        with log_path.open("w") as f:
             f.write(json.dumps(entry) + "\n")
 
         with patch("sys.argv", ["analyze_cli.py", self.temp_dir, "--metrics-only"]):
@@ -266,7 +266,7 @@ class TestMain(unittest.TestCase):
 
     def test_markdown_format(self):
         """Test markdown output format (default)."""
-        log_path = os.path.join(self.temp_dir, ".prompt-log.json")
+        log_path = Path(self.temp_dir) / ".prompt-log.json"
         entry = {
             "timestamp": "2025-01-01T10:00:00+00:00",
             "session_id": "test-123",
@@ -280,7 +280,7 @@ class TestMain(unittest.TestCase):
             },
             "metadata": {"content_length": 12},
         }
-        with open(log_path, "w") as f:
+        with log_path.open("w") as f:
             f.write(json.dumps(entry) + "\n")
 
         with patch("sys.argv", ["analyze_cli.py", self.temp_dir]):

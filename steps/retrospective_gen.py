@@ -9,20 +9,17 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from .base import BaseStep, StepResult
+from .base import LOG_FILE, BaseStep, StepResult, find_latest_completed_project
 
 
 class RetrospectiveGeneratorStep(BaseStep):
     """Generates retrospective as post-step for /c."""
 
     name = "generate-retrospective"
-
-    # Log file name at project root
-    LOG_FILE = ".prompt-log.json"
 
     def execute(self) -> StepResult:
         """Execute the retrospective generation step.
@@ -32,43 +29,26 @@ class RetrospectiveGeneratorStep(BaseStep):
         """
         cwd_path = Path(self.cwd)
 
-        # Find target directory - most recent completed project
-        completed_dir = cwd_path / "docs" / "spec" / "completed"
+        # ARCH-HIGH-002: Use shared utility for finding completed project
+        target_dir = find_latest_completed_project(cwd_path, "retrospective_gen")
 
-        if not completed_dir.is_dir():
+        if target_dir is None:
             return StepResult.ok(
-                "No completed projects directory found", generated=False
+                "No completed projects directory found",
+                generated=False,
             )
-
-        # Find most recently modified project directory
-        project_dirs = [d for d in completed_dir.iterdir() if d.is_dir()]
-
-        if not project_dirs:
-            return StepResult.ok(
-                "No completed project directories found", generated=False
-            )
-
-        # Sort by modification time, most recent first
-        # Use 0 as fallback for dirs where stat() fails (permissions, broken symlinks)
-        def safe_mtime(d: Path) -> float:
-            try:
-                return d.stat().st_mtime
-            except OSError as e:
-                sys.stderr.write(f"retrospective_gen: Cannot stat {d}: {e}\n")
-                return 0
-
-        project_dirs.sort(key=safe_mtime, reverse=True)
-        target_dir = project_dirs[0]
 
         # Check if RETROSPECTIVE.md already exists
         retro_path = target_dir / "RETROSPECTIVE.md"
         if retro_path.is_file():
             return StepResult.ok(
-                "RETROSPECTIVE.md already exists", generated=False, path=str(retro_path)
+                "RETROSPECTIVE.md already exists",
+                generated=False,
+                path=str(retro_path),
             )
 
         # Try to load and analyze prompt log
-        log_file = cwd_path / self.LOG_FILE
+        log_file = cwd_path / LOG_FILE
         log_analysis = self._analyze_log(log_file) if log_file.is_file() else None
 
         # Generate retrospective content
@@ -159,7 +139,7 @@ class RetrospectiveGeneratorStep(BaseStep):
                     duration = str(last - first)
                 except Exception as e:
                     sys.stderr.write(
-                        f"retrospective_gen: Failed to calculate duration: {e}\n"
+                        f"retrospective_gen: Failed to calculate duration: {e}\n",
                     )
 
             return {
@@ -173,7 +153,9 @@ class RetrospectiveGeneratorStep(BaseStep):
             return None
 
     def _generate_retrospective(
-        self, project_dir: Path, log_analysis: dict[str, Any] | None
+        self,
+        project_dir: Path,
+        log_analysis: dict[str, Any] | None,
     ) -> str:
         """Generate retrospective markdown content.
 
@@ -185,7 +167,7 @@ class RetrospectiveGeneratorStep(BaseStep):
             Retrospective markdown content
         """
         project_name = project_dir.name
-        timestamp = datetime.now().strftime("%Y-%m-%d")
+        timestamp = datetime.now(UTC).strftime("%Y-%m-%d")
 
         # Read project README for context
         readme_path = project_dir / "README.md"
@@ -205,7 +187,7 @@ class RetrospectiveGeneratorStep(BaseStep):
                         break
             except Exception as e:
                 sys.stderr.write(
-                    f"retrospective_gen: Failed to read {readme_path}: {e}\n"
+                    f"retrospective_gen: Failed to read {readme_path}: {e}\n",
                 )
 
         # Build retrospective content

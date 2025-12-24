@@ -161,7 +161,10 @@ class SecurityReviewerStep(BaseStep):
             # Check if bandit is available to distinguish
             try:
                 subprocess.run(
-                    ["bandit", "--version"], capture_output=True, timeout=5, check=True
+                    ["bandit", "--version"],
+                    capture_output=True,
+                    timeout=5,
+                    check=True,
                 )
                 # Bandit available but scan failed
                 result = StepResult.ok(
@@ -185,7 +188,7 @@ class SecurityReviewerStep(BaseStep):
                     scan_complete=False,
                 )
                 result.add_warning(
-                    "Install bandit for security scanning: pip install bandit"
+                    "Install bandit for security scanning: pip install bandit",
                 )
                 return result
 
@@ -204,7 +207,7 @@ class SecurityReviewerStep(BaseStep):
 
         if not scan_complete:
             result.add_warning(
-                "Scan did not complete fully - results may be incomplete"
+                "Scan did not complete fully - results may be incomplete",
             )
 
         # Output findings to stderr for user visibility
@@ -230,7 +233,12 @@ class SecurityReviewerStep(BaseStep):
         """
         try:
             # Check if bandit is available
-            subprocess.run(["bandit", "--version"], capture_output=True, timeout=5)
+            subprocess.run(
+                ["bandit", "--version"],
+                capture_output=True,
+                timeout=5,
+                check=False,
+            )
         except (subprocess.TimeoutExpired, FileNotFoundError):
             return ([], False)
 
@@ -252,6 +260,7 @@ class SecurityReviewerStep(BaseStep):
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                check=False,  # Handle return code manually
             )
 
             if result.stdout:
@@ -266,11 +275,11 @@ class SecurityReviewerStep(BaseStep):
                         filename = issue.get("filename", "unknown")
                         line = issue.get("line_number", 0)
                         findings.append(
-                            f"[{severity}/{confidence}] {filename}:{line} - {text}"
+                            f"[{severity}/{confidence}] {filename}:{line} - {text}",
                         )
                 except json.JSONDecodeError as e:
                     sys.stderr.write(
-                        f"security_reviewer: Failed to parse bandit output: {e}\n"
+                        f"security_reviewer: Failed to parse bandit output: {e}\n",
                     )
                     scan_complete = False
 

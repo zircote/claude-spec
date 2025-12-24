@@ -1,35 +1,70 @@
-"""
-Log Analyzer for claude-spec Prompt Capture Hook
+"""Log Analyzer for claude-spec Prompt Capture Hook.
 
 Analyzes .prompt-log.json to generate insights for retrospectives.
 Calculates metrics, identifies patterns, and generates recommendations.
 """
 
-import os
+from __future__ import annotations
+
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 
-# Add parent directory for imports
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
-if PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, PLUGIN_ROOT)
+# SEC-MED-003: sys.path manipulation for standalone execution
+# See analyze_cli.py for detailed security documentation.
+_SCRIPT_DIR = Path(__file__).parent.resolve()
+_PLUGIN_ROOT = _SCRIPT_DIR.parent
+if str(_PLUGIN_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PLUGIN_ROOT))
 
 from filters.log_entry import LogEntry
 from filters.log_writer import read_log
 
+# QUAL-MED-002: Named constants for analysis thresholds
+# These thresholds define when insights and recommendations are triggered
+
+# Session is considered "clarification-heavy" if it has more than this many questions
+CLARIFICATION_HEAVY_THRESHOLD = 10
+
+# Ratio thresholds for question analysis
+HIGH_QUESTION_RATIO = 0.5  # >50% questions triggers insight
+EXCESSIVE_QUESTIONS_RATIO = 0.3  # >30% questions triggers recommendation
+
+# Session count thresholds
+MULTI_SESSION_THRESHOLD = 3  # More than 3 sessions triggers insight
+MANY_SESSIONS_THRESHOLD = 5  # More than 5 sessions triggers recommendation
+
+# Prompt length thresholds (in characters)
+SHORT_PROMPT_THRESHOLD = 50  # Below this suggests prompts are too brief
+DETAILED_PROMPT_THRESHOLD = 500  # Above this suggests detailed prompting
+
 
 @dataclass
 class SessionStats:
-    """Statistics for a single session."""
+    """Statistics for a single Claude Code session.
+
+    Tracks interaction patterns within a single session, including
+    prompt types, questions asked, and content filtering events.
+
+    Attributes:
+        session_id: Unique identifier for the session (from CLAUDE_SESSION_ID).
+        entry_count: Total number of log entries in this session.
+        user_inputs: Count of user-initiated prompts (entry_type="user_input").
+        expanded_prompts: Count of expanded slash command prompts.
+        response_summaries: Count of response summary entries.
+        questions_asked: Number of user inputs containing "?" (indicates clarification).
+        filtered_content: Number of entries with secrets filtered out.
+        start_time: ISO timestamp of first entry in session (if available).
+        end_time: ISO timestamp of last entry in session (if available).
+    """
 
     session_id: str
     entry_count: int
     user_inputs: int
     expanded_prompts: int
     response_summaries: int
-    questions_asked: int  # Entries ending with ?
+    questions_asked: int  # Entries containing "?"
     filtered_content: int
     start_time: str | None = None
     end_time: str | None = None
@@ -37,7 +72,30 @@ class SessionStats:
 
 @dataclass
 class LogAnalysis:
-    """Complete analysis of a prompt log."""
+    """Complete analysis of a prompt log for retrospective generation.
+
+    Aggregates metrics across all sessions in a prompt log, providing
+    insights for project retrospectives and interaction pattern analysis.
+
+    Attributes:
+        total_entries: Total log entries across all sessions.
+        user_inputs: Total user-initiated prompts.
+        expanded_prompts: Total expanded slash command prompts.
+        response_summaries: Total response summary entries.
+        session_count: Number of unique sessions in the log.
+        avg_entries_per_session: Mean entries per session for efficiency metrics.
+        total_questions: Prompts containing "?" (clarification indicators).
+        clarification_heavy_sessions: Sessions exceeding CLARIFICATION_HEAVY_THRESHOLD.
+        total_filtered_content: Entries with any content filtered.
+        secrets_filtered: Total secret instances filtered (may be >1 per entry).
+        prompt_length_min: Shortest user prompt in characters.
+        prompt_length_max: Longest user prompt in characters.
+        prompt_length_avg: Mean user prompt length for detail metrics.
+        commands_used: Frequency map of slash commands used.
+        session_stats: Per-session statistics for detailed analysis.
+        first_entry_time: ISO timestamp of earliest log entry.
+        last_entry_time: ISO timestamp of latest log entry.
+    """
 
     total_entries: int = 0
     user_inputs: int = 0
@@ -48,7 +106,9 @@ class LogAnalysis:
     avg_entries_per_session: float = 0.0
 
     total_questions: int = 0  # Prompts containing "?"
-    clarification_heavy_sessions: int = 0  # Sessions with >10 questions
+    clarification_heavy_sessions: int = (
+        0  # Sessions exceeding CLARIFICATION_HEAVY_THRESHOLD
+    )
 
     total_filtered_content: int = 0
     secrets_filtered: int = 0
@@ -156,7 +216,7 @@ def analyze_log(project_dir: str) -> LogAnalysis | None:
                 e
                 for e in session_entries
                 if e.filter_applied and e.filter_applied.secret_count > 0
-            ]
+            ],
         )
 
         stats = SessionStats(
@@ -176,7 +236,7 @@ def analyze_log(project_dir: str) -> LogAnalysis | None:
         )
         analysis.session_stats.append(stats)
 
-        if session_questions > 10:
+        if session_questions > CLARIFICATION_HEAVY_THRESHOLD:
             analysis.clarification_heavy_sessions += 1
 
     # Set time bounds
@@ -248,35 +308,35 @@ def generate_interaction_analysis(analysis: LogAnalysis) -> str:
     if analysis.clarification_heavy_sessions > 0:
         insights.append(
             f"**High clarification sessions**: {analysis.clarification_heavy_sessions} session(s) "
-            f"had >10 questions, suggesting initial requirements may have been unclear."
+            f"had >10 questions, suggesting initial requirements may have been unclear.",
         )
 
     # Question ratio
     if analysis.user_inputs > 0:
         question_ratio = analysis.total_questions / analysis.user_inputs
-        if question_ratio > 0.5:
+        if question_ratio > HIGH_QUESTION_RATIO:
             insights.append(
                 f"**Question-heavy interaction**: {question_ratio:.0%} of prompts were questions. "
-                "Consider providing more upfront context in future projects."
+                "Consider providing more upfront context in future projects.",
             )
 
     # Session efficiency
-    if analysis.session_count > 3:
+    if analysis.session_count > MULTI_SESSION_THRESHOLD:
         insights.append(
             f"**Multiple sessions**: Project required {analysis.session_count} sessions. "
-            "Consider breaking down future projects into smaller chunks."
+            "Consider breaking down future projects into smaller chunks.",
         )
 
     # Prompt length
-    if analysis.prompt_length_avg < 50:
+    if analysis.prompt_length_avg < SHORT_PROMPT_THRESHOLD:
         insights.append(
-            "**Short prompts**: Average prompt was under 50 characters. "
-            "More detailed prompts may reduce back-and-forth."
+            f"**Short prompts**: Average prompt was under {SHORT_PROMPT_THRESHOLD} characters. "
+            "More detailed prompts may reduce back-and-forth.",
         )
-    elif analysis.prompt_length_avg > 500:
+    elif analysis.prompt_length_avg > DETAILED_PROMPT_THRESHOLD:
         insights.append(
-            "**Detailed prompts**: Average prompt was over 500 characters. "
-            "This level of detail likely improved Claude's understanding."
+            f"**Detailed prompts**: Average prompt was over {DETAILED_PROMPT_THRESHOLD} characters. "
+            "This level of detail likely improved Claude's understanding.",
         )
 
     if not insights:
@@ -295,27 +355,27 @@ def generate_interaction_analysis(analysis: LogAnalysis) -> str:
 
     if analysis.clarification_heavy_sessions > 0:
         recommendations.append(
-            "Spend more time on initial requirements gathering before starting implementation."
+            "Spend more time on initial requirements gathering before starting implementation.",
         )
 
-    if analysis.total_questions > analysis.user_inputs * 0.3:
+    if analysis.total_questions > analysis.user_inputs * EXCESSIVE_QUESTIONS_RATIO:
         recommendations.append(
-            "Provide more context in the initial project description."
+            "Provide more context in the initial project description.",
         )
 
-    if analysis.session_count > 5:
+    if analysis.session_count > MANY_SESSIONS_THRESHOLD:
         recommendations.append(
-            "Consider using /p with more specific scope to reduce session count."
+            "Consider using /p with more specific scope to reduce session count.",
         )
 
     if analysis.secrets_filtered > 0:
         recommendations.append(
-            "Be mindful of including secrets in prompts - they were filtered but consider avoiding them entirely."
+            "Be mindful of including secrets in prompts - they were filtered but consider avoiding them entirely.",
         )
 
     if not recommendations:
         recommendations.append(
-            "Interaction patterns were efficient. Continue current prompting practices."
+            "Interaction patterns were efficient. Continue current prompting practices.",
         )
 
     for rec in recommendations:

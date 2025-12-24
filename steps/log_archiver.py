@@ -9,20 +9,17 @@ from __future__ import annotations
 
 import shutil
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from .base import BaseStep, StepResult
+from .base import LOG_FILE, BaseStep, StepResult, find_latest_completed_project
 
 
 class LogArchiverStep(BaseStep):
     """Archives prompt logs as post-step for /c."""
 
     name = "archive-logs"
-
-    # Log file name at project root
-    LOG_FILE = ".prompt-log.json"
 
     def execute(self) -> StepResult:
         """Execute the log archival step.
@@ -31,42 +28,23 @@ class LogArchiverStep(BaseStep):
             StepResult with archive info in data
         """
         cwd_path = Path(self.cwd)
-        log_file = cwd_path / self.LOG_FILE
+        log_file = cwd_path / LOG_FILE
 
         # Check if log file exists
         if not log_file.is_file():
             return StepResult.ok("No prompt log to archive", archived=False)
 
         # Find the target directory - most recent completed project
-        completed_dir = cwd_path / "docs" / "spec" / "completed"
+        target_dir = find_latest_completed_project(cwd_path, "log_archiver")
 
-        if not completed_dir.is_dir():
+        if target_dir is None:
             return StepResult.ok(
-                "No completed projects directory found", archived=False
+                "No completed project directories found",
+                archived=False,
             ).add_warning("Log file remains at project root")
-
-        # Find most recently modified project directory
-        project_dirs = [d for d in completed_dir.iterdir() if d.is_dir()]
-
-        if not project_dirs:
-            return StepResult.ok(
-                "No completed project directories found", archived=False
-            ).add_warning("Log file remains at project root")
-
-        # Sort by modification time, most recent first
-        # Use 0 as fallback for dirs where stat() fails (permissions, broken symlinks)
-        def safe_mtime(d: Path) -> float:
-            try:
-                return d.stat().st_mtime
-            except OSError as e:
-                sys.stderr.write(f"log_archiver: Cannot stat {d}: {e}\n")
-                return 0
-
-        project_dirs.sort(key=safe_mtime, reverse=True)
-        target_dir = project_dirs[0]
 
         # Generate unique archive filename with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
         archive_name = f"prompt-log-{timestamp}.json"
         target_path = target_dir / archive_name
 

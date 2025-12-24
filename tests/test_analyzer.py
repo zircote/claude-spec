@@ -2,16 +2,16 @@
 Tests for the log analyzer module.
 """
 
-import os
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 # Add parent directory for imports
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
-if PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, PLUGIN_ROOT)
+SCRIPT_DIR = Path(__file__).resolve().parent
+PLUGIN_ROOT = SCRIPT_DIR.parent
+if str(PLUGIN_ROOT) not in sys.path:
+    sys.path.insert(0, str(PLUGIN_ROOT))
 
 from analyzers.log_analyzer import (
     LogAnalysis,
@@ -37,10 +37,9 @@ class TestAnalyzeLog(unittest.TestCase):
 
     def _write_log_entries(self, entries):
         """Helper to write log entries to temp directory."""
-        log_path = os.path.join(self.temp_dir, PROMPT_LOG_FILENAME)
-        with open(log_path, "w") as f:
-            for entry in entries:
-                f.write(entry.to_json() + "\n")
+        log_path = Path(self.temp_dir) / PROMPT_LOG_FILENAME
+        with log_path.open("w") as f:
+            f.writelines(entry.to_json() + "\n" for entry in entries)
 
     def test_empty_log_returns_none(self):
         """analyze_log should return None for empty/missing log."""
@@ -50,7 +49,9 @@ class TestAnalyzeLog(unittest.TestCase):
     def test_single_entry(self):
         """analyze_log should handle single entry."""
         entry = LogEntry.create(
-            session_id="s1", entry_type="user_input", content="Hello"
+            session_id="s1",
+            entry_type="user_input",
+            content="Hello",
         )
         self._write_log_entries([entry])
 
@@ -66,7 +67,9 @@ class TestAnalyzeLog(unittest.TestCase):
         entries = [
             LogEntry.create(session_id="s1", entry_type="user_input", content="First"),
             LogEntry.create(
-                session_id="s1", entry_type="user_input", content="Second?"
+                session_id="s1",
+                entry_type="user_input",
+                content="Second?",
             ),
             LogEntry.create(session_id="s2", entry_type="user_input", content="Third"),
         ]
@@ -118,10 +121,15 @@ class TestAnalyzeLog(unittest.TestCase):
                 command="/p",
             ),
             LogEntry.create(
-                session_id="s1", entry_type="user_input", content="no command"
+                session_id="s1",
+                entry_type="user_input",
+                content="no command",
             ),  # command=None
             LogEntry.create(
-                session_id="s1", entry_type="user_input", content="test", command=""
+                session_id="s1",
+                entry_type="user_input",
+                content="test",
+                command="",
             ),  # empty command
             LogEntry.create(
                 session_id="s1",
@@ -179,7 +187,9 @@ class TestAnalyzeLog(unittest.TestCase):
         # Create a session with > 10 questions
         entries = [
             LogEntry.create(
-                session_id="s1", entry_type="user_input", content=f"Question {i}?"
+                session_id="s1",
+                entry_type="user_input",
+                content=f"Question {i}?",
             )
             for i in range(15)
         ]

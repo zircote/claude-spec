@@ -284,6 +284,79 @@ ALL remediation agents MUST include progress tracking in their workflow:
 
 </progress_tracking>
 
+<all_mode_completion_contract>
+
+## ALL MODE COMPLETION CONTRACT (MANDATORY)
+
+**THIS IS A HARD REQUIREMENT - ALL MODE IS NOT COMPLETE UNTIL ALL FINDINGS ARE REMEDIATED**
+
+### Completion Criteria
+
+The `--all` mode task is **NOT COMPLETE** until:
+
+1. ✅ ALL Critical findings are remediated (0 remaining)
+2. ✅ ALL High findings are remediated (0 remaining)
+3. ✅ ALL Medium findings are remediated (0 remaining)
+4. ✅ ALL Low findings are remediated (0 remaining)
+5. ✅ REMEDIATION_TASKS.md shows 100% completion
+6. ✅ Tests pass after all fixes
+7. ✅ CI checks pass after all fixes
+
+### Progress Tracking Requirement
+
+During remediation, maintain a running count:
+
+```
+📊 ALL MODE Progress: [completed]/[total] findings
+   ✅ Critical: [X]/[Y]
+   ✅ High: [X]/[Y]
+   🔄 Medium: [X]/[Y]  ← Currently remediating
+   ⏳ Low: [0]/[Y]     ← Pending
+```
+
+Update this after EACH batch of fixes. Do NOT move to verification until all counts show [Y]/[Y].
+
+### Anti-Premature-Termination Rules
+
+**DO NOT:**
+- ❌ Stop after Critical+High (that's `--quick` mode, not `--all`)
+- ❌ Claim "remaining items are low priority" - ALL means ALL
+- ❌ Defer Medium/Low to "next sprint" - ALL mode does not defer
+- ❌ Report completion with any non-zero "remaining" counts
+- ❌ Context-switch to other tasks before finishing
+
+**DO:**
+- ✅ Continue through ALL severity levels in order: Critical → High → Medium → Low
+- ✅ Track progress with explicit counts after each batch
+- ✅ Only report completion when REMEDIATION_TASKS.md shows 100%
+- ✅ If context limits approach, use compact summaries but continue working
+
+### Validation Checkpoint
+
+Before generating REMEDIATION_REPORT.md, run this validation:
+
+```bash
+# Count remaining unchecked items in REMEDIATION_TASKS.md
+REMAINING=$(grep -c '^\- \[ \]' "${REPORT_DIR}/REMEDIATION_TASKS.md" || echo 0)
+
+if [ "$REMAINING" -gt 0 ]; then
+  echo "❌ ALL MODE INCOMPLETE: $REMAINING findings not remediated"
+  echo "Continue remediation until all items are checked."
+  exit 1
+else
+  echo "✅ ALL MODE COMPLETE: All findings remediated"
+fi
+```
+
+### Session Boundary Handling
+
+If the session must end before completion:
+1. Update REMEDIATION_TASKS.md with current progress
+2. Document exactly which items remain
+3. First message in next session: "Continuing ALL MODE remediation - [X] findings remaining"
+
+</all_mode_completion_contract>
+
 <target>$ARGUMENTS</target>
 
 </shared_configuration>

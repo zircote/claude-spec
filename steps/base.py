@@ -125,7 +125,70 @@ Post-steps (run after command):
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import Any
+
+# =============================================================================
+# Shared Constants (DRY fix for QUAL-001)
+# =============================================================================
+
+LOG_FILE = ".prompt-log.json"
+
+
+# =============================================================================
+# Shared Utility Functions (DRY fix for QUAL-001)
+# =============================================================================
+
+
+def safe_mtime(path: Path, context: str = "base") -> float:
+    """Get modification time safely, returning 0 on errors.
+
+    This utility is shared across steps that need to sort files/directories
+    by modification time. It handles OSError gracefully for permissions,
+    broken symlinks, etc.
+
+    Args:
+        path: Path to get modification time for.
+        context: Caller context for error messages (e.g., "log_archiver").
+
+    Returns:
+        Modification time as float, or 0 on error.
+    """
+    import sys
+
+    try:
+        return path.stat().st_mtime
+    except OSError as e:
+        sys.stderr.write(f"{context}: Cannot stat {path}: {e}\n")
+        return 0
+
+
+def find_latest_completed_project(cwd: Path, context: str = "base") -> Path | None:
+    """Find the most recently modified completed project directory.
+
+    Looks in docs/spec/completed/ for project directories and returns
+    the one with the most recent modification time.
+
+    Args:
+        cwd: Current working directory (project root).
+        context: Caller context for error messages.
+
+    Returns:
+        Path to most recent project directory, or None if not found.
+    """
+    completed_dir = cwd / "docs" / "spec" / "completed"
+
+    if not completed_dir.is_dir():
+        return None
+
+    project_dirs = [d for d in completed_dir.iterdir() if d.is_dir()]
+
+    if not project_dirs:
+        return None
+
+    # Sort by modification time, most recent first
+    project_dirs.sort(key=lambda d: safe_mtime(d, context), reverse=True)
+    return project_dirs[0]
 
 
 class ErrorCode(Enum):
@@ -337,7 +400,6 @@ class BaseStep(ABC):
         Returns:
             StepResult indicating success or failure.
         """
-        pass
 
     def validate(self) -> bool:
         """Validate preconditions. Override in subclasses if needed.

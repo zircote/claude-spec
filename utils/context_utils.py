@@ -119,6 +119,7 @@ def load_git_state(
             capture_output=True,
             text=True,
             timeout=timeout,
+            check=False,  # Handle return code manually
         )
         if result.returncode == 0:
             parts.append(f"**Branch**: {result.stdout.strip()}")
@@ -130,6 +131,7 @@ def load_git_state(
             capture_output=True,
             text=True,
             timeout=timeout,
+            check=False,  # Handle return code manually
         )
         if result.returncode == 0 and result.stdout.strip():
             parts.append(f"\n**Recent commits**:\n```\n{result.stdout.strip()}\n```")
@@ -141,6 +143,7 @@ def load_git_state(
             capture_output=True,
             text=True,
             timeout=timeout,
+            check=False,  # Handle return code manually
         )
         if result.returncode == 0:
             changes = result.stdout.strip()
@@ -154,7 +157,7 @@ def load_git_state(
                     else:
                         parts.append(
                             f"```\n{chr(10).join(lines[:max_change_lines])}\n"
-                            f"... and {len(lines) - max_change_lines} more\n```"
+                            f"... and {len(lines) - max_change_lines} more\n```",
                         )
             else:
                 parts.append("\n**Working tree**: clean")

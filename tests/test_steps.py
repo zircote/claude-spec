@@ -17,6 +17,7 @@ from steps import (
     StepError,
     StepResult,
 )
+from steps.base import BaseStep, ErrorCode
 
 
 class TestStepResult:
@@ -71,14 +72,18 @@ class TestContextLoaderStep:
         """Test loading git state."""
         import subprocess
 
-        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True, check=True)
         subprocess.run(
             ["git", "config", "user.email", "test@test.com"],
             cwd=tmp_path,
             capture_output=True,
+            check=True,
         )
         subprocess.run(
-            ["git", "config", "user.name", "Test"], cwd=tmp_path, capture_output=True
+            ["git", "config", "user.name", "Test"],
+            cwd=tmp_path,
+            capture_output=True,
+            check=True,
         )
 
         step = ContextLoaderStep(str(tmp_path))
@@ -148,7 +153,9 @@ class TestSecurityReviewerStep:
         assert any("incomplete" in w.lower() for w in result.warnings)
 
     def test_indicates_scan_error_when_bandit_available_but_fails(
-        self, tmp_path, monkeypatch
+        self,
+        tmp_path,
+        monkeypatch,
     ):
         """Test indicates scan error when bandit is available but scan fails."""
         import subprocess
@@ -165,7 +172,7 @@ class TestSecurityReviewerStep:
         def mock_subprocess_run(cmd, *args, **kwargs):
             if cmd == ["bandit", "--version"]:
                 return subprocess.CompletedProcess(cmd, 0, "bandit 1.0", "")
-            raise FileNotFoundError()
+            raise FileNotFoundError
 
         monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
 
@@ -281,7 +288,7 @@ class TestRetrospectiveGeneratorStep:
         project = tmp_path / "docs" / "spec" / "completed" / "test-project"
         project.mkdir(parents=True)
         (project / "README.md").write_text(
-            "# Test Project\n\nA test project for testing."
+            "# Test Project\n\nA test project for testing.",
         )
 
         step = RetrospectiveGeneratorStep(str(tmp_path))
@@ -958,8 +965,8 @@ class TestSecurityReviewerStepRunBanditErrors:
                         "filename": "utils.py",
                         "line_number": 10,
                     },
-                ]
-            }
+                ],
+            },
         )
 
         def mock_subprocess_run(cmd, *args, **kwargs):
@@ -1160,7 +1167,7 @@ class TestRetrospectiveGeneratorStepErrorPaths:
 
         # Create valid log file
         (tmp_path / ".prompt-log.json").write_text(
-            '{"timestamp": "2025-01-01T00:00:00Z"}'
+            '{"timestamp": "2025-01-01T00:00:00Z"}',
         )
 
         step = RetrospectiveGeneratorStep(str(tmp_path))
@@ -1239,3 +1246,241 @@ class TestRetrospectiveGeneratorStepModuleLevelRun:
         result = run(str(tmp_path), {"some": "config"})
         assert result.success is True
         assert result.data.get("generated") is True
+
+
+# ============================================================================
+# TEST-MED-001: ErrorCode Enum Values Tests
+# ============================================================================
+
+
+class TestErrorCodeEnum:
+    """Tests for ErrorCode enum values and usage (TEST-MED-001)."""
+
+    def test_all_error_codes_defined(self):
+        """Test all expected error codes are defined."""
+        assert ErrorCode.NONE.value == "none"
+        assert ErrorCode.VALIDATION.value == "validation"
+        assert ErrorCode.IO.value == "io"
+        assert ErrorCode.TIMEOUT.value == "timeout"
+        assert ErrorCode.CONFIG.value == "config"
+        assert ErrorCode.DEPENDENCY.value == "dependency"
+        assert ErrorCode.PERMISSION.value == "permission"
+        assert ErrorCode.PARSE.value == "parse"
+        assert ErrorCode.UNKNOWN.value == "unknown"
+
+    def test_error_code_count(self):
+        """Test expected number of error codes."""
+        # Should have 9 error codes
+        assert len(ErrorCode) == 9
+
+    def test_error_code_in_step_result_fail(self):
+        """Test error code can be passed to StepResult.fail()."""
+        result = StepResult.fail("timeout error", error_code=ErrorCode.TIMEOUT)
+        assert result.error_code == ErrorCode.TIMEOUT
+        assert result.success is False
+
+    def test_error_code_in_step_result_ok(self):
+        """Test StepResult.ok() sets error_code to NONE."""
+        result = StepResult.ok("Success")
+        assert result.error_code == ErrorCode.NONE
+
+    def test_error_code_in_step_error(self):
+        """Test StepError can carry error code."""
+        error = StepError("Failed", step_name="test", error_code=ErrorCode.IO)
+        assert error.error_code == ErrorCode.IO
+        assert error.step_name == "test"
+
+
+# ============================================================================
+# TEST-MED-002: StepResult.is_retriable() Tests
+# ============================================================================
+
+
+class TestStepResultIsRetriable:
+    """Tests for StepResult.is_retriable() method (TEST-MED-002)."""
+
+    def test_is_retriable_true_when_failed_and_retriable(self):
+        """Test is_retriable returns True for retriable failures."""
+        result = StepResult.fail("Network error", retriable=True)
+        assert result.is_retriable() is True
+
+    def test_is_retriable_false_when_failed_not_retriable(self):
+        """Test is_retriable returns False for non-retriable failures."""
+        result = StepResult.fail("Config error", retriable=False)
+        assert result.is_retriable() is False
+
+    def test_is_retriable_false_when_success(self):
+        """Test is_retriable returns False for successful results."""
+        result = StepResult.ok("Done")
+        assert result.is_retriable() is False
+
+    def test_is_retriable_false_when_success_with_retriable_flag(self):
+        """Test is_retriable returns False even if success has retriable=True."""
+        # This is an edge case - success shouldn't have retriable=True
+        # but if it does, is_retriable() should still return False
+        result = StepResult(success=True, message="Done", retriable=True)
+        assert result.is_retriable() is False
+
+    def test_is_retriable_with_timeout_error_code(self):
+        """Test is_retriable with timeout error code."""
+        result = StepResult.fail(
+            "Timed out",
+            error_code=ErrorCode.TIMEOUT,
+            retriable=True,
+        )
+        assert result.is_retriable() is True
+        assert result.error_code == ErrorCode.TIMEOUT
+
+    def test_is_retriable_with_io_error_code(self):
+        """Test is_retriable with IO error code."""
+        result = StepResult.fail("Disk full", error_code=ErrorCode.IO, retriable=True)
+        assert result.is_retriable() is True
+        assert result.error_code == ErrorCode.IO
+
+
+# ============================================================================
+# TEST-MED-004: BaseStep.run() Exception Handling Tests
+# ============================================================================
+
+
+class ConcreteTestStep(BaseStep):
+    """Concrete step implementation for testing BaseStep.run()."""
+
+    name = "test-step"
+
+    def __init__(self, cwd, config=None, execute_fn=None, validate_fn=None):
+        super().__init__(cwd, config)
+        self._execute_fn = execute_fn
+        self._validate_fn = validate_fn
+
+    def execute(self) -> StepResult:
+        if self._execute_fn:
+            return self._execute_fn()
+        return StepResult.ok("Default success")
+
+    def validate(self) -> bool:
+        if self._validate_fn:
+            return self._validate_fn()
+        return True
+
+
+class TestBaseStepRunExceptionHandling:
+    """Tests for BaseStep.run() exception handling paths (TEST-MED-004)."""
+
+    def test_run_catches_timeout_error(self, tmp_path):
+        """Test run() catches TimeoutError and returns retriable result."""
+
+        def raise_timeout():
+            raise TimeoutError("Operation timed out")
+
+        step = ConcreteTestStep(str(tmp_path), execute_fn=raise_timeout)
+        result = step.run()
+
+        assert result.success is False
+        assert result.error_code == ErrorCode.TIMEOUT
+        assert result.retriable is True
+        assert "timed out" in result.warnings[0].lower()
+
+    def test_run_catches_permission_error(self, tmp_path):
+        """Test run() catches PermissionError and returns non-retriable result."""
+
+        def raise_permission():
+            raise PermissionError("Access denied")
+
+        step = ConcreteTestStep(str(tmp_path), execute_fn=raise_permission)
+        result = step.run()
+
+        assert result.success is False
+        assert result.error_code == ErrorCode.PERMISSION
+        assert result.retriable is False
+        assert "permission denied" in result.warnings[0].lower()
+
+    def test_run_catches_os_error(self, tmp_path):
+        """Test run() catches OSError and returns retriable result."""
+
+        def raise_oserror():
+            raise OSError("Disk I/O error")
+
+        step = ConcreteTestStep(str(tmp_path), execute_fn=raise_oserror)
+        result = step.run()
+
+        assert result.success is False
+        assert result.error_code == ErrorCode.IO
+        assert result.retriable is True
+        assert "i/o error" in result.warnings[0].lower()
+
+    def test_run_catches_generic_exception(self, tmp_path):
+        """Test run() catches generic Exception and returns non-retriable result."""
+
+        def raise_generic():
+            raise RuntimeError("Something unexpected happened")
+
+        step = ConcreteTestStep(str(tmp_path), execute_fn=raise_generic)
+        result = step.run()
+
+        assert result.success is False
+        assert result.error_code == ErrorCode.UNKNOWN
+        assert result.retriable is False
+        assert "encountered error" in result.warnings[0].lower()
+
+    def test_run_propagates_step_error(self, tmp_path):
+        """Test run() propagates StepError without catching."""
+        import pytest
+
+        def raise_step_error():
+            raise StepError("Critical failure", step_name="test-step")
+
+        step = ConcreteTestStep(str(tmp_path), execute_fn=raise_step_error)
+
+        with pytest.raises(StepError) as exc_info:
+            step.run()
+
+        assert "Critical failure" in str(exc_info.value)
+        assert exc_info.value.step_name == "test-step"
+
+    def test_run_returns_validation_failure(self, tmp_path):
+        """Test run() returns failure when validation fails."""
+
+        def fail_validation():
+            return False
+
+        step = ConcreteTestStep(str(tmp_path), validate_fn=fail_validation)
+        result = step.run()
+
+        assert result.success is False
+        assert result.error_code == ErrorCode.VALIDATION
+        assert "Validation failed" in result.message
+
+    def test_run_skips_execute_on_validation_failure(self, tmp_path):
+        """Test run() does not call execute() when validation fails."""
+        execute_called = [False]
+
+        def track_execute():
+            execute_called[0] = True
+            return StepResult.ok("Executed")
+
+        def fail_validation():
+            return False
+
+        step = ConcreteTestStep(
+            str(tmp_path),
+            execute_fn=track_execute,
+            validate_fn=fail_validation,
+        )
+        result = step.run()
+
+        assert result.success is False
+        assert execute_called[0] is False
+
+    def test_run_success_path(self, tmp_path):
+        """Test run() executes successfully with no exceptions."""
+
+        def success_execute():
+            return StepResult.ok("All good", data_key="data_value")
+
+        step = ConcreteTestStep(str(tmp_path), execute_fn=success_execute)
+        result = step.run()
+
+        assert result.success is True
+        assert result.message == "All good"
+        assert result.data.get("data_key") == "data_value"

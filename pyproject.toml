@@ -96,3 +96,8 @@ replace = 'version = "{new_version}"'
 filename = ".claude-plugin/plugin.json"
 search = '"version": "{current_version}"'
 replace = '"version": "{new_version}"'
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

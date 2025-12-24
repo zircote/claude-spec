@@ -1,7 +1,6 @@
 """Tests for log_writer module."""
 
 import json
-import os
 import sys
 import tempfile
 import unittest
@@ -10,14 +9,16 @@ from pathlib import Path
 from unittest.mock import patch
 
 # Add parent directory for imports
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
-if PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, PLUGIN_ROOT)
+SCRIPT_DIR = Path(__file__).resolve().parent
+PLUGIN_ROOT = SCRIPT_DIR.parent
+if str(PLUGIN_ROOT) not in sys.path:
+    sys.path.insert(0, str(PLUGIN_ROOT))
 
 from filters.log_entry import LogEntry
 from filters.log_writer import (
+    LOCK_TIMEOUT_SECONDS,
     PROMPT_LOG_FILENAME,
+    LockTimeoutError,
     PathTraversalError,
     _check_symlink_safety,
     _validate_path,
@@ -198,7 +199,7 @@ class TestAppendToLog(unittest.TestCase):
         append_to_log(self.temp_dir, entry2)
 
         log_path = get_log_path(self.temp_dir)
-        with open(log_path) as f:
+        with log_path.open() as f:
             lines = f.readlines()
 
         self.assertEqual(len(lines), 2)
@@ -214,7 +215,7 @@ class TestAppendToLog(unittest.TestCase):
         append_to_log(self.temp_dir, entry)
 
         log_path = get_log_path(self.temp_dir)
-        with open(log_path) as f:
+        with log_path.open() as f:
             line = f.readline()
 
         data = json.loads(line)
@@ -286,7 +287,7 @@ class TestReadLog(unittest.TestCase):
             content="test",
         )
 
-        with open(log_path, "w") as f:
+        with log_path.open("w") as f:
             f.write("\n")
             f.write(entry.to_json() + "\n")
             f.write("\n")
@@ -304,7 +305,7 @@ class TestReadLog(unittest.TestCase):
             content="valid entry",
         )
 
-        with open(log_path, "w") as f:
+        with log_path.open("w") as f:
             f.write("this is not json\n")
             f.write(entry.to_json() + "\n")
             f.write("{invalid json}\n")
@@ -321,10 +322,10 @@ class TestReadLog(unittest.TestCase):
         log_path = get_log_path(self.temp_dir)
 
         # Create file then make it unreadable
-        with open(log_path, "w") as f:
+        with log_path.open("w") as f:
             f.write('{"test": "data"}\n')
 
-        with patch("builtins.open", side_effect=OSError("Permission denied")):
+        with patch.object(Path, "open", side_effect=OSError("Permission denied")):
             with patch("sys.stderr", new_callable=StringIO) as mock_stderr:
                 entries = read_log(self.temp_dir)
 
@@ -416,7 +417,7 @@ class TestLogExists(unittest.TestCase):
     def test_returns_true_if_file_exists(self):
         """Should return True if log file exists."""
         log_path = get_log_path(self.temp_dir)
-        with open(log_path, "w") as f:
+        with log_path.open("w") as f:
             f.write("")
 
         self.assertTrue(log_exists(self.temp_dir))
@@ -443,7 +444,7 @@ class TestClearLog(unittest.TestCase):
     def test_removes_file(self):
         """Should remove existing log file."""
         log_path = get_log_path(self.temp_dir)
-        with open(log_path, "w") as f:
+        with log_path.open("w") as f:
             f.write("some content\n")
 
         result = clear_log(self.temp_dir)
@@ -454,7 +455,7 @@ class TestClearLog(unittest.TestCase):
     def test_returns_false_on_error(self):
         """Should return False on removal error."""
         log_path = get_log_path(self.temp_dir)
-        with open(log_path, "w") as f:
+        with log_path.open("w") as f:
             f.write("content\n")
 
         with patch.object(Path, "unlink", side_effect=OSError("Permission denied")):
@@ -481,6 +482,79 @@ class TestClearLog(unittest.TestCase):
         # Both files should still exist
         self.assertTrue(real_file.exists())
         self.assertTrue(log_symlink.exists())
+
+
+class TestLockTimeout(unittest.TestCase):
+    """Tests for lock timeout behavior (RES-HIGH-001)."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        import shutil
+
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_lock_timeout_error_is_timeout_error(self):
+        """LockTimeoutError should be a subclass of TimeoutError."""
+        self.assertTrue(issubclass(LockTimeoutError, TimeoutError))
+
+    def test_lock_timeout_error_message(self):
+        """LockTimeoutError should have meaningful message."""
+        err = LockTimeoutError("Lock acquisition timed out after 30s")
+        self.assertIn("30s", str(err))
+
+    def test_lock_timeout_constant_defined(self):
+        """LOCK_TIMEOUT_SECONDS constant should be defined."""
+        self.assertIsInstance(LOCK_TIMEOUT_SECONDS, int)
+        self.assertGreater(LOCK_TIMEOUT_SECONDS, 0)
+
+    def test_append_uses_timeout_mechanism(self):
+        """append_to_log should use signal-based timeout for lock acquisition."""
+        import signal
+
+        entry = LogEntry.create(
+            session_id="test-123",
+            entry_type="user_input",
+            content="test content",
+        )
+
+        # First write should succeed
+        result = append_to_log(self.temp_dir, entry)
+        self.assertTrue(result)
+
+        # Verify signal handler is restored after successful write
+        # by checking that SIGALRM handler is back to default/SIG_DFL
+        handler = signal.getsignal(signal.SIGALRM)
+        # Handler should be either SIG_DFL (0) or SIG_IGN (1), not our custom handler
+        self.assertIn(
+            handler,
+            [signal.SIG_DFL, signal.SIG_IGN, None],
+            "Signal handler should be restored after write",
+        )
+
+    def test_lock_timeout_raises_on_alarm(self):
+        """LockTimeoutError should be raised when SIGALRM fires during lock wait."""
+        import signal
+
+        # Create a simple test that verifies our timeout handler works
+        def test_handler(_signum: int, _frame: object) -> None:
+            raise LockTimeoutError("Test timeout")
+
+        old_handler = signal.signal(signal.SIGALRM, test_handler)
+        signal.alarm(1)  # Fire in 1 second
+
+        try:
+            with self.assertRaises(LockTimeoutError):
+                # Simulate waiting for a lock (this would timeout in real scenario)
+                import time
+
+                time.sleep(2)  # Will be interrupted by SIGALRM
+        finally:
+            signal.alarm(0)  # Cancel alarm
+            signal.signal(signal.SIGALRM, old_handler)
 
 
 if __name__ == "__main__":

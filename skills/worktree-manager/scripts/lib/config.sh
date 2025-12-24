@@ -146,7 +146,7 @@ show_config_summary() {
     echo "Current values:"
     echo "  terminal:      $(get_config "terminal" "ghostty")"
     echo "  shell:         $(get_config "shell" "bash")"
-    echo "  claudeCommand: $(get_config "claudeCommand" "claude --dangerously-skip-permissions")"
+    echo "  claudeCommand: $(get_config "claudeCommand" "claude")"
     echo "  worktreeBase:  $(get_config "worktreeBase" "$HOME/Projects/worktrees")"
     echo "  portPool:      $(get_config_nested "portPool.start" "8100")-$(get_config_nested "portPool.end" "8199")"
 }
