@@ -415,3 +415,21 @@ tags:
 
     Attributes:
         total_entries: Total log entries across all sessions....
+
+---
+type: patterns
+timestamp: '2025-12-24T20:12:24.104664+00:00'
+summary: '...path derivation'
+tags:
+- auto-captured
+- post-tool-use
+- file:REMEDIATION_TASKS.md
+---
+
+...path derivation
+  - Fixed: 2025-12-24
+
+### Performance
+
+- [ ] **PERF-MED-001** Multiple regex pattern iterations (deferred - acceptable performance)
+- [ ] **PERF-MED-002** Repeated jq invocations...
