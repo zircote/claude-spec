@@ -210,3 +210,22 @@ Instead of a fixed pattern, user wants branch names to match the issue type:
 
 ## Rationale
 Aligns with conventional commits workflow and provides semantic meaning in branch names.
+
+---
+type: learnings
+timestamp: '2025-12-24T19:23:33.954531+00:00'
+summary: '...proceeds to the new workflow section
+
+  `─────────────────────────────────────────────────`
+
+  Now ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...proceeds to the new workflow section
+`─────────────────────────────────────────────────`
+
+Now I understand exactly what needs to be done. Let me implement Task 1.1 by:
+1. Adding `no_args` detection...
