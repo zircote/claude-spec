@@ -1,0 +1,15 @@
+---
+type: patterns
+timestamp: '2025-12-24T18:55:11.081621+00:00'
+summary: '...analyzers/log_analyzer.py` and `analyzers/analyze_cli.py`'
+tags:
+- auto-captured
+- post-tool-use
+- file:CODE_REVIEW.md
+---
+
+...analyzers/log_analyzer.py` and `analyzers/analyze_cli.py`
+
+**Description:** Both files contain similar pattern matching and analysis logic for prompt logs.
+
+**Impact:** Maintenance burden, risk of divergent...
