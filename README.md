@@ -11,6 +11,12 @@ A comprehensive Claude Code plugin for project specification and implementation 
   - `/c` - Project close-out and archival
   - `/migrate` - Migration from legacy `/arch:*` commands
 
+- **`/claude-spec:code-cleanup`** - Comprehensive code review and remediation
+  - Multi-agent parallel review (6-12+ specialists)
+  - Automated remediation with verification
+  - Focus modes for security, performance, maintainability
+  - `--focus=MAX` / `--focus=MAXALL` for maximum coverage
+
 - **`/claude-spec:worktree-*` Worktree Commands** - Git worktree automation
   - `/claude-spec:worktree-create` - Create worktrees with Claude agents
   - `/claude-spec:worktree-status` - View worktree status
@@ -90,6 +96,61 @@ Generates RETROSPECTIVE.md, archives to `docs/spec/completed/`.
 /claude-spec:worktree-status
 /claude-spec:worktree-cleanup feature/auth
 ```
+
+### Code Review & Remediation
+
+```bash
+# Interactive mode (asks for confirmation at each step)
+/claude-spec:code-cleanup
+
+# Quick mode (Critical+High, no prompts)
+/claude-spec:code-cleanup --quick
+
+# Fix everything (all severities, full verification)
+/claude-spec:code-cleanup --all
+
+# Focus on specific dimension
+/claude-spec:code-cleanup --focus=security
+/claude-spec:code-cleanup --focus=performance
+/claude-spec:code-cleanup --focus=maintainability
+
+# Maximum coverage (11+ agents)
+/claude-spec:code-cleanup --focus=MAX
+
+# Maximum coverage + auto-remediate everything (nuclear option)
+/claude-spec:code-cleanup --focus=MAXALL
+```
+
+#### Focus Modes
+
+| Mode | Agents | Behavior |
+|------|--------|----------|
+| (none) | 6 base | Interactive - asks for confirmation |
+| `--quick` | 6 base | Critical+High only, quick verification |
+| `--all` | 6 base | All severities, full verification, no prompts |
+| `--focus=security` | 6 base | Enhanced security (OWASP, CVE scan, secrets) |
+| `--focus=performance` | 6 base | Enhanced perf (benchmarks, query analysis) |
+| `--focus=maintainability` | 6 base | Enhanced maint (tech debt, complexity) |
+| `--focus=MAX` | 12+ | All enhancements, all specialists, interactive |
+| `--focus=MAXALL` | 12+ | All enhancements, all specialists, auto-fix all |
+
+#### Base Agents (6)
+
+1. **Security Analyst** - Vulnerabilities, auth, secrets, OWASP
+2. **Performance Engineer** - N+1, caching, algorithms
+3. **Architecture Reviewer** - SOLID, patterns, complexity
+4. **Code Quality Analyst** - DRY, dead code, naming
+5. **Test Coverage Analyst** - Coverage gaps, edge cases
+6. **Documentation Reviewer** - Docstrings, README, API docs
+
+#### Additional Specialists (MAX/MAXALL modes)
+
+- **Database Expert** - Query optimization, index analysis
+- **Penetration Tester** - Deep security beyond OWASP
+- **Compliance Auditor** - Regulatory patterns
+- **Chaos Engineer** - Resilience, fault tolerance
+- **Accessibility Tester** - WCAG compliance (if UI code)
+- **Prompt Engineer** - Anthropic best practices, Claude patterns (if prompts)
 
 ### Migration from /arch:*
 

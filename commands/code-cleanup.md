@@ -1,6 +1,6 @@
 ---
 argument-hint:
-  [path|--focus=security|--focus=performance|--focus=maintainability|--quick|--all]
+  [path|--focus=security|--focus=performance|--focus=maintainability|--focus=MAX|--focus=MAXALL|--quick|--all]
 description: Comprehensive code review and remediation using parallel specialist agents. Uses LSP semantic analysis when available for precise code navigation. Executes in two sequential steps - review then fix. Produces actionable findings prioritized by severity with clear remediation paths.
 model: claude-opus-4-5-20251101
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, TodoRead, TodoWrite, LSP
@@ -800,6 +800,166 @@ If `--focus` argument provided, weight that dimension more heavily:
 - Technical debt quantification
 - Code complexity metrics
 - Dependency freshness check
+
+### --focus=MAX
+
+**MAXIMUM COVERAGE MODE** - No limits, all available review agents.
+
+This mode combines ALL focus enhancements and deploys additional specialist agents beyond the base 6.
+
+#### Behavior
+- **Maximum agent deployment**: 12+ specialist agents in parallel
+- **All focus enhancements**: Security + Performance + Maintainability combined
+- **Full verification**: All pr-review-toolkit agents + tests + linters
+
+#### Combining with --all
+
+For **maximum review + automatic remediation**, use both flags:
+```
+/claude-spec:code-cleanup --focus=MAX --all
+```
+
+| Flag Combination | Review Agents | Remediation |
+|-----------------|---------------|-------------|
+| `--focus=MAX` | 12+ agents | Interactive (asks user) |
+| `--all` | 6 base agents | All findings, no prompts |
+| `--focus=MAX --all` | 12+ agents | All findings, no prompts |
+| `--focus=MAXALL` | 12+ agents | All findings, no prompts |
+
+#### Base 6 Agents (Enhanced)
+All base agents run with maximum thoroughness:
+1. Security Analyst (with OWASP Top 10, CVE scan, secrets scanning)
+2. Performance Engineer (with benchmarks, query analysis, profiling recommendations)
+3. Architecture Reviewer (with tech debt quantification, complexity metrics)
+4. Code Quality Analyst (with dependency freshness check)
+5. Test Coverage Analyst
+6. Documentation Reviewer
+
+#### Additional Specialist Agents
+Deploy these domain specialists in parallel with the base 6:
+
+| Agent | subagent_type | Focus |
+|-------|---------------|-------|
+| Database Expert | `postgres-pro` or `database-optimizer` | Query optimization, index analysis, schema review |
+| Penetration Tester | `penetration-tester` | Deep security beyond OWASP (exploit scenarios) |
+| Compliance Auditor | `compliance-auditor` | Regulatory patterns (logging, data handling) |
+| Chaos Engineer | `chaos-engineer` | Resilience, fault tolerance, error recovery |
+| Accessibility Tester | `accessibility-tester` | WCAG compliance, a11y patterns (if UI code) |
+| Prompt Engineer | `claude-code-guide` | Prompt quality, Anthropic best practices, Claude patterns |
+
+#### Agent Deployment Instructions
+
+When `--focus=MAX` detected, deploy ALL agents in parallel:
+
+```
+PARALLEL DEPLOYMENT (12+ agents):
+─────────────────────────────────────────────────────────────────────────
+# Base 6 with all enhancements
+Task(subagent_type="Explore", description="Security Analyst", ...)      # Enhanced
+Task(subagent_type="Explore", description="Performance Engineer", ...)  # Enhanced
+Task(subagent_type="Explore", description="Architecture Reviewer", ...) # Enhanced
+Task(subagent_type="Explore", description="Code Quality Analyst", ...)  # Enhanced
+Task(subagent_type="Explore", description="Test Coverage Analyst", ...)
+Task(subagent_type="Explore", description="Documentation Reviewer", ...)
+
+# Additional specialists
+Task(subagent_type="zircote:postgres-pro", description="Database analysis", ...)
+Task(subagent_type="zircote:penetration-tester", description="Deep security", ...)
+Task(subagent_type="zircote:compliance-auditor", description="Compliance check", ...)
+Task(subagent_type="zircote:chaos-engineer", description="Resilience review", ...)
+Task(subagent_type="zircote:accessibility-tester", description="A11y review", ...)  # If UI
+Task(subagent_type="claude-code-guide", description="Prompt engineering review", ...)  # If prompts
+─────────────────────────────────────────────────────────────────────────
+```
+
+#### MAX Mode Announcement
+
+At execution start, if `--focus=MAX` detected:
+
+```
+🔥 MAXIMUM COVERAGE MODE ACTIVATED
+
+Deploying ALL review agents with full enhancements:
+
+BASE AGENTS (6):
+  ✓ Security Analyst      [OWASP + CVE + Secrets]
+  ✓ Performance Engineer  [Benchmarks + Query Analysis]
+  ✓ Architecture Reviewer [Tech Debt + Complexity]
+  ✓ Code Quality Analyst  [DRY + Dead Code + Freshness]
+  ✓ Test Coverage Analyst [Coverage + Edge Cases]
+  ✓ Documentation         [Docstrings + API + README]
+
+SPECIALIST AGENTS (6+):
+  ✓ Database Expert       [Query + Index + Schema]
+  ✓ Penetration Tester    [Exploit Scenarios]
+  ✓ Compliance Auditor    [Regulatory Patterns]
+  ✓ Chaos Engineer        [Resilience + Fault Tolerance]
+  ✓ Accessibility Tester  [WCAG] (if UI code detected)
+  ✓ Prompt Engineer       [Anthropic Best Practices] (if prompts detected)
+
+VERIFICATION: Full (pr-review-toolkit + tests + linters)
+
+No limits. Maximum thoroughness.
+```
+
+If combined with `--all`, add to announcement:
+
+```
+REMEDIATION: ALL findings (Critical → Low) will be addressed
+USER PROMPTS: None - proceeding autonomously
+```
+
+### --focus=MAXALL
+
+**Convenience wrapper** for `--focus=MAX --all`. One flag, maximum everything.
+
+#### Behavior
+- **Equivalent to**: `--focus=MAX --all`
+- **12+ agents**: All base + specialist agents deployed
+- **All enhancements**: Security + Performance + Maintainability combined
+- **Auto-remediation**: ALL findings (Critical → Low) addressed without prompting
+- **No user prompts**: Proceeds autonomously through entire review + fix cycle
+- **Full verification**: All pr-review-toolkit agents + tests + linters
+
+#### When to Use
+
+| Scenario | Use |
+|----------|-----|
+| Want maximum review, pick what to fix | `--focus=MAX` |
+| Want to fix everything, standard review | `--all` |
+| Want everything, fix everything, no questions | `--focus=MAXALL` |
+
+#### MAXALL Announcement
+
+At execution start, if `--focus=MAXALL` detected:
+
+```
+🔥 MAXALL MODE - FULL AUTONOMOUS REVIEW + REMEDIATION
+
+Deploying ALL review agents with full enhancements:
+
+BASE AGENTS (6):
+  ✓ Security Analyst      [OWASP + CVE + Secrets]
+  ✓ Performance Engineer  [Benchmarks + Query Analysis]
+  ✓ Architecture Reviewer [Tech Debt + Complexity]
+  ✓ Code Quality Analyst  [DRY + Dead Code + Freshness]
+  ✓ Test Coverage Analyst [Coverage + Edge Cases]
+  ✓ Documentation         [Docstrings + API + README]
+
+SPECIALIST AGENTS (6+):
+  ✓ Database Expert       [Query + Index + Schema]
+  ✓ Penetration Tester    [Exploit Scenarios]
+  ✓ Compliance Auditor    [Regulatory Patterns]
+  ✓ Chaos Engineer        [Resilience + Fault Tolerance]
+  ✓ Accessibility Tester  [WCAG] (if UI code detected)
+  ✓ Prompt Engineer       [Anthropic Best Practices] (if prompts detected)
+
+REMEDIATION: ALL findings (Critical → Low) will be addressed
+VERIFICATION: Full (pr-review-toolkit + tests + linters)
+USER PROMPTS: None - fully autonomous
+
+One command. No limits. No questions.
+```
 
 </focus_modes>
 
