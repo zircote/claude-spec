@@ -578,3 +578,15 @@ tags:
 2. **build-issue-prompt.sh:61-62**: The sed escape pattern `s/[&/\]/\\&/g` is missing the pipe character `|` which is our sed delimiter.
 
 Let me fix both...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:36:01.952775+00:00'
+summary: 'Now let me fix the test files. Let me read and fix the common pattern used
+  for path setup:'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Now let me fix the test files. Let me read and fix the common pattern used for path setup:
