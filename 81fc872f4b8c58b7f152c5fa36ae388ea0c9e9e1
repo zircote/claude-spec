@@ -601,3 +601,23 @@ tags:
 ---
 
 ...todo list and add a note about Task 2.1 being already partially done (Filter Selection UI was implemented as part of Phase 1):
+
+---
+type: progress
+timestamp: '2025-12-24T18:55:11.125455+00:00'
+summary: '...Outdated (HIGH)'
+tags:
+- auto-captured
+- post-tool-use
+- file:CODE_REVIEW.md
+---
+
+...Outdated (HIGH)
+
+**File:** `CLAUDE.md`
+
+**Description:** Active spec projects section lists completed project.
+
+**Impact:** Misleading project status.
+
+**Remediation:** Update to reflect current...
