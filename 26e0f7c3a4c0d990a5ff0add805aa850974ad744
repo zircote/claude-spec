@@ -1,0 +1,891 @@
+---
+type: decisions
+timestamp: '2025-12-24T18:34:56.268463+00:00'
+summary: Auto-detect trigger for GitHub Issues workflow
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T18:34:56.300090+00:00'
+summary: AI-evaluated issue completeness with user override
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T18:36:51.726856+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  Auto-detect trigger for GitHub Issues workflow
+
+  ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T18:36:51.810414+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  AI-evaluated issue completeness with user overri...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T18:46:35.779914+00:00'
+summary: Auto-detect trigger for GitHub Issues workflow
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T18:46:35.818899+00:00'
+summary: AI-evaluated issue completeness with user override
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T18:48:18.832804+00:00'
+summary: Auto-detect trigger for GitHub Issues workflow
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T18:48:18.879063+00:00'
+summary: AI-evaluated issue completeness with user override
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T18:52:56.508021+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  Auto-detect trigger for GitHub Issues workflow
+
+  ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T18:52:56.603512+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  AI-evaluated issue completeness with user overri...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T19:00:13.817498+00:00'
+summary: Auto-detect trigger for GitHub Issues workflow
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T19:00:13.863508+00:00'
+summary: AI-evaluated issue completeness with user override
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T19:19:47.302879+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  Auto-detect trigger for GitHub Issues workflow
+
+  ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T19:19:47.393852+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  AI-evaluated issue completeness with user overri...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T19:23:33.131770+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  Auto-detect trigger for GitHub Issues workflow
+
+  ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T19:23:33.220218+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  AI-evaluated issue completeness with user overri...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T19:33:25.941488+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  Auto-detect trigger for GitHub Issues workflow
+
+  ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T19:33:26.036103+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  AI-evaluated issue completeness with user overri...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T19:44:32.175796+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  Auto-detect trigger for GitHub Issues workflow
+
+  ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T19:44:32.264330+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  AI-evaluated issue completeness with user overri...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T19:51:34.170430+00:00'
+summary: Auto-detect trigger for GitHub Issues workflow
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T19:51:34.215145+00:00'
+summary: AI-evaluated issue completeness with user override
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T19:56:12.085070+00:00'
+summary: Auto-detect trigger for GitHub Issues workflow
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T19:56:12.138923+00:00'
+summary: AI-evaluated issue completeness with user override
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T19:57:06.034454+00:00'
+summary: Auto-detect trigger for GitHub Issues workflow
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T19:57:06.075877+00:00'
+summary: AI-evaluated issue completeness with user override
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T19:57:36.852625+00:00'
+summary: Auto-detect trigger for GitHub Issues workflow
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T19:57:36.893398+00:00'
+summary: AI-evaluated issue completeness with user override
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T19:58:00.177103+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  Auto-detect trigger for GitHub Issues workflow
+
+  ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T19:58:00.265464+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  AI-evaluated issue completeness with user overri...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T20:04:35.171504+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  Auto-detect trigger for GitHub Issues workflow
+
+  ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T20:04:35.258795+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  AI-evaluated issue completeness with user overri...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T20:12:27.014911+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  Auto-detect trigger for GitHub Issues workflow
+
+  ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T20:12:27.099926+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  AI-evaluated issue completeness with user overri...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T20:25:24.436132+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  Auto-detect trigger for GitHub Issues workflow
+
+  ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T20:25:24.525248+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  AI-evaluated issue completeness with user overri...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T20:36:00.311857+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  Auto-detect trigger for GitHub Issues workflow
+
+  ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T20:36:00.398256+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  AI-evaluated issue completeness with user overri...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
+
+---
+type: decisions
+timestamp: '2025-12-24T20:41:04.210239+00:00'
+summary: Auto-detect trigger for GitHub Issues workflow
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T20:41:04.248136+00:00'
+summary: AI-evaluated issue completeness with user override
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
