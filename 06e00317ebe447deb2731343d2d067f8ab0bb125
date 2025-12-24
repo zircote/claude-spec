@@ -1,0 +1,32 @@
+---
+type: patterns
+timestamp: '2025-12-24T17:01:33.418248+00:00'
+summary: '...`--state open` is default |'
+tags:
+- auto-captured
+- post-tool-use
+- file:REQUIREMENTS.md
+---
+
+...`--state open` is default |
+| FR-004 | Present issues via AskUserQuestion | Consistent UX pattern | Issues shown as selectable options with title/number |
+| FR-005 | Create worktree per selected...
+
+---
+type: patterns
+timestamp: '2025-12-24T17:06:03.674177+00:00'
+summary: '...elicitation)'
+tags:
+- auto-captured
+- post-tool-use
+- file:DECISIONS.md
+---
+
+...elicitation)
+
+### Context
+
+Need to generate branch names for issue-based worktrees. Options:
+1. Simple pattern: `issue/42-title`
+2. Conventional commits: `{type}/42-title` based on labels
+3. User-specified...
