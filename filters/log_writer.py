@@ -1,5 +1,4 @@
-"""
-Log Writer Module for claude-spec Prompt Capture Hook.
+"""Log Writer Module for claude-spec Prompt Capture Hook.
 
 This module provides atomic NDJSON append operations for the prompt capture log.
 It handles concurrent writes safely using file locking and includes comprehensive
@@ -103,9 +102,12 @@ Log files are stored at the project root:
     - Archived: Moved to completed project dir on ``/c``
 """
 
+from __future__ import annotations
+
 import fcntl
 import json
 import os
+import signal
 import sys
 from pathlib import Path
 
@@ -118,6 +120,14 @@ PROMPT_LOG_FILENAME = ".prompt-log.json"
 # This prevents other users from reading potentially sensitive prompt data
 LOG_FILE_PERMISSIONS = 0o600
 
+# RES-HIGH-001: Timeout for file lock acquisition (seconds)
+# Prevents indefinite blocking if another process holds the lock
+LOCK_TIMEOUT_SECONDS = 30
+
+
+class LockTimeoutError(TimeoutError):
+    """Raised when file lock acquisition times out."""
+
 
 class PathTraversalError(ValueError):
     """Raised when a path traversal attack is detected.
@@ -125,8 +135,6 @@ class PathTraversalError(ValueError):
     This exception indicates that a provided path attempts to escape
     the expected directory boundaries, such as using ``../`` sequences.
     """
-
-    pass
 
 
 def _validate_path(project_dir: str | Path, target_path: Path) -> None:
@@ -148,7 +156,7 @@ def _validate_path(project_dir: str | Path, target_path: Path) -> None:
         resolved_target.relative_to(resolved_base)
     except ValueError as e:
         raise PathTraversalError(
-            f"Path traversal detected: {target_path} escapes {resolved_base}"
+            f"Path traversal detected: {target_path} escapes {resolved_base}",
         ) from e
 
 
@@ -233,15 +241,18 @@ def append_to_log(project_dir: str, entry: LogEntry) -> bool:
             parent_dir.mkdir(parents=True, exist_ok=True)
 
         # Security: Check for symlink attacks before writing
+        # SEC-MED-002: This check creates a TOCTOU window, but O_NOFOLLOW below
+        # provides the actual atomic protection. This check is kept for
+        # user-friendly error messages when symlinks are detected.
         if log_path.exists() and not _check_symlink_safety(log_path):
             sys.stderr.write(
                 f"claude-spec prompt_capture: Symlink detected at {log_path}, "
-                "refusing to write\n"
+                "refusing to write\n",
             )
             return False
 
         # Open in append mode, create if doesn't exist
-        # Use os.open with O_NOFOLLOW to prevent symlink attacks on open
+        # SEC-MED-002: Use os.open with O_NOFOLLOW to atomically prevent symlink attacks
         # SEC-005: Use restrictive permissions (0o600) for new log files
         try:
             fd = os.open(
@@ -253,15 +264,28 @@ def append_to_log(project_dir: str, entry: LogEntry) -> bool:
             # If O_NOFOLLOW fails because path is symlink, this is a security issue
             if "symbolic link" in str(e).lower() or e.errno == 40:  # ELOOP
                 sys.stderr.write(
-                    f"claude-spec prompt_capture: Symlink attack prevented: {e}\n"
+                    f"claude-spec prompt_capture: Symlink attack prevented: {e}\n",
                 )
                 return False
             raise
 
         try:
             with os.fdopen(fd, "a", encoding="utf-8") as f:
-                # Acquire exclusive lock
-                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                # RES-HIGH-001: Acquire exclusive lock with timeout
+                # Set up alarm signal to prevent indefinite blocking
+                def _lock_timeout_handler(_signum: int, _frame: object) -> None:
+                    raise LockTimeoutError(
+                        f"Lock acquisition timed out after {LOCK_TIMEOUT_SECONDS}s",
+                    )
+
+                old_handler = signal.signal(signal.SIGALRM, _lock_timeout_handler)
+                signal.alarm(LOCK_TIMEOUT_SECONDS)
+                try:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                finally:
+                    signal.alarm(0)  # Cancel the alarm
+                    signal.signal(signal.SIGALRM, old_handler)  # Restore handler
+
                 try:
                     # Write JSON line with newline
                     f.write(entry.to_json() + "\n")
@@ -270,6 +294,9 @@ def append_to_log(project_dir: str, entry: LogEntry) -> bool:
                 finally:
                     # Release lock
                     fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+        except LockTimeoutError as e:
+            sys.stderr.write(f"claude-spec prompt_capture: {e}\n")
+            return False
         except Exception:
             # fd is already closed by fdopen on error
             raise
@@ -304,14 +331,14 @@ def read_log(project_dir: str) -> list[LogEntry]:
     if not _check_symlink_safety(log_path):
         sys.stderr.write(
             f"claude-spec prompt_capture: Symlink detected at {log_path}, "
-            "refusing to read\n"
+            "refusing to read\n",
         )
         return []
 
     entries = []
 
     try:
-        with open(log_path, encoding="utf-8") as f:
+        with log_path.open(encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if not line:
@@ -321,7 +348,7 @@ def read_log(project_dir: str) -> list[LogEntry]:
                 except json.JSONDecodeError:
                     sys.stderr.write(
                         f"claude-spec prompt_capture: Skipping corrupted line "
-                        f"{line_num} in {log_path}\n"
+                        f"{line_num} in {log_path}\n",
                     )
     except OSError as e:
         sys.stderr.write(f"claude-spec prompt_capture: Error reading log: {e}\n")
@@ -376,7 +403,7 @@ def clear_log(project_dir: str) -> bool:
     if not _check_symlink_safety(log_path):
         sys.stderr.write(
             f"claude-spec prompt_capture: Symlink detected at {log_path}, "
-            "refusing to delete\n"
+            "refusing to delete\n",
         )
         return False
 

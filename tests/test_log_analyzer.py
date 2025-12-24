@@ -1,16 +1,16 @@
 """Tests for log_analyzer module."""
 
-import os
 import shutil
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 # Add parent directory for imports
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
-if PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, PLUGIN_ROOT)
+SCRIPT_DIR = Path(__file__).resolve().parent
+PLUGIN_ROOT = SCRIPT_DIR.parent
+if str(PLUGIN_ROOT) not in sys.path:
+    sys.path.insert(0, str(PLUGIN_ROOT))
 
 from analyzers.log_analyzer import (
     LogAnalysis,
@@ -65,8 +65,8 @@ class TestAnalyzeLog(unittest.TestCase):
     def test_empty_log_returns_none(self):
         """Should return None for empty log."""
         # Create empty log file
-        log_path = os.path.join(self.temp_dir, ".prompt-log.json")
-        open(log_path, "w").close()
+        log_path = Path(self.temp_dir) / ".prompt-log.json"
+        log_path.touch()
         result = analyze_log(self.temp_dir)
         self.assertIsNone(result)
 

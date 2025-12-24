@@ -1,7 +1,7 @@
 {
   "terminal": "ghostty",
   "shell": "bash",
-  "claudeCommand": "claude --dangerously-skip-permissions",
+  "claudeCommand": "claude",
   "portPool": {
     "start": 8100,
     "end": 8199

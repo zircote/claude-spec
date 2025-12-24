@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-CLI for analyzing prompt logs and generating retrospective content.
+"""CLI for analyzing prompt logs and generating retrospective content.
 
 Usage:
     python3 analyze_cli.py <project_dir>
@@ -8,16 +7,25 @@ Usage:
     python3 analyze_cli.py <project_dir> --metrics-only
 """
 
+from __future__ import annotations
+
 import argparse
 import json
-import os
 import sys
+from pathlib import Path
 
-# Add parent directory for imports
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
-if PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, PLUGIN_ROOT)
+# SEC-MED-003: sys.path manipulation for standalone CLI execution
+# This module can be run directly (`python3 analyzers/analyze_cli.py`) or as part
+# of the installed package. When run directly from the plugin directory without
+# installation, we need to add the parent directory to sys.path.
+#
+# Security consideration: We only add the parent of THIS script's directory,
+# not arbitrary paths. The path is derived from __file__ which is controlled.
+# For production deployments, install the package to avoid this manipulation.
+_SCRIPT_DIR = Path(__file__).parent.resolve()
+_PLUGIN_ROOT = _SCRIPT_DIR.parent
+if str(_PLUGIN_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PLUGIN_ROOT))
 
 try:
     from analyzers.log_analyzer import (
@@ -90,7 +98,7 @@ def format_json(analysis: LogAnalysis) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Analyze prompt logs for spec project retrospectives"
+        description="Analyze prompt logs for spec project retrospectives",
     )
     parser.add_argument("project_dir", help="Path to the spec project directory")
     parser.add_argument(
@@ -113,10 +121,12 @@ def main() -> int:
         print("Error: Analyzer module not available", file=sys.stderr)
         return 1
 
-    # Validate project directory
-    if not os.path.isdir(args.project_dir):
+    # Validate project directory (QUAL-MED-003: use pathlib instead of os.path)
+    project_path = Path(args.project_dir)
+    if not project_path.is_dir():
         print(
-            f"Error: Project directory not found: {args.project_dir}", file=sys.stderr
+            f"Error: Project directory not found: {args.project_dir}",
+            file=sys.stderr,
         )
         return 1
 

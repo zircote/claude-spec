@@ -3,15 +3,15 @@ Tests for LogEntry and FilterInfo classes.
 """
 
 import json
-import os
 import sys
 import unittest
+from pathlib import Path
 
 # Add parent directory for imports
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
-if PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, PLUGIN_ROOT)
+SCRIPT_DIR = Path(__file__).resolve().parent
+PLUGIN_ROOT = SCRIPT_DIR.parent
+if str(PLUGIN_ROOT) not in sys.path:
+    sys.path.insert(0, str(PLUGIN_ROOT))
 
 from filters.log_entry import EntryMetadata, FilterInfo, LogEntry
 
@@ -29,7 +29,9 @@ class TestFilterInfo(unittest.TestCase):
     def test_to_dict(self):
         """FilterInfo should serialize to dictionary."""
         info = FilterInfo(
-            secret_count=2, secret_types=["aws_key", "api_token"], was_truncated=True
+            secret_count=2,
+            secret_types=["aws_key", "api_token"],
+            was_truncated=True,
         )
         d = info.to_dict()
         self.assertEqual(d["secret_count"], 2)
@@ -62,7 +64,9 @@ class TestLogEntry(unittest.TestCase):
     def test_create_basic_entry(self):
         """LogEntry.create should generate valid entry with timestamp."""
         entry = LogEntry.create(
-            session_id="test-session", entry_type="user_input", content="Hello, world!"
+            session_id="test-session",
+            entry_type="user_input",
+            content="Hello, world!",
         )
         self.assertEqual(entry.session_id, "test-session")
         self.assertEqual(entry.entry_type, "user_input")
@@ -96,7 +100,9 @@ class TestLogEntry(unittest.TestCase):
     def test_to_json(self):
         """LogEntry should serialize to valid JSON."""
         entry = LogEntry.create(
-            session_id="s1", entry_type="user_input", content="test"
+            session_id="s1",
+            entry_type="user_input",
+            content="test",
         )
         json_str = entry.to_json()
         # Should be valid JSON
@@ -136,7 +142,9 @@ class TestLogEntry(unittest.TestCase):
     def test_metadata_content_length(self):
         """LogEntry should track content length in metadata."""
         entry = LogEntry.create(
-            session_id="s1", entry_type="user_input", content="12345"
+            session_id="s1",
+            entry_type="user_input",
+            content="12345",
         )
         self.assertEqual(entry.metadata.content_length, 5)
 

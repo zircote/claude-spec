@@ -738,32 +738,35 @@ After migration is complete:
 
 When the user runs `/claude-spec:plan` with no arguments, this workflow fetches GitHub issues from the current repository, allows selection, creates worktrees, and evaluates completeness.
 
+### Script Dependencies
+
+The GitHub Issues workflow relies on modular scripts in `${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/`:
+
+| Script | Purpose |
+|--------|---------|
+| `check-gh-prerequisites.sh` | Verify gh CLI, authentication, and repository |
+| `get-branch-prefix.sh` | Map labels to conventional commit prefixes |
+| `generate-branch-name.sh` | Generate branch names from issue data |
+| `create-issue-worktree.sh` | Create worktree with issue context |
+| `post-issue-comment.sh` | Post clarification comments to GitHub |
+| `build-issue-prompt.sh` | Build agent prompt with issue context |
+
+These scripts are testable via `scripts/github-issues/tests/test_github_issues.sh`.
+
 ### Prerequisites Check
 
 **Execute these checks IMMEDIATELY when entering this workflow:**
 
 ```bash
-# Step 1: Check gh CLI installed
-if ! command -v gh &>/dev/null; then
-  echo "GH_STATUS=not_installed"
-else
-  echo "GH_STATUS=installed"
-fi
+# Source the prerequisites check script
+PREREQ_OUTPUT=$(${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/check-gh-prerequisites.sh 2>&1)
+PREREQ_EXIT=$?
 
-# Step 2: Check authentication status
-if ! gh auth status &>/dev/null 2>&1; then
-  echo "GH_AUTH=not_authenticated"
-else
-  echo "GH_AUTH=authenticated"
-fi
+# Parse results
+eval "$PREREQ_OUTPUT"
 
-# Step 3: Get repository info
-REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null)
-if [ -z "$REPO" ]; then
-  echo "GH_REPO=not_found"
-else
-  echo "GH_REPO=$REPO"
-fi
+# Show output for debugging
+echo "$PREREQ_OUTPUT"
 ```
 
 **Prerequisites Decision Gate:**
@@ -995,58 +998,31 @@ IF user selected 1+ issues:
 
 ### Branch Name Generation
 
-For each selected issue, generate a branch name following conventional commit patterns:
+For each selected issue, generate a branch name following conventional commit patterns using the extracted scripts:
 
 **Label-to-Prefix Mapping:**
 
-```bash
-get_branch_prefix() {
-  local labels="$1"  # Comma-separated: "bug, security, priority-high"
+Uses `${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/get-branch-prefix.sh`:
 
-  # Priority order: bug > docs > chore > feat (default)
-  # Check for bug-related labels
-  if echo "$labels" | grep -qiE '\bbug\b|\bdefect\b|\bfix\b'; then
-    echo "bug"
-    return
-  fi
+| Label(s) | Prefix |
+|----------|--------|
+| `bug`, `defect`, `fix` | `bug` |
+| `documentation`, `docs` | `docs` |
+| `chore`, `maintenance`, `refactor`, `technical-debt` | `chore` |
+| `enhancement`, `feature`, (default) | `feat` |
 
-  # Check for documentation labels
-  if echo "$labels" | grep -qiE '\bdocumentation\b|\bdocs\b'; then
-    echo "docs"
-    return
-  fi
-
-  # Check for chore/maintenance labels
-  if echo "$labels" | grep -qiE '\bchore\b|\bmaintenance\b|\brefactor\b|\btechnical-debt\b'; then
-    echo "chore"
-    return
-  fi
-
-  # Default to feat for enhancement/feature or unknown
-  echo "feat"
-}
-```
+Priority order: bug > docs > chore > feat
 
 **Branch Name Generation:**
 
+Uses `${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/generate-branch-name.sh`:
+
 ```bash
-generate_branch_name() {
-  local issue_number="$1"
-  local title="$2"
-  local labels="$3"
-
-  # Get prefix from labels
-  local prefix=$(get_branch_prefix "$labels")
-
-  # Slugify title: lowercase, replace non-alphanumeric with hyphens, collapse multiples
-  local slug=$(echo "$title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
-
-  # Truncate slug to max 40 chars
-  slug="${slug:0:40}"
-
-  # Format: prefix/issue-number-slug
-  echo "${prefix}/${issue_number}-${slug}"
-}
+# Generate branch name for an issue
+BRANCH=$(${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/generate-branch-name.sh \
+  "$ISSUE_NUMBER" \
+  "$ISSUE_TITLE" \
+  "$LABELS")
 
 # Example outputs:
 # "bug" label + #42 + "Fix authentication bug" → bug/42-fix-authentication-bug
@@ -1080,50 +1056,32 @@ Use AskUserQuestion with:
 
 ### Worktree Creation
 
-For each confirmed issue, create a worktree:
+For each confirmed issue, create a worktree using the extracted script:
 
 **Worktree Creation Process:**
 
+Uses `${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/create-issue-worktree.sh`:
+
 ```bash
-create_issue_worktree() {
-  local issue_json="$1"
-  local worktree_base="$2"
-  local repo_name="$3"
+# Create worktree for a single issue
+RESULT=$(${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/create-issue-worktree.sh \
+  "$ISSUE_JSON" \
+  "$WORKTREE_BASE" \
+  "$REPO_NAME")
 
-  # Parse issue data
-  local number=$(echo "$issue_json" | jq -r '.number')
-  local title=$(echo "$issue_json" | jq -r '.title')
-  local labels=$(echo "$issue_json" | jq -r '[.labels[].name] | join(", ")')
-  local body=$(echo "$issue_json" | jq -r '.body // ""')
-  local url=$(echo "$issue_json" | jq -r '.url')
+# Parse results
+eval "$RESULT"
+# Sets: WORKTREE_PATH, BRANCH, ISSUE_NUMBER
 
-  # Generate branch name
-  local branch=$(generate_branch_name "$number" "$title" "$labels")
-  local worktree_slug=$(echo "$branch" | tr '/' '-')
-  local worktree_path="${worktree_base}/${repo_name}/${worktree_slug}"
-
-  # Create worktree directory
-  mkdir -p "${worktree_base}/${repo_name}"
-
-  # Create git worktree
-  git worktree add -b "$branch" "$worktree_path" HEAD
-
-  # Save issue context for the agent
-  cat > "${worktree_path}/.issue-context.json" << EOF
-{
-  "number": $number,
-  "title": $(echo "$title" | jq -Rs .),
-  "url": "$url",
-  "body": $(echo "$body" | jq -Rs .),
-  "labels": [$(echo "$labels" | sed 's/, /", "/g' | sed 's/^/"/;s/$/"/')],
-  "fetched_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-EOF
-
-  echo "WORKTREE_CREATED: $worktree_path"
-  echo "BRANCH: $branch"
-}
+echo "Created worktree: $WORKTREE_PATH"
+echo "Branch: $BRANCH"
 ```
+
+The script:
+- Parses issue JSON (number, title, labels, body, url)
+- Generates branch name using conventional commit prefixes
+- Creates git worktree with `-b` flag for new branch
+- Creates `.issue-context.json` with full issue details for agent consumption
 
 **Parallel Creation for Multiple Issues:**
 
@@ -1291,22 +1249,24 @@ Use AskUserQuestion with:
 
 **Post Comment:**
 
+Uses `${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/post-issue-comment.sh`:
+
 ```bash
-post_clarification_comment() {
-  local repo="$1"
-  local issue_number="$2"
-  local comment_body="$3"
+# Post the comment
+RESULT=$(${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/post-issue-comment.sh \
+  "$REPO" \
+  "$ISSUE_NUMBER" \
+  "$COMMENT_BODY")
 
-  # Post the comment
-  gh issue comment "$issue_number" --repo "$repo" --body "$comment_body"
+# Parse results
+eval "$RESULT"
 
-  if [ $? -eq 0 ]; then
-    echo "COMMENT_POSTED: Issue #$issue_number"
-  else
-    echo "COMMENT_FAILED: Issue #$issue_number"
-    echo "You can manually post the comment from the GitHub web interface."
-  fi
-}
+if [ "$COMMENT_POSTED" = "true" ]; then
+  echo "Comment posted: $COMMENT_URL"
+else
+  echo "Failed to post comment: $ERROR"
+  echo "You can manually post the comment from the GitHub web interface."
+fi
 ```
 
 **After Posting:**
@@ -1333,22 +1293,14 @@ For each worktree where user chose to proceed, launch a Claude agent in a new te
 
 **Build Initial Prompt:**
 
+Uses `${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/build-issue-prompt.sh`:
+
 ```bash
-build_issue_prompt() {
-  local issue_number="$1"
-  local issue_title="$2"
-  local worktree_path="$3"
-
-  # Create a prompt that includes issue context
-  local prompt="/claude-spec:plan Issue #${issue_number}: ${issue_title}
-
-This worktree was created for GitHub Issue #${issue_number}.
-Issue context is available at: ${worktree_path}/.issue-context.json
-
-Please read the issue context and begin planning."
-
-  echo "$prompt"
-}
+# Build the prompt
+PROMPT=$(${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/build-issue-prompt.sh \
+  "$ISSUE_NUMBER" \
+  "$ISSUE_TITLE" \
+  "$WORKTREE_PATH")
 ```
 
 **Launch Agents in Parallel:**

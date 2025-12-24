@@ -1,5 +1,4 @@
-"""
-Filter Pipeline for claude-spec Prompt Capture Hook.
+"""Filter Pipeline for claude-spec Prompt Capture Hook.
 
 This module chains content filters together to sanitize prompt content
 before logging. The pipeline runs in a specific order to ensure security:
@@ -146,6 +145,8 @@ Example::
     assert "aws_access_key" in result.secret_types
 """
 
+from __future__ import annotations
+
 import base64
 import re
 from dataclasses import dataclass, field
@@ -153,22 +154,29 @@ from re import Pattern
 
 from .log_entry import FilterInfo
 
-# Maximum content length before truncation
+# QUAL-003: Named constants for configuration
+# Maximum content length before truncation (characters)
 MAX_CONTENT_LENGTH = 50000
 
+# Maximum length of decoded base64 content to scan (prevents memory exhaustion)
+MAX_DECODED_LENGTH = 10000
+
+# Minimum length for base64 segment to be considered for decoding
+MIN_BASE64_SEGMENT_LENGTH = 20
+
 # Base64 pattern for detecting encoded content
-# Matches strings of 20+ base64 characters with optional padding
-B64_PATTERN = re.compile(r"[A-Za-z0-9+/]{20,}={0,2}")
+# Matches strings of MIN_BASE64_SEGMENT_LENGTH+ base64 characters with optional padding
+B64_PATTERN = re.compile(rf"[A-Za-z0-9+/]{{{MIN_BASE64_SEGMENT_LENGTH},}}={{0,2}}")
 
 # Pre-compiled regex patterns for secret detection
 # SEC-004: Comprehensive secret detection patterns for major cloud providers and services
 SECRET_PATTERNS: dict[str, Pattern[str]] = {
     # AWS
     "aws_access_key": re.compile(
-        r"\b((?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16})\b"
+        r"\b((?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16})\b",
     ),
     "aws_secret_key": re.compile(
-        r'(?i)aws.{0,20}secret.{0,20}[\'"][0-9a-zA-Z/+=]{40}[\'"]'
+        r'(?i)aws.{0,20}secret.{0,20}[\'"][0-9a-zA-Z/+=]{40}[\'"]',
     ),
     # GitHub
     "github_pat": re.compile(r"ghp_[A-Za-z0-9_]{36,}"),
@@ -193,12 +201,12 @@ SECRET_PATTERNS: dict[str, Pattern[str]] = {
     "sendgrid_key": re.compile(r"\bSG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}\b"),
     # Azure Storage - base64-encoded 88-char keys
     "azure_storage_key": re.compile(
-        r'(?i)(?:accountkey|storage.{0,20}key)\s*[:=]\s*[\'"]?[A-Za-z0-9+/]{86}==[\'""]?'
+        r'(?i)(?:accountkey|storage.{0,20}key)\s*[:=]\s*[\'"]?[A-Za-z0-9+/]{86}==[\'""]?',
     ),
     # Generic patterns
     "bearer_token": re.compile(r"Bearer\s+[a-zA-Z0-9\-_.~+\/]+=*"),
     "jwt": re.compile(
-        r"ey[a-zA-Z0-9]{17,}\.ey[a-zA-Z0-9\/\\_-]{17,}\.[a-zA-Z0-9\/\\_-]{10,}"
+        r"ey[a-zA-Z0-9]{17,}\.ey[a-zA-Z0-9\/\\_-]{17,}\.[a-zA-Z0-9\/\\_-]{10,}",
     ),
     # Connection strings
     "postgres_uri": re.compile(r'postgres(?:ql)?://[^\s\'"]+'),
@@ -207,14 +215,14 @@ SECRET_PATTERNS: dict[str, Pattern[str]] = {
     "redis_uri": re.compile(r'redis://[^\s\'"]+'),
     # Private keys (detect headers)
     "private_key": re.compile(
-        r"-----BEGIN (?:RSA |DSA |EC |OPENSSH |PGP )?PRIVATE KEY"
+        r"-----BEGIN (?:RSA |DSA |EC |OPENSSH |PGP )?PRIVATE KEY",
     ),
     # Password patterns (context-aware)
     "password_assignment": re.compile(
-        r'(?i)(?:password|passwd|pwd)\s*[:=]\s*[\'"][^\'"]{8,}[\'"]'
+        r'(?i)(?:password|passwd|pwd)\s*[:=]\s*[\'"][^\'"]{8,}[\'"]',
     ),
     "secret_assignment": re.compile(
-        r'(?i)(?:secret|api[_-]?key|access[_-]?token|auth[_-]?token)\s*[:=]\s*[\'"][^\'"]{10,}[\'"]'
+        r'(?i)(?:secret|api[_-]?key|access[_-]?token|auth[_-]?token)\s*[:=]\s*[\'"][^\'"]{10,}[\'"]',
     ),
 }
 
@@ -268,7 +276,10 @@ class FilterResult:
         return self.secret_count > 0 or self.was_truncated
 
 
-def decode_base64_segments(text: str, max_decoded_length: int = 10000) -> str:
+def decode_base64_segments(
+    text: str,
+    max_decoded_length: int = MAX_DECODED_LENGTH,
+) -> str:
     """
     Decode base64 segments to check for hidden secrets.
 
@@ -293,7 +304,7 @@ def decode_base64_segments(text: str, max_decoded_length: int = 10000) -> str:
 
         segment = match.group()
         # Skip segments that are clearly not secrets (too short after padding removal)
-        if len(segment.rstrip("=")) < 20:
+        if len(segment.rstrip("=")) < MIN_BASE64_SEGMENT_LENGTH:
             continue
 
         try:
@@ -340,7 +351,7 @@ def detect_secrets(text: str) -> list[SecretMatch]:
                     match=match.group(0),
                     start=match.start(),
                     end=match.end(),
-                )
+                ),
             )
 
     # Sort by position for consistent replacement

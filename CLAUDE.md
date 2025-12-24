@@ -142,11 +142,15 @@ def test_something(temp_project_dir, monkeypatch):
 
 ## Active Spec Projects
 
-(None - project completed)
+- `docs/spec/active/2025-12-24-github-issues-worktree-wf/` - GitHub Issues Worktree Workflow
+  - Status: Implementation complete, in review
+  - Branch: plan/github-issues-worktree-wf
+  - Features: Issue-to-worktree automation, `/claude-spec:plan` without arguments
+  - Scripts: `scripts/github-issues/` (6 scripts, 47 tests)
 
-## Recent Completed Spec Project
+## Recent Completed Spec Projects
 
-- `docs/spec/active/2025-12-19-remove-memory-hooks/` - Remove Memory and Hook Components
+- `docs/spec/completed/2025-12-19-remove-memory-hooks/` - Remove Memory and Hook Components
   - Completed: 2025-12-19
   - Outcome: success
   - Branch: plan/remove-memory-hooks

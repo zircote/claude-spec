@@ -1,5 +1,4 @@
-"""
-Log Entry Schema for claude-spec Prompt Capture Hook.
+"""Log Entry Schema for claude-spec Prompt Capture Hook.
 
 This module defines the data structures for prompt log entries stored in
 NDJSON format. Each entry captures a user interaction during a /*
@@ -68,6 +67,8 @@ The ``filter_applied`` field tracks what content filtering was applied:
 See ``filters/pipeline.py`` for the full list of detected secret types.
 """
 
+from __future__ import annotations
+
 import json
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
@@ -93,7 +94,7 @@ class FilterInfo:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "FilterInfo":
+    def from_dict(cls, data: dict[str, Any]) -> FilterInfo:
         """Create FilterInfo from dictionary."""
         return cls(
             secret_count=data.get("secret_count", 0),
@@ -119,10 +120,11 @@ class EntryMetadata:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "EntryMetadata":
+    def from_dict(cls, data: dict[str, Any]) -> EntryMetadata:
         """Create EntryMetadata from dictionary."""
         return cls(
-            content_length=data.get("content_length", 0), cwd=data.get("cwd", "")
+            content_length=data.get("content_length", 0),
+            cwd=data.get("cwd", ""),
         )
 
 
@@ -178,7 +180,7 @@ class LogEntry:
         return json.dumps(self.to_dict(), ensure_ascii=False)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "LogEntry":
+    def from_dict(cls, data: dict[str, Any]) -> LogEntry:
         """Create LogEntry from dictionary.
 
         Note: Expects ``type`` key in data, maps to ``entry_type`` attribute.
@@ -194,7 +196,7 @@ class LogEntry:
         )
 
     @classmethod
-    def from_json(cls, json_str: str) -> "LogEntry":
+    def from_json(cls, json_str: str) -> LogEntry:
         """Create LogEntry from JSON string."""
         return cls.from_dict(json.loads(json_str))
 
@@ -207,7 +209,7 @@ class LogEntry:
         command: str | None = None,
         cwd: str = "",
         filter_info: FilterInfo | None = None,
-    ) -> "LogEntry":
+    ) -> LogEntry:
         """
         Factory method to create a new log entry with current timestamp.
 

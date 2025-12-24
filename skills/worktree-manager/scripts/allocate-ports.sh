@@ -60,8 +60,9 @@ is_port_available() {
         return 1
     fi
 
-    # Check if port is actually in use by system
-    if lsof -i :"$port" &>/dev/null; then
+    # RES-MED-003: Add timeout to lsof to prevent blocking on network filesystem issues
+    # Check if port is actually in use by system (with 2s timeout)
+    if timeout 2 lsof -i :"$port" &>/dev/null 2>&1; then
         return 1
     fi
 
@@ -86,7 +87,10 @@ if [ ${#FOUND_PORTS[@]} -lt "$COUNT" ]; then
     exit 1
 fi
 
-# Update registry with newly allocated ports
+# RES-MED-002: Update registry with newly allocated ports
+# NOTE: If the calling script fails after this, ports remain allocated until cleanup.
+# This is by design - cleanup.sh handles port deallocation (see Step 4).
+# A trap here wouldn't help since failures typically occur in the calling script.
 TMP=$(mktemp)
 PORTS_JSON=$(printf '%s\n' "${FOUND_PORTS[@]}" | jq -R 'tonumber' | jq -s .)
 jq ".portPool.allocated = ((.portPool.allocated // []) + $PORTS_JSON | unique | sort_by(.))" "$REGISTRY" > "$TMP" && mv "$TMP" "$REGISTRY"

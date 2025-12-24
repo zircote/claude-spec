@@ -63,7 +63,7 @@ source "$SCRIPT_DIR/lib/config.sh"
 # Load config values (user config -> template -> defaults)
 TERMINAL=$(get_config "terminal" "ghostty")
 SHELL_CMD=$(get_config "shell" "bash")
-CLAUDE_CMD=$(get_config "claudeCommand" "claude --dangerously-skip-permissions")
+CLAUDE_CMD=$(get_config "claudeCommand" "claude")
 
 # SEC-001: Security warning for dangerous mode
 # The --dangerously-skip-permissions flag bypasses Claude's permission prompts,
@@ -116,7 +116,11 @@ if [ -f "$HOME/.claude/worktree-registry.json" ] && command -v jq &> /dev/null; 
     PORT=$(echo "$PORTS" | cut -d',' -f1)
 fi
 
-# Template variable substitution function
+# SEC-MED-001: Template variable substitution function
+# These variables are used in prompt strings passed to Claude, NOT in file operations.
+# WORKTREE_PATH is validated above (exists, is git worktree) before substitution.
+# Other variables (BRANCH, PROJECT, BRANCH_SLUG) are derived from git or path basenames.
+# Path traversal is not a concern because outputs are text prompts, not file paths.
 substitute_template() {
     local template="$1"
     template="${template//\{\{service\}\}/$BRANCH_SLUG}"
