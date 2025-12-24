@@ -1,0 +1,13 @@
+---
+type: progress
+timestamp: '2025-12-24T16:18:40.567457+00:00'
+summary: '## Recent Completed Spec Project'
+tags:
+- auto-captured
+- post-tool-use
+- file:CLAUDE.md
+---
+
+## Recent Completed Spec Project
+
+- `docs/spec/active/2025-12-19-remove-memory-hooks/` - Remove Memory and Hook...
