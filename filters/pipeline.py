@@ -201,7 +201,7 @@ SECRET_PATTERNS: dict[str, Pattern[str]] = {
     "sendgrid_key": re.compile(r"\bSG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}\b"),
     # Azure Storage - base64-encoded 88-char keys
     "azure_storage_key": re.compile(
-        r'(?i)(?:accountkey|storage.{0,20}key)\s*[:=]\s*[\'"]?[A-Za-z0-9+/]{86}==[\'""]?',
+        r'(?i)(?:accountkey|storage.{0,20}key)\s*[:=]\s*[\'"]?[A-Za-z0-9+/]{86}==[\'"]?',
     ),
     # Generic patterns
     "bearer_token": re.compile(r"Bearer\s+[a-zA-Z0-9\-_.~+\/]+=*"),
