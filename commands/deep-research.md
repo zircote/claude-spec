@@ -1,8 +1,47 @@
 ---
 argument-hint: <research-topic|codebase-path|url>
-description: Deep research command optimized for Opus 4.5. Conducts comprehensive, multi-phase investigation of any subject matter, codebase, or technical domain using extended thinking, subagent orchestration, and structured analysis workflows.
+description: Deep research command optimized for Opus 4.5. Conducts comprehensive, multi-phase investigation of any subject matter, codebase, or technical domain using extended thinking, subagent orchestration, LSP semantic analysis when available, and structured analysis workflows.
 model: claude-opus-4-5-20251101
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch, Task
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch, Task, LSP
+---
+
+<help_check>
+## Help Check
+
+If `$ARGUMENTS` contains `--help` or `-h`:
+
+**Output this help and HALT (do not proceed further):**
+
+<help_output>
+```
+DEEP_RESEARCH(1)                                     User Commands                                     DEEP_RESEARCH(1)
+
+NAME
+    deep-research - Deep research command optimized for Opus 4.5. Conducts ...
+
+SYNOPSIS
+    /claude-spec:deep-research <research-topic|codebase-path|url>
+
+DESCRIPTION
+    Deep research command optimized for Opus 4.5. Conducts comprehensive, multi-phase investigation of any subject matter, codebase, or technical domain using extended thinking, subagent orchestration, LS
+
+OPTIONS
+    --help, -h                Show this help message
+
+EXAMPLES
+    /claude-spec:deep-research              
+    /claude-spec:deep-research --help       
+
+SEE ALSO
+    /claude-spec:* for related commands
+
+                                                                      DEEP_RESEARCH(1)
+```
+</help_output>
+
+**After outputting help, HALT immediately. Do not proceed with command execution.**
+</help_check>
+
 ---
 
 # Deep Research Protocol
@@ -48,11 +87,22 @@ Execute systematic information collection based on research type:
 <codebase_research>
 For software/codebase analysis:
 
+**LSP Availability Check (for CODEBASE research type):**
+```bash
+echo $ENABLE_LSP_TOOL  # If "1", use LSP-first approach
+```
+
 1. **Architecture Discovery:**
    - Identify entry points, core modules, data flow
    - Map dependency relationships
    - Locate configuration and environment handling
    - Find test coverage and documentation
+
+   **IF LSP AVAILABLE:**
+   - Use `workspaceSymbol` to discover all classes/functions/types
+   - Use `documentSymbol` to understand file structure
+   - Use `goToDefinition` to trace imports to their source
+   - Use `findReferences` to map module consumers
 
 2. **Pattern Analysis:**
    - Identify design patterns and architectural decisions
@@ -60,9 +110,26 @@ For software/codebase analysis:
    - Find reusable abstractions and utilities
    - Detect anti-patterns or technical debt
 
+   **IF LSP AVAILABLE:**
+   - Use `hover` to extract type signatures and documentation
+   - Use `goToImplementation` to find interface implementations
+   - Use `incomingCalls/outgoingCalls` to analyze polymorphism patterns
+
 3. **Deep Dive Protocol:**
+
+   **LSP-First Approach (when available):**
+   - Use `goToDefinition` to navigate to symbol sources
+   - Use `findReferences` to find all usages before modifying
+   - Use `hover` for type information without file navigation
+   - Use `incomingCalls` to understand impact of changes
+
+   **Grep Fallback (when LSP unavailable):**
    - Use `Grep` for pattern matching across files
    - Use `Glob` for file discovery
+   - Note: Grep may return false positives; verify with file reads
+   - Document limitation in research findings
+
+   **Always:**
    - Read key files completely, not partially
    - Trace execution paths through the code
 
@@ -70,6 +137,7 @@ For software/codebase analysis:
    - Security audit subagent: vulnerability scanning
    - Performance subagent: bottleneck identification
    - Documentation subagent: API surface mapping
+   - **Call graph subagent (LSP-enhanced):** Use incomingCalls/outgoingCalls for dependency analysis
 </codebase_research>
 
 <technical_research>
@@ -153,7 +221,9 @@ Structure findings for maximum utility:
 
 ## Research Scope
 - **Subject:** [What was investigated]
+- **Research Type:** [CODEBASE/TECHNICAL/DOMAIN/COMPARATIVE/INVESTIGATIVE]
 - **Methodology:** [How investigation was conducted]
+- **LSP Available:** [Yes/No - for CODEBASE type]
 - **Sources:** [Primary sources consulted]
 - **Limitations:** [What was not covered or uncertain]
 
@@ -177,6 +247,18 @@ Structure findings for maximum utility:
 ## Appendix
 - [Detailed evidence, code samples, raw data]
 - [Links to all sources consulted]
+
+### LSP Operations Used (for CODEBASE research, if available)
+| Operation | Target | Result Summary |
+|-----------|--------|----------------|
+| workspaceSymbol | [query] | [count] symbols found |
+| goToDefinition | [file:line] | [target definition] |
+| findReferences | [symbol] | [count] references |
+| incomingCalls | [function] | [count] callers |
+| outgoingCalls | [function] | [count] dependencies |
+
+### Grep Fallbacks (if LSP unavailable)
+[Document which semantic operations used Grep instead, with accuracy notes]
 </output_structure>
 
 </execution_protocol>
@@ -226,5 +308,43 @@ Before finalizing:
 </quality_gates>
 
 <execution_instruction>
-Begin research now. Start with Phase 1 planning using ultrathink. Write RESEARCH_PLAN.md, then execute phases systematically. Provide progress updates at phase transitions. Conclude with structured deliverable.
+Begin research now.
+
+## Step 0: Environment Check (for CODEBASE research type)
+
+If researching a codebase, check LSP availability:
+```bash
+echo $ENABLE_LSP_TOOL
+```
+- If "1": Use LSP-first approach for semantic code analysis
+- If empty: Use Grep fallback, document limitation
+
+## Execution Sequence
+
+1. Start with Phase 1 planning using ultrathink
+2. Write RESEARCH_PLAN.md
+3. Execute phases systematically
+4. **For CODEBASE type: Prefer LSP operations over Grep when available**
+5. Provide progress updates at phase transitions
+6. Conclude with structured deliverable
+
+## LSP Decision Tree (for CODEBASE research)
+
+```
+TRACING SYMBOL DEFINITIONS?
+├─ LSP available → goToDefinition
+└─ LSP unavailable → Grep + Read
+
+FINDING ALL USAGES?
+├─ LSP available → findReferences (exact matches)
+└─ LSP unavailable → Grep (may have false positives)
+
+MAPPING CALL GRAPH?
+├─ LSP available → incomingCalls + outgoingCalls
+└─ LSP unavailable → Manual code tracing
+
+UNDERSTANDING FILE STRUCTURE?
+├─ LSP available → documentSymbol
+└─ LSP unavailable → Read entire file
+```
 </execution_instruction>

@@ -5,6 +5,45 @@ model: claude-opus-4-5-20251101
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, WebSearch, WebFetch, TodoRead, TodoWrite, AskUserQuestion
 ---
 
+<help_check>
+## Help Check
+
+If `$ARGUMENTS` contains `--help` or `-h`:
+
+**Output this help and HALT (do not proceed further):**
+
+<help_output>
+```
+PLAN(1)                                              User Commands                                              PLAN(1)
+
+NAME
+    plan - Strategic project planning with Socratic requirements e...
+
+SYNOPSIS
+    /claude-spec:plan <project-idea|feature|problem-statement>
+
+DESCRIPTION
+    Strategic project planning with Socratic requirements elicitation. Produces PRD, technical architecture, and implementation plan with full artifact lifecycle management. Part of the /claude-spec suite
+
+OPTIONS
+    --help, -h                Show this help message
+
+EXAMPLES
+    /claude-spec:plan                       
+    /claude-spec:plan --help                
+
+SEE ALSO
+    /claude-spec:* for related commands
+
+                                                                      PLAN(1)
+```
+</help_output>
+
+**After outputting help, HALT immediately. Do not proceed with command execution.**
+</help_check>
+
+---
+
 # /claude-spec:plan - Strategic Project Planner
 
 <mandatory_first_actions>

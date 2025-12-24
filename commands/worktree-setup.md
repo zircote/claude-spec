@@ -5,6 +5,45 @@ model: claude-sonnet-4-5-20250929
 allowed-tools: Read, Write, Bash, AskUserQuestion
 ---
 
+<help_check>
+## Help Check
+
+If `$ARGUMENTS` contains `--help` or `-h`:
+
+**Output this help and HALT (do not proceed further):**
+
+<help_output>
+```
+WORKTREE_SETUP(1)                                    User Commands                                    WORKTREE_SETUP(1)
+
+NAME
+    worktree-setup - Interactive configuration wizard for worktree-manager. ...
+
+SYNOPSIS
+    /claude-spec:worktree-setup (none)
+
+DESCRIPTION
+    Interactive configuration wizard for worktree-manager. Creates ~/.claude/claude-spec.config.json with terminal, shell, and path settings.
+
+OPTIONS
+    --help, -h                Show this help message
+
+EXAMPLES
+    /claude-spec:worktree-setup             
+    /claude-spec:worktree-setup --help      
+
+SEE ALSO
+    /claude-spec:* for related commands
+
+                                                                      WORKTREE_SETUP(1)
+```
+</help_output>
+
+**After outputting help, HALT immediately. Do not proceed with command execution.**
+</help_check>
+
+---
+
 # /claude-spec:worktree-setup - Configure Worktree Manager
 
 Run the interactive setup flow to configure your worktree-manager preferences.

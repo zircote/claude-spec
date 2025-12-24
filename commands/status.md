@@ -5,6 +5,45 @@ model: claude-sonnet-4-5-20250929
 allowed-tools: Read, Bash, Glob, Grep
 ---
 
+<help_check>
+## Help Check
+
+If `$ARGUMENTS` contains `--help` or `-h`:
+
+**Output this help and HALT (do not proceed further):**
+
+<help_output>
+```
+STATUS(1)                                            User Commands                                            STATUS(1)
+
+NAME
+    status - View spec project status, list portfolio, find expired ...
+
+SYNOPSIS
+    /claude-spec:status [project-id|--list|--expired|--cleanup]
+
+DESCRIPTION
+    View spec project status, list portfolio, find expired plans, or cleanup. Part of the /claude-spec suite - use /claude-spec:plan to plan, /claude-spec:complete to complete.
+
+OPTIONS
+    --help, -h                Show this help message
+
+EXAMPLES
+    /claude-spec:status                     
+    /claude-spec:status --help              
+
+SEE ALSO
+    /claude-spec:* for related commands
+
+                                                                      STATUS(1)
+```
+</help_output>
+
+**After outputting help, HALT immediately. Do not proceed with command execution.**
+</help_check>
+
+---
+
 # /claude-spec:status - Project Status & Portfolio Manager
 
 <role>

@@ -5,6 +5,46 @@ model: claude-sonnet-4-5-20250929
 allowed-tools: Read, Bash, Glob, Grep
 ---
 
+<help_check>
+## Help Check
+
+If `$ARGUMENTS` contains `--help` or `-h`:
+
+**Output this help and HALT (do not proceed further):**
+
+<help_output>
+```
+WORKTREE_CLEANUP(1)                                  User Commands                                  WORKTREE_CLEANUP(1)
+
+NAME
+    worktree-cleanup - Clean up stale and orphaned worktrees. By default runs ...
+
+SYNOPSIS
+    /claude-spec:worktree-cleanup [--force|--dry-run|--stale-days <N>]
+
+DESCRIPTION
+    Clean up stale and orphaned worktrees. By default runs interactively, --force removes all stale.
+
+OPTIONS
+    --help, -h                Show this help message
+
+EXAMPLES
+    /claude-spec:worktree-cleanup           
+    /claude-spec:worktree-cleanup --dry-run 
+    /claude-spec:worktree-cleanup --help    
+
+SEE ALSO
+    /claude-spec:* for related commands
+
+                                                                      WORKTREE_CLEANUP(1)
+```
+</help_output>
+
+**After outputting help, HALT immediately. Do not proceed with command execution.**
+</help_check>
+
+---
+
 # /claude-spec:worktree-cleanup - Worktree Cleanup
 
 <role>
