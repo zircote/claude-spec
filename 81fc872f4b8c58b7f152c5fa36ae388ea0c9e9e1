@@ -1804,3 +1804,20 @@ tags:
 
     ARCH-HIGH-002: Extracted from log_archiver.py and retrospective_gen.py
     to eliminate...
+
+---
+type: progress
+timestamp: '2025-12-24T19:37:33.452621+00:00'
+summary: '...Name of the calling module for error messages'
+tags:
+- auto-captured
+- post-tool-use
+- file:utils.py
+---
+
+...Name of the calling module for error messages
+
+    Returns:
+        Path to the most recent completed project directory, or None if not found
+    """
+    completed_dir = cwd / "docs" / "spec"...
