@@ -1,0 +1,108 @@
+---
+date: '2025-12-24'
+id: 20251224-date-based-report-directory-structure-for-code
+status: proposed
+title: Date-based report directory structure for code reviews
+---
+
+# Date-based report directory structure for code reviews
+
+## Context and Problem Statement
+- The code-cleanup command previously used a precedence-based directory detection to decide where to write code review / cleanup reports (e.g., prefer docs/ then reports/ then repo root).
+- Precedence-based detection caused:
+  - Reports for the same repository or branch to be written in different locations across runs, reducing discoverability.
+  - Higher risk of filename collisions when multiple runs target the same precedence-chosen directory.
+  - Difficulty in automating archive/cleanup and chronological browsing of historical reports.
+- Recent change (commit ba9ecfe: "feat(commands): add help sections and date-based report paths") moves report output to a deterministic date-based directory structure:
+  - docs/code-review/YYYY/MM/DD/
+- Problem statement: define and justify the new date-based directory structure, document decision drivers, considered alternatives, chosen approach and its consequences (technical and operational).
+
+## Decision Drivers
+- Determinism: report path must be predictable across runs and environments.
+- Chronological organization: make it easy to browse reports by date.
+- Collision resistance: avoid accidental overwrites or name clashes between runs (especially from CI).
+- Backwards compatibility: minimize breakage for consumers and automation that relied on previous precedence detection.
+- Discoverability: reports should be findable via a consistent path for tooling, documentation, and humans.
+- Simplicity: implementation should be straightforward to reason about and maintain in the code-cleanup command.
+- CI and artifact retention: integrate cleanly with CI systems that archive artifacts by path.
+- Cross-platform and timezone correctness: date calculation must be unambiguous across developer CI environments.
+- Migration cost: effort required to update docs, scripts, and to migrate or archive old reports.
+
+## Considered Options
+- Keep precedence-based directory detection (status quo)
+  - Continue trying multiple candidate directories in order and write to the first writable one.
+- Use date-based directories under repo root (chosen variant 1)
+  - docs/code-review/YYYY/MM/DD/
+- Use date-based directories under a global or configurable path (e.g., ~/.project-reports/YYYY/MM/DD/)
+- Name-based uniqueness (no directories): keep previous directories but append unique timestamp/UUID to filenames to avoid collisions.
+- Use Git metadata to place reports (e.g., reports/<branch>/<commit>/ or reports/<YYYY-MM-DD>-<commit-sha>/)
+- Make output directory fully configurable via command-line option or configuration file (user-driven)
+- Store reports only as CI artifacts (avoid committing to repo tree)
+
+## Decision Outcome (Chosen option with justification)
+Chosen option:
+- Always write reports to docs/code-review/YYYY/MM/DD/ where YYYY, MM, and DD are derived from the run date in UTC.
+- Implementation details:
+  - Use UTC date (date -u / equivalent) to generate path segments to avoid local timezone drift across CI and developers.
+  - Create directories as needed (mkdir -p docs/code-review/YYYY/MM/DD) with repository-relative paths.
+  - Report filename uses the previous naming scheme; if a filename collision occurs within the same day, append an ISO-8601 time suffix in UTC (T HHMMSSZ) to the basename before the extension, e.g.:
+    - docs/code-review/2025/12/24/code-cleanup-report.md
+    - docs/code-review/2025/12/24/code-cleanup-report-20251224T093012Z.md
+  - Write files atomically: write to a temporary file in the target directory then rename/move to final filename (POSIX atomic rename) to avoid partial writes and race conditions.
+  - Ensure file permissions mirror repository defaults (e.g., 0644) and maintain line endings as before.
+- Justification:
+  - Deterministic repository-relative path (docs/code-review/YYYY/MM/DD/) makes reports easy to find and to browse chronologically.
+  - Per-day directories greatly reduce the probability of collision; the additional timestamp-on-collision policy guarantees uniqueness even for multiple runs in a day.
+  - Using UTC prevents inconsistent directory placement caused by differing developer/CI local timezones.
+  - Atomic write strategy avoids partial or corrupt files when multiple processes run concurrently.
+  - The path lives in docs/, which is commonly included in repo hosting, previews, and static site generation workflows; this makes reports visible to reviewers with no additional configuration.
+  - Low implementation complexity: minimal code change to switch from precedence detection to deterministic path generation while preserving filename handling and backwards-compatible filename semantics (with suffix on collision).
+
+## Consequences
+
+Good
+- Chronological organization:
+  - Reports are grouped by run date, enabling simple browsing (by date) and automated archival (e.g., archive per month).
+- Predictability and discoverability:
+  - Consumers know exactly where to look: docs/code-review/<year>/<month>/<day>/.
+  - Static site generators and repo viewers can expose these directories clearly.
+- Collision avoidance:
+  - Per-day directories plus timestamp-on-collision prevents accidental overwrites from concurrent or repeated runs.
+- Easier automation:
+  - CI jobs and retention scripts can target date prefixes (e.g., docs/code-review/2025/12/) for pruning or publishing.
+- Simpler code:
+  - Removes precedence-detection code paths and edge cases.
+- Safer writes:
+  - Atomic write policy reduces the risk of partial files being checked into the repo.
+
+Bad
+- Breaking changes for existing consumers:
+  - Any scripts, integrations, or documentation that relied on the previous precedence-based detection path will need updates.
+  - Projects that previously expected reports at a specific legacy path may not find new reports until they update.
+- Repo size and clutter:
+  - Committing dated reports under docs/ increases repository tree size over time unless retention/archival policies are enforced.
+- Potential duplication:
+  - If teams already keep reports elsewhere (external dashboards, CI artifacts), storing copies in the repo doubles storage unless deduplicated by policy.
+
+Neutral
+- Migration requirement:
+  - Existing reports are not automatically moved. Migration is a manual/optional process; tools can be built to copy older reports into the new date structure if desired.
+- Search tooling:
+  - Search queries will need to target the new path; however, repo search tools and static site indices can be updated with minimal effort.
+- Configurability:
+  - The command is deterministic by default; a future enhancement could add a CLI flag or config to override the path, but the default is now the date-based layout.
+
+Implementation and rollout notes (practical follow-ups)
+- Update:
+  - code-cleanup command code to generate path using UTC date, mkdir -p, write atomically, append timestamp-on-collision.
+  - help text (commit ba9ecfe already adds help sections) to document the new output location and collision behavior.
+  - CI workflows and any scripts that read or publish reports should be updated to use docs/code-review/YYYY/MM/DD/.
+- Migration:
+  - Provide a one-time migration script and documentation to move existing reports into the date-based layout if teams want historical consolidation.
+- Policy:
+  - Define retention/archival policy (e.g., move older than N months to archive storage or delete) to avoid repository bloat.
+- Monitoring:
+  - Add a small test in CI to verify that a run of code-cleanup creates a file under docs/code-review/<today>/ and that multiple concurrent runs do not conflict.
+
+References
+- Change commit: ba9ecfe feat(commands): add help sections and date-based report paths.
