@@ -11,3 +11,20 @@ tags:
 ## Recent Completed Spec Project
 
 - `docs/spec/active/2025-12-19-remove-memory-hooks/` - Remove Memory and Hook...
+
+---
+type: progress
+timestamp: '2025-12-24T16:18:40.586059+00:00'
+summary: '...`docs/spec/active/2025-12-19-remove-memory-hooks/` - Remove Memory and
+  Hook Components'
+tags:
+- auto-captured
+- post-tool-use
+- file:CLAUDE.md
+---
+
+...`docs/spec/active/2025-12-19-remove-memory-hooks/` - Remove Memory and Hook Components
+  - Completed: 2025-12-19
+  - Outcome: success
+  - Branch: plan/remove-memory-hooks
+  - Key changes: Removed...
