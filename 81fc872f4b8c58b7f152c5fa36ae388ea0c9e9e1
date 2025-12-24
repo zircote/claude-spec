@@ -228,3 +228,15 @@ tags:
 
 ### How It Works
 1. Run `/claude-spec:plan` with...
+
+---
+type: progress
+timestamp: '2025-12-24T18:36:52.222661+00:00'
+summary: '...todo list and add a note about Task 2.1 being already partially done
+  (Filter Selection UI was ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...todo list and add a note about Task 2.1 being already partially done (Filter Selection UI was implemented as part of Phase 1):
