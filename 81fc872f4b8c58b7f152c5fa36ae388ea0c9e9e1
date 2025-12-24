@@ -3119,3 +3119,23 @@ tags:
 ---
 
 ...todo list and add a note about Task 2.1 being already partially done (Filter Selection UI was implemented as part of Phase 1):
+
+---
+type: progress
+timestamp: '2025-12-24T20:00:11.882335+00:00'
+summary: '...Tracking Requirement'
+tags:
+- auto-captured
+- post-tool-use
+- file:code-cleanup.md
+---
+
+...Tracking Requirement
+
+During remediation, maintain a running count:
+
+```
+📊 ALL MODE Progress: [completed]/[total] findings
+   ✅ Critical: [X]/[Y]
+   ✅ High: [X]/[Y]
+   🔄 Medium: [X]/[Y]  ← Currently...
