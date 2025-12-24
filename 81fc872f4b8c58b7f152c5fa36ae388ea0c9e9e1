@@ -4740,3 +4740,27 @@ All 10 parallel specialist agents have completed their analysis. Collected compr
 - docs/code-review/2025/12/24/CODE_REVIEW.md
 - docs/code-review/2025/12/24/REVIEW_SUMMARY.md
 - docs/code-review/2025/12/24/REMEDIATION_TASKS.md
+
+---
+type: progress
+timestamp: '2025-12-24T20:25:24.917246+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Fixed 2 CRITICAL security vulnerabilities (SEC-C...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Fixed 2 CRITICAL security vulnerabilities (SEC-CRIT-001, SEC-CRIT-002)
+## Summary
+Remediated the two most severe security findings from the code review.
+
+## Changes Made
+- **SEC-CRIT-001**: Fixed command injection in `build-issue-prompt.sh` by using quoted heredoc (`<< 'EOF'`) and safe sed substitution with escaped special characters
+- **SEC-CRIT-002**: Removed `--dangerously-skip-permissions` from default `claudeCommand` in `claude-spec.config.json` and updated fallback default in `config.sh`
+
+## Related Files
+- scripts/github-issues/build-issue-prompt.sh:45-67
+- claude-spec.config.json:4
+- skills/worktree-manager/scripts/lib/config.sh:149
