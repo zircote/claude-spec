@@ -1,0 +1,37 @@
+---
+type: decisions
+timestamp: '2025-12-24T17:07:11.350832+00:00'
+summary: Auto-detect trigger for GitHub Issues workflow
+---
+
+Auto-detect trigger for GitHub Issues workflow
+## Context
+User chose to have the workflow trigger when `/plan` is run with no arguments, offering to fetch issues as an option. This keeps the command surface minimal while making the feature discoverable.
+
+## Rationale
+- Avoids command proliferation (no new command to learn)
+- Natural entry point when user doesn't have a specific idea
+- Existing `/plan <idea>` workflow remains unchanged
+- Progressive disclosure - only shows issues option when relevant
+
+## Related Files
+- commands/plan.md:1-50
+
+---
+type: decisions
+timestamp: '2025-12-24T17:07:11.381685+00:00'
+summary: AI-evaluated issue completeness with user override
+---
+
+AI-evaluated issue completeness with user override
+## Context
+User wants Claude to assess whether an issue has sufficient detail to begin planning elicitation with reasonable confidence. The threshold is practical: "can we start meaningful requirements elicitation?" rather than a rigid checklist.
+
+## Rationale
+- Flexible assessment rather than boolean checkbox requirements
+- User retains final judgment with 4 options: post clarification, add details inline, proceed anyway, skip
+- Professional tone for GitHub comments maintains project credibility
+- User MUST have option to request Claude draft a clarification comment
+
+## Related Files
+- commands/plan.md (will be extended)
