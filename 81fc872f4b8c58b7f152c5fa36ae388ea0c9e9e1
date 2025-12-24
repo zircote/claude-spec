@@ -5645,3 +5645,28 @@ Continuing from previous session where Critical (2/2) and High (11/11) findings 
 
 ## Related Files
 - analyzers/log_analyzer.py - Current target for QUAL-MED-002
+
+---
+type: progress
+timestamp: '2025-12-24T20:36:01.097230+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Fixed 3 more MEDIUM findings
+
+  ## Changes Made
+
+  - ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Fixed 3 more MEDIUM findings
+## Changes Made
+- QUAL-MED-002: Added named constants for magic numbers in log_analyzer.py
+- COMP-MED-006: Added chmod 600 for .issue-context.json
+- RES-MED-001: Made worktree creation idempotent
+
+## Related Files
+- analyzers/log_analyzer.py:24-40
+- scripts/github-issues/create-issue-worktree.sh:100-163
