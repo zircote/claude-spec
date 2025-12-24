@@ -169,3 +169,20 @@ tags:
         # The password_assignment pattern should match and filter
         self.assertGreater(result.secret_count, 0)
         # The filtered...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:48:43.833612+00:00'
+summary: '...com)EXAMPLE"'
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...com)EXAMPLE"
+        result = filter_pipeline(text)
+        # This should be detected as an AWS key pattern
+        self.assertIn("aws_access_key", result.secret_types)
+
+    def test_github_token_with_injection...
