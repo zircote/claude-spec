@@ -492,3 +492,15 @@ tags:
   - Fixed: 2025-12-24
 
 - [x] **ARCH-MED-002** LogAnalysis class has 17 fields ✅ ACCEPTABLE...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:25:25.473801+00:00'
+summary: I need to fix these tests - they had incorrect assumptions about the pattern
+  matching. Let me upd...
+tags:
+- auto-captured
+- pre-compact
+---
+
+I need to fix these tests - they had incorrect assumptions about the pattern matching. Let me update them to be more realistic:
