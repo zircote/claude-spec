@@ -1,0 +1,612 @@
+---
+type: patterns
+timestamp: '2025-12-24T18:55:11.081621+00:00'
+summary: '...analyzers/log_analyzer.py` and `analyzers/analyze_cli.py`'
+tags:
+- auto-captured
+- post-tool-use
+- file:CODE_REVIEW.md
+---
+
+...analyzers/log_analyzer.py` and `analyzers/analyze_cli.py`
+
+**Description:** Both files contain similar pattern matching and analysis logic for prompt logs.
+
+**Impact:** Maintenance burden, risk of divergent...
+
+---
+type: patterns
+timestamp: '2025-12-24T18:55:11.102504+00:00'
+summary: '...High coupling, difficult to modify independently.'
+tags:
+- auto-captured
+- post-tool-use
+- file:CODE_REVIEW.md
+---
+
+...High coupling, difficult to modify independently.
+
+**Remediation:** Use artifact registry pattern for inter-step communication.
+
+### QUAL-004: Complex Conditional in Pipeline (MEDIUM)
+
+**File:**...
+
+---
+type: patterns
+timestamp: '2025-12-24T18:56:54.647657+00:00'
+summary: '...Validate branch name format before git commands'
+tags:
+- auto-captured
+- post-tool-use
+- file:create-issue-worktree.sh
+---
+
+...Validate branch name format before git commands
+    # Branch names must match: prefix/number-slug pattern
+    if ! [[ "$branch" =~ ^[a-z]+/[0-9]+-[a-z0-9-]+$ ]]; then
+        echo "Error: Invalid branch...
+
+---
+type: patterns
+timestamp: '2025-12-24T18:57:18.154557+00:00'
+summary: '...for base64 segment to be considered for decoding'
+tags:
+- auto-captured
+- post-tool-use
+- file:pipeline.py
+---
+
+...for base64 segment to be considered for decoding
+MIN_BASE64_SEGMENT_LENGTH = 20
+
+# Base64 pattern for detecting encoded content
+# Matches strings of MIN_BASE64_SEGMENT_LENGTH+ base64 characters...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:19:47.803889+00:00'
+summary: '...────────────────────────`
+
+  The command injection vulnerability in bash scripts is a classic sec...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...────────────────────────`
+The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:22:53.133163+00:00'
+summary: '...created from GitHub issue data without secret filtering.'
+tags:
+- auto-captured
+- post-tool-use
+- file:CODE_REVIEW.md
+---
+
+...created from GitHub issue data without secret filtering.
+
+---
+
+### PERF-MED-001: Multiple Regex Pattern Iterations
+
+**File:** `filters/pipeline.py:340-354`
+
+**Description:** `detect_secrets()` iterates...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:23:33.667709+00:00'
+summary: '...────────────────────────`
+
+  The command injection vulnerability in bash scripts is a classic sec...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...────────────────────────`
+The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:33:26.548349+00:00'
+summary: '...────────────────────────`
+
+  The command injection vulnerability in bash scripts is a classic sec...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...────────────────────────`
+The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:44:32.917623+00:00'
+summary: '...────────────────────────`
+
+  The command injection vulnerability in bash scripts is a classic sec...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...────────────────────────`
+The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:46:33.619924+00:00'
+summary: '...| as delimiter since paths may contain /'
+tags:
+- auto-captured
+- post-tool-use
+- file:build-issue-prompt.sh
+---
+
+...| as delimiter since paths may contain /
+    # SFH-002: Include pipe character | in escape pattern since it's our sed delimiter
+    local safe_title safe_path
+    safe_title=$(printf '%s' "$issue_title...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:48:43.812829+00:00'
+summary: '...whoami)secret123password"'''
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...whoami)secret123password"'
+        result = filter_pipeline(text)
+        # The password_assignment pattern should match and filter
+        self.assertGreater(result.secret_count, 0)
+        # The filtered...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:48:43.833612+00:00'
+summary: '...com)EXAMPLE"'
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...com)EXAMPLE"
+        result = filter_pipeline(text)
+        # This should be detected as an AWS key pattern
+        self.assertIn("aws_access_key", result.secret_types)
+
+    def test_github_token_with_injection...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:48:43.854892+00:00'
+summary: '...# JWT format but with script injection in payload'
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...# JWT format but with script injection in payload
+        # Note: This tests that JWT pattern still matches even with unusual content
+        header = base64.b64encode(b'{"alg":"HS256"}').decode...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:48:43.875531+00:00'
+summary: '...f"ey{header[2:]}.ey{payload_b64}.{signature}"'
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...f"ey{header[2:]}.ey{payload_b64}.{signature}"
+
+        result = filter_pipeline(jwt)
+        # JWT pattern should still match the overall structure
+        self.assertGreater(result.secret_count, 0)
+
+if...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:49:36.217985+00:00'
+summary: '...AKIAIOSFODNN7EXAMPLE)"'''
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...AKIAIOSFODNN7EXAMPLE)"'
+        result = filter_pipeline(text)
+        # The aws_secret_key pattern should match (key in quotes context)
+        self.assertGreater(result.secret_count, 0)
+
+---
+type: patterns
+timestamp: '2025-12-24T19:49:42.571988+00:00'
+summary: '...JWT-like tokens with XSS payloads."""'
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...JWT-like tokens with XSS payloads."""
+        # Use a realistic JWT structure that matches the pattern
+        # JWT pattern: ey[17+ chars].ey[17+ chars/\\_-].[10+ chars/\\_-]
+        # A real JWT...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:49:42.595313+00:00'
+summary: '...payloads."""'
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...payloads."""
+        # Use a realistic JWT structure that matches the pattern
+        # JWT pattern: ey[17+ chars].ey[17+ chars/\\_-].[10+ chars/\\_-]
+        # A real JWT with XSS in the payload...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:49:42.617755+00:00'
+summary: '...YWxlcnQoMSk8L3NjcmlwdD4ifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"'
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...YWxlcnQoMSk8L3NjcmlwdD4ifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        result = filter_pipeline(jwt)
+        # JWT pattern should match the overall structure
+        self.assertGreater(result.secret_count, 0)...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:50:53.284404+00:00'
+summary: '...instead of silent suppression'
+tags:
+- auto-captured
+- post-tool-use
+- file:REMEDIATION_TASKS.md
+---
+
+...instead of silent suppression
+  - Fixed: 2025-12-24
+
+- [x] **SFH-002** Incomplete sed escape pattern (missing pipe) ✅ FIXED
+  - File: `scripts/github-issues/build-issue-prompt.sh:62-63`
+  - Action:...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:50:53.309207+00:00'
+summary: '...scripts/github-issues/build-issue-prompt.sh:62-63`'
+tags:
+- auto-captured
+- post-tool-use
+- file:REMEDIATION_TASKS.md
+---
+
+...scripts/github-issues/build-issue-prompt.sh:62-63`
+  - Action: Added pipe `|` character to sed escape pattern
+  - Fixed: 2025-12-24
+
+### Test Coverage Gaps (Phase 5)
+
+- [x] **TEST-LOCK** LockTimeoutError...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:58:01.059664+00:00'
+summary: I need to fix these tests - they had incorrect assumptions about the pattern
+  matching. Let me upd...
+tags:
+- auto-captured
+- pre-compact
+---
+
+I need to fix these tests - they had incorrect assumptions about the pattern matching. Let me update them to be more realistic:
+
+---
+type: patterns
+timestamp: '2025-12-24T19:58:01.103508+00:00'
+summary: '...────────────────────────`
+
+  The command injection vulnerability in bash scripts is a classic sec...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...────────────────────────`
+The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:58:01.233889+00:00'
+summary: '...should preserve stderr for debugging.
+
+  2. **build-issue-prompt.sh:61-62**: The sed escape patt...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...should preserve stderr for debugging.
+
+2. **build-issue-prompt.sh:61-62**: The sed escape pattern `s/[&/\]/\\&/g` is missing the pipe character `|` which is our sed delimiter.
+
+Let me fix both...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:04:36.084451+00:00'
+summary: I need to fix these tests - they had incorrect assumptions about the pattern
+  matching. Let me upd...
+tags:
+- auto-captured
+- pre-compact
+---
+
+I need to fix these tests - they had incorrect assumptions about the pattern matching. Let me update them to be more realistic:
+
+---
+type: patterns
+timestamp: '2025-12-24T20:04:36.125695+00:00'
+summary: '...────────────────────────`
+
+  The command injection vulnerability in bash scripts is a classic sec...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...────────────────────────`
+The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:04:36.255767+00:00'
+summary: '...should preserve stderr for debugging.
+
+  2. **build-issue-prompt.sh:61-62**: The sed escape patt...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...should preserve stderr for debugging.
+
+2. **build-issue-prompt.sh:61-62**: The sed escape pattern `s/[&/\]/\\&/g` is missing the pipe character `|` which is our sed delimiter.
+
+Let me fix both...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:09:44.996254+00:00'
+summary: '...sessions in a prompt log, providing'
+tags:
+- auto-captured
+- post-tool-use
+- file:log_analyzer.py
+---
+
+...sessions in a prompt log, providing
+    insights for project retrospectives and interaction pattern analysis.
+
+    Attributes:
+        total_entries: Total log entries across all sessions....
+
+---
+type: patterns
+timestamp: '2025-12-24T20:12:24.104664+00:00'
+summary: '...path derivation'
+tags:
+- auto-captured
+- post-tool-use
+- file:REMEDIATION_TASKS.md
+---
+
+...path derivation
+  - Fixed: 2025-12-24
+
+### Performance
+
+- [ ] **PERF-MED-001** Multiple regex pattern iterations (deferred - acceptable performance)
+- [ ] **PERF-MED-002** Repeated jq invocations...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:12:28.047846+00:00'
+summary: I need to fix these tests - they had incorrect assumptions about the pattern
+  matching. Let me upd...
+tags:
+- auto-captured
+- pre-compact
+---
+
+I need to fix these tests - they had incorrect assumptions about the pattern matching. Let me update them to be more realistic:
+
+---
+type: patterns
+timestamp: '2025-12-24T20:12:28.092700+00:00'
+summary: '...────────────────────────`
+
+  The command injection vulnerability in bash scripts is a classic sec...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...────────────────────────`
+The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:12:28.219228+00:00'
+summary: '...should preserve stderr for debugging.
+
+  2. **build-issue-prompt.sh:61-62**: The sed escape patt...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...should preserve stderr for debugging.
+
+2. **build-issue-prompt.sh:61-62**: The sed escape pattern `s/[&/\]/\\&/g` is missing the pipe character `|` which is our sed delimiter.
+
+Let me fix both...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:23:17.138546+00:00'
+summary: '...context_loader.py:24-34`'
+tags:
+- auto-captured
+- post-tool-use
+- file:REMEDIATION_TASKS.md
+---
+
+...context_loader.py:24-34`
+  - Note: Module-level try/except for optional dependency is acceptable Python pattern
+  - Fixed: 2025-12-24
+
+- [x] **ARCH-MED-002** LogAnalysis class has 17 fields ✅ ACCEPTABLE...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:25:25.473801+00:00'
+summary: I need to fix these tests - they had incorrect assumptions about the pattern
+  matching. Let me upd...
+tags:
+- auto-captured
+- pre-compact
+---
+
+I need to fix these tests - they had incorrect assumptions about the pattern matching. Let me update them to be more realistic:
+
+---
+type: patterns
+timestamp: '2025-12-24T20:25:25.515158+00:00'
+summary: '...────────────────────────`
+
+  The command injection vulnerability in bash scripts is a classic sec...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...────────────────────────`
+The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:25:25.640916+00:00'
+summary: '...should preserve stderr for debugging.
+
+  2. **build-issue-prompt.sh:61-62**: The sed escape patt...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...should preserve stderr for debugging.
+
+2. **build-issue-prompt.sh:61-62**: The sed escape pattern `s/[&/\]/\\&/g` is missing the pipe character `|` which is our sed delimiter.
+
+Let me fix both...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:36:01.353326+00:00'
+summary: I need to fix these tests - they had incorrect assumptions about the pattern
+  matching. Let me upd...
+tags:
+- auto-captured
+- pre-compact
+---
+
+I need to fix these tests - they had incorrect assumptions about the pattern matching. Let me update them to be more realistic:
+
+---
+type: patterns
+timestamp: '2025-12-24T20:36:01.395762+00:00'
+summary: '...────────────────────────`
+
+  The command injection vulnerability in bash scripts is a classic sec...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...────────────────────────`
+The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:36:01.527327+00:00'
+summary: '...should preserve stderr for debugging.
+
+  2. **build-issue-prompt.sh:61-62**: The sed escape patt...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...should preserve stderr for debugging.
+
+2. **build-issue-prompt.sh:61-62**: The sed escape pattern `s/[&/\]/\\&/g` is missing the pipe character `|` which is our sed delimiter.
+
+Let me fix both...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:36:01.952775+00:00'
+summary: 'Now let me fix the test files. Let me read and fix the common pattern used
+  for path setup:'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Now let me fix the test files. Let me read and fix the common pattern used for path setup:
+
+---
+type: patterns
+timestamp: '2025-12-24T20:40:33.751470+00:00'
+summary: '...E501 (19): Line length - acceptable'
+tags:
+- auto-captured
+- post-tool-use
+- file:REMEDIATION_TASKS.md
+---
+
+...E501 (19): Line length - acceptable
+- [ ] E402 (15): Module-level imports - dynamic import pattern
+
+---
+
+## Progress Tracking
+
+| Priority | Total | Done | Remaining |
+|----------|-------|------|-----...
