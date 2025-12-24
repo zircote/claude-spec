@@ -1840,3 +1840,18 @@ tags:
         return None
 
     # Find all project directories...
+
+---
+type: progress
+timestamp: '2025-12-24T19:38:03.716246+00:00'
+summary: '...cwd_path = Path(self.cwd)'
+tags:
+- auto-captured
+- post-tool-use
+- file:retrospective_gen.py
+---
+
+...cwd_path = Path(self.cwd)
+
+        # ARCH-HIGH-002: Use shared utility for finding completed project
+        target_dir = find_most_recent_completed_project(cwd_path, "retrospective_gen")...
