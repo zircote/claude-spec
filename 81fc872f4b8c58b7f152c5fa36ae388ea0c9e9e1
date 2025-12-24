@@ -62,3 +62,17 @@ MIN_BASE64_SEGMENT_LENGTH = 20
 
 # Base64 pattern for detecting encoded content
 # Matches strings of MIN_BASE64_SEGMENT_LENGTH+ base64 characters...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:19:47.803889+00:00'
+summary: '...────────────────────────`
+
+  The command injection vulnerability in bash scripts is a classic sec...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...────────────────────────`
+The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
