@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.0.0] - 2025-12-24
+
+### Added - Implementation
+- **Phase 1: Foundation**
+  - Extended Step 0 argument parsing with `no_args` detection
+  - Prerequisites checker for `gh` CLI with detailed error messages
+  - Filter Selection UI for labels and assignee filtering
+  - Issue Fetcher with dynamic `gh issue list` command building
+
+- **Phase 2: Core Workflow**
+  - Issue Selection UI with JSON parsing and pagination (max 4 per question)
+  - Label-to-prefix mapper following conventional commits (bug > docs > chore > feat)
+  - Branch name generator: `{prefix}/{issue-number}-{slugified-title}`
+  - Worktree creation with `.issue-context.json` for agent context
+  - Parallel agent launch with issue-aware prompts
+
+- **Phase 3: Completeness & Comments**
+  - AI-based completeness evaluation with 5-criteria weighted assessment
+  - Three verdict levels: COMPLETE, NEEDS_CLARIFICATION, MINIMAL
+  - Comment draft generator with professional tone
+  - Comment posting workflow with confirmation UI
+  - "Add details inline" option for user-provided context
+
+### Changed
+- Extended `commands/plan.md` with new `<github_issues_workflow>` section (~670 lines)
+- Added 4th argument type (`no_args`) to Step 0 classification
+
 ## [1.0.0] - 2025-12-24
 
 ### Added
