@@ -46,3 +46,19 @@ tags:
     # Branch names must match: prefix/number-slug pattern
     if ! [[ "$branch" =~ ^[a-z]+/[0-9]+-[a-z0-9-]+$ ]]; then
         echo "Error: Invalid branch...
+
+---
+type: patterns
+timestamp: '2025-12-24T18:57:18.154557+00:00'
+summary: '...for base64 segment to be considered for decoding'
+tags:
+- auto-captured
+- post-tool-use
+- file:pipeline.py
+---
+
+...for base64 segment to be considered for decoding
+MIN_BASE64_SEGMENT_LENGTH = 20
+
+# Base64 pattern for detecting encoded content
+# Matches strings of MIN_BASE64_SEGMENT_LENGTH+ base64 characters...
