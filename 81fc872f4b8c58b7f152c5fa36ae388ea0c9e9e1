@@ -433,3 +433,15 @@ tags:
 
 - [ ] **PERF-MED-001** Multiple regex pattern iterations (deferred - acceptable performance)
 - [ ] **PERF-MED-002** Repeated jq invocations...
+
+---
+type: patterns
+timestamp: '2025-12-24T20:12:28.047846+00:00'
+summary: I need to fix these tests - they had incorrect assumptions about the pattern
+  matching. Let me upd...
+tags:
+- auto-captured
+- pre-compact
+---
+
+I need to fix these tests - they had incorrect assumptions about the pattern matching. Let me update them to be more realistic:
