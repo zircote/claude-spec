@@ -200,3 +200,21 @@ tags:
 ...# JWT format but with script injection in payload
         # Note: This tests that JWT pattern still matches even with unusual content
         header = base64.b64encode(b'{"alg":"HS256"}').decode...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:48:43.875531+00:00'
+summary: '...f"ey{header[2:]}.ey{payload_b64}.{signature}"'
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...f"ey{header[2:]}.ey{payload_b64}.{signature}"
+
+        result = filter_pipeline(jwt)
+        # JWT pattern should still match the overall structure
+        self.assertGreater(result.secret_count, 0)
+
+if...
