@@ -153,3 +153,19 @@ tags:
     # SFH-002: Include pipe character | in escape pattern since it's our sed delimiter
     local safe_title safe_path
     safe_title=$(printf '%s' "$issue_title...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:48:43.812829+00:00'
+summary: '...whoami)secret123password"'''
+tags:
+- auto-captured
+- post-tool-use
+- file:test_pipeline.py
+---
+
+...whoami)secret123password"'
+        result = filter_pipeline(text)
+        # The password_assignment pattern should match and filter
+        self.assertGreater(result.secret_count, 0)
+        # The filtered...
