@@ -5595,3 +5595,29 @@ Finished remediation of all Critical and High severity findings from the code re
 - tests/test_log_writer.py:488-561
 - tests/test_pipeline.py:602-730
 - docs/code-review/2025/12/24/REMEDIATION_TASKS.md:89-111, 172-180
+
+---
+type: progress
+timestamp: '2025-12-24T20:36:01.010428+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Added ALL MODE COMPLETION CONTRACT to code-clean...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Added ALL MODE COMPLETION CONTRACT to code-cleanup.md command
+## Summary
+Added mandatory completion contract with explicit anti-premature-termination rules to prevent stopping before all findings are remediated.
+
+## Changes Made
+- Added `<all_mode_completion_contract>` section with:
+  - Explicit completion criteria (0 remaining in ALL severities)
+  - Progress tracking requirement with running count display
+  - Anti-premature-termination rules (DO NOT / DO lists)
+  - Validation checkpoint bash script
+  - Session boundary handling instructions
+
+## Related Files
+- commands/code-cleanup.md:179-250
