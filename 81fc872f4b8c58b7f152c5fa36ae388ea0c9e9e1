@@ -3300,3 +3300,38 @@ Completed implementation of GitHub Issues Worktree Workflow feature. All core fu
 - commands/plan.md (main implementation)
 - docs/spec/active/2025-12-24-github-issues-worktree-wf/PROGRESS.md
 - docs/spec/active/2025-12-24-github-issues-worktree-wf/CHANGELOG.md
+
+---
+type: progress
+timestamp: '2025-12-24T20:04:35.525451+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Extracted GitHub Issues bash functions into test...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Extracted GitHub Issues bash functions into testable scripts with comprehensive test suite
+## Summary
+Moved all embedded bash scripting for the GitHub Issues Worktree Workflow from `commands/plan.md` into separate, testable scripts in `scripts/github-issues/`. Created a 47-test validation suite.
+
+## Changes Made
+- Created `scripts/github-issues/check-gh-prerequisites.sh` - Verify gh CLI, auth, and repository
+- Created `scripts/github-issues/get-branch-prefix.sh` - Map labels to conventional commit prefixes
+- Created `scripts/github-issues/generate-branch-name.sh` - Generate branch names from issue data
+- Created `scripts/github-issues/create-issue-worktree.sh` - Create worktree with issue context
+- Created `scripts/github-issues/post-issue-comment.sh` - Post clarification comments to GitHub
+- Created `scripts/github-issues/build-issue-prompt.sh` - Build agent prompt with issue context
+- Created `scripts/github-issues/tests/test_github_issues.sh` - Comprehensive test suite
+- Updated `commands/plan.md` to reference extracted scripts instead of inline functions
+
+## Related Files
+- scripts/github-issues/check-gh-prerequisites.sh:1-75
+- scripts/github-issues/get-branch-prefix.sh:1-56
+- scripts/github-issues/generate-branch-name.sh:1-86
+- scripts/github-issues/create-issue-worktree.sh:1-134
+- scripts/github-issues/post-issue-comment.sh:1-98
+- scripts/github-issues/build-issue-prompt.sh:1-61
+- scripts/github-issues/tests/test_github_issues.sh:1-285
+- commands/plan.md:695-1265
