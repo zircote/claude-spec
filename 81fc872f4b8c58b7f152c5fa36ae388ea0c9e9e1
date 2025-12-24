@@ -5829,3 +5829,15 @@ tags:
 ---
 
 The fetch completed (exit code 1 is just for the notes warnings, not the branch fetch). Let me check for incoming...
+
+---
+type: progress
+timestamp: '2025-12-24T20:36:01.654614+00:00'
+summary: '...- 14 modified files + 3 untracked directories. The stash was popped right
+  after the rebase com...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...- 14 modified files + 3 untracked directories. The stash was popped right after the rebase completed.
