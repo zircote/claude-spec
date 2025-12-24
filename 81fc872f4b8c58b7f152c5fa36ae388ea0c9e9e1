@@ -138,3 +138,18 @@ tags:
 
 ...────────────────────────`
 The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:46:33.619924+00:00'
+summary: '...| as delimiter since paths may contain /'
+tags:
+- auto-captured
+- post-tool-use
+- file:build-issue-prompt.sh
+---
+
+...| as delimiter since paths may contain /
+    # SFH-002: Include pipe character | in escape pattern since it's our sed delimiter
+    local safe_title safe_path
+    safe_title=$(printf '%s' "$issue_title...
