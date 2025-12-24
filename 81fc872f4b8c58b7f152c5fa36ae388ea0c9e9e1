@@ -325,3 +325,17 @@ tags:
 ---
 
 I need to fix these tests - they had incorrect assumptions about the pattern matching. Let me update them to be more realistic:
+
+---
+type: patterns
+timestamp: '2025-12-24T19:58:01.103508+00:00'
+summary: '...────────────────────────`
+
+  The command injection vulnerability in bash scripts is a classic sec...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...────────────────────────`
+The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
