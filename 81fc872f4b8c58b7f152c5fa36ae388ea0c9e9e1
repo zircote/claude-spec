@@ -1775,3 +1775,15 @@ tags:
 ---
 
 Excellent! Several agents have completed. Let me get the remaining outputs:
+
+---
+type: progress
+timestamp: '2025-12-24T19:33:26.923999+00:00'
+summary: '...todo list and add a note about Task 2.1 being already partially done
+  (Filter Selection UI was ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...todo list and add a note about Task 2.1 being already partially done (Filter Selection UI was implemented as part of Phase 1):
