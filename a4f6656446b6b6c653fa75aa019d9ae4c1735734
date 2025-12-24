@@ -115,3 +115,22 @@ tags:
 
     Looks in docs/spec/completed/ for project directories and returns
     the one with the most recent modification time....
+
+---
+type: progress
+timestamp: '2025-12-24T19:37:38.849267+00:00'
+summary: '...project directory, or None if not found.'
+tags:
+- auto-captured
+- post-tool-use
+- file:base.py
+---
+
+...project directory, or None if not found.
+    """
+    completed_dir = cwd / "docs" / "spec" / "completed"
+
+    if not completed_dir.is_dir():
+        return None
+
+    project_dirs = [d for d in completed_dir...
