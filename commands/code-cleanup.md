@@ -1,9 +1,48 @@
 ---
 argument-hint:
   [path|--focus=security|--focus=performance|--focus=maintainability|--quick|--all]
-description: Comprehensive code review and remediation using parallel specialist agents. Executes in two sequential steps - review then fix. Produces actionable findings prioritized by severity with clear remediation paths.
+description: Comprehensive code review and remediation using parallel specialist agents. Uses LSP semantic analysis when available for precise code navigation. Executes in two sequential steps - review then fix. Produces actionable findings prioritized by severity with clear remediation paths.
 model: claude-opus-4-5-20251101
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, TodoRead, TodoWrite
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, TodoRead, TodoWrite, LSP
+---
+
+<help_check>
+## Help Check
+
+If `$ARGUMENTS` contains `--help` or `-h`:
+
+**Output this help and HALT (do not proceed further):**
+
+<help_output>
+```
+CODE_CLEANUP(1)                                      User Commands                                      CODE_CLEANUP(1)
+
+NAME
+    code-cleanup - Comprehensive code review and remediation using paralle...
+
+SYNOPSIS
+    /claude-spec:code-cleanup 
+
+DESCRIPTION
+    Comprehensive code review and remediation using parallel specialist agents. Uses LSP semantic analysis when available for precise code navigation. Executes in two sequential steps - review then fix. P
+
+OPTIONS
+    --help, -h                Show this help message
+
+EXAMPLES
+    /claude-spec:code-cleanup               
+    /claude-spec:code-cleanup --help        
+
+SEE ALSO
+    /claude-spec:* for related commands
+
+                                                                      CODE_CLEANUP(1)
+```
+</help_output>
+
+**After outputting help, HALT immediately. Do not proceed with command execution.**
+</help_check>
+
 ---
 
 # /code/cleanup - Comprehensive Code Review and Remediation
@@ -25,34 +64,39 @@ EXECUTION CONTRACT:
 
 ## Report Placement Directive (Applies to All Steps)
 
-**MANDATORY**: Reports are placed in the first available location from this precedence order.
+**MANDATORY**: Reports are ALWAYS placed in a date-organized directory structure.
 
 ### Detection Protocol (Run Once at Start of Each Step)
 
 ```bash
-# Precedence 1: Active spec directory
-SPEC_DIR=$(find docs/spec/active -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)
+# ALWAYS use date-based directory: docs/code-review/YYYY/MM/DD/
+YEAR=$(date +%Y)
+MONTH=$(date +%m)
+DAY=$(date +%d)
+REPORT_DIR="docs/code-review/${YEAR}/${MONTH}/${DAY}"
 
-if [ -n "$SPEC_DIR" ]; then
-  REPORT_DIR="$SPEC_DIR"
-# Precedence 2: docs/ directory
-elif [ -d "docs" ]; then
-  REPORT_DIR="docs"
-# Precedence 3: Repository root
-else
-  REPORT_DIR="."
-fi
+# Create the directory if it doesn't exist
+mkdir -p "${REPORT_DIR}"
 
 echo "REPORT_DIR=${REPORT_DIR}"
 ```
 
-### Precedence Order
+### Directory Structure
 
-| Priority | Location                   | Condition                  |
-| -------- | -------------------------- | -------------------------- |
-| 1        | `docs/spec/active/<SPEC>/` | Active spec project exists |
-| 2        | `docs/`                    | docs/ directory exists     |
-| 3        | `./`                       | Fallback to repo root      |
+```
+docs/
+└── code-review/
+    └── 2025/
+        └── 12/
+            ├── 23/
+            │   ├── CODE_REVIEW.md
+            │   ├── REVIEW_SUMMARY.md
+            │   ├── REMEDIATION_TASKS.md
+            │   └── REMEDIATION_REPORT.md
+            └── 24/
+                ├── CODE_REVIEW.md
+                └── ...
+```
 
 ### All Report Locations
 
@@ -62,6 +106,12 @@ echo "REPORT_DIR=${REPORT_DIR}"
 | REVIEW_SUMMARY.md     | `${REPORT_DIR}/REVIEW_SUMMARY.md`     |
 | REMEDIATION_TASKS.md  | `${REPORT_DIR}/REMEDIATION_TASKS.md`  |
 | REMEDIATION_REPORT.md | `${REPORT_DIR}/REMEDIATION_REPORT.md` |
+
+**Example (December 24, 2025):**
+- `docs/code-review/2025/12/24/CODE_REVIEW.md`
+- `docs/code-review/2025/12/24/REVIEW_SUMMARY.md`
+- `docs/code-review/2025/12/24/REMEDIATION_TASKS.md`
+- `docs/code-review/2025/12/24/REMEDIATION_REPORT.md`
 
 </report_placement>
 
@@ -201,6 +251,7 @@ You orchestrate parallel specialist agents, synthesize their findings, and produ
 3. **Actionable Output**: Every finding has a clear remediation path
 4. **Severity-Driven Priority**: Critical issues surface first
 5. **No Speculation**: Only review code that has been READ
+6. **LSP-First Navigation**: Use semantic code analysis when available for precision
 
 ## Review Dimensions
 
@@ -223,6 +274,56 @@ You orchestrate parallel specialist agents, synthesize their findings, and produ
 ```
 
 </review_philosophy>
+
+<lsp_integration>
+## LSP-Enhanced Code Review and Remediation
+
+**Check LSP availability at start of each step:**
+```bash
+echo $ENABLE_LSP_TOOL  # If "1", LSP is available
+```
+
+### When LSP is Available
+
+Use LSP operations for more accurate code review and remediation:
+
+| Task | LSP Operation | Benefit |
+|------|---------------|---------|
+| Understanding function implementation | `goToDefinition` | Navigate directly to definition |
+| Finding all usages before suggesting changes | `findReferences` | Exact usages, not text matches |
+| Checking type signatures | `hover` | Get type info without reading entire file |
+| Understanding file structure | `documentSymbol` | Quick overview of classes/functions |
+| Analyzing call graphs | `incomingCalls/outgoingCalls` | Accurate caller/callee relationships |
+| Finding interface implementations | `goToImplementation` | All concrete implementations |
+
+### LSP Decision Matrix
+
+```
+REVIEWING FUNCTION IMPLEMENTATION?
+├─ LSP available → goToDefinition first, then read context
+└─ LSP unavailable → Grep for function name, read file
+
+CHECKING IF CHANGE BREAKS OTHER CODE?
+├─ LSP available → findReferences (exact usages)
+└─ LSP unavailable → Grep (may have false positives)
+
+UNDERSTANDING TYPE SIGNATURES?
+├─ LSP available → hover (instant info)
+└─ LSP unavailable → Read entire file
+
+MAPPING DEPENDENCIES?
+├─ LSP available → outgoingCalls (accurate)
+└─ LSP unavailable → Manual tracing
+```
+
+### LSP Fallback Protocol
+
+If LSP is NOT available:
+1. Note in report: "LSP unavailable - using Grep fallback"
+2. Use Grep for pattern matching
+3. Manually verify references to avoid false positives
+4. Document any uncertainty in findings
+</lsp_integration>
 
 <user_interaction>
 
@@ -331,6 +432,11 @@ Subagent 1 - Security Analyst:
 - File permission issues
 - Unsafe deserialization
 
+IF LSP AVAILABLE:
+- Use findReferences to trace data flow from user input to sinks
+- Use goToDefinition to understand validation/sanitization functions
+- Use incomingCalls to find all entry points to sensitive functions
+
 READ every file. For each finding, document:
 - File path and line number
 - Vulnerability type
@@ -352,6 +458,11 @@ Subagent 2 - Performance Engineer:
 - Large payload handling
 - Connection pool exhaustion risks
 
+IF LSP AVAILABLE:
+- Use incomingCalls to find hot paths (frequently called functions)
+- Use outgoingCalls to trace expensive operation chains
+- Use findReferences to identify repeated computation opportunities
+
 READ every file. For each finding, document:
 - File path and line number
 - Performance issue type
@@ -372,6 +483,12 @@ Subagent 3 - Architecture Reviewer:
 - Missing abstractions
 - Dependency injection opportunities
 - Configuration management
+
+IF LSP AVAILABLE:
+- Use findReferences to detect inappropriate coupling (who depends on what)
+- Use goToImplementation to verify interface adherence
+- Use incomingCalls/outgoingCalls to detect circular dependencies
+- Use documentSymbol to identify god classes (too many symbols)
 
 READ every file. For each finding, document:
 - File path and line number
@@ -395,6 +512,11 @@ Subagent 4 - Code Quality Analyst:
 - Deep nesting (>4 levels)
 - Missing type hints/annotations
 
+IF LSP AVAILABLE:
+- Use findReferences to detect dead code (functions with 0 references)
+- Use hover to verify type annotations
+- Use documentSymbol to assess function complexity (number per file)
+
 READ every file. For each finding, document:
 - File path and line number
 - Quality issue
@@ -417,6 +539,11 @@ Subagent 5 - Test Coverage Analyst:
 - Test naming conventions
 - Missing test fixtures/factories
 
+IF LSP AVAILABLE:
+- Use documentSymbol to list all public functions in source files
+- Use findReferences from test files to identify untested functions
+- Use goToDefinition to trace mock targets
+
 READ every file. For each finding, document:
 - Source file lacking coverage
 - What tests are missing
@@ -436,6 +563,11 @@ Subagent 6 - Documentation & Standards Reviewer:
 - License compliance
 - Missing environment variable documentation
 - Deployment documentation gaps
+
+IF LSP AVAILABLE:
+- Use hover to check for existing documentation on public APIs
+- Use documentSymbol to identify all exported symbols needing docs
+- Use findReferences to verify documented behavior matches usage
 
 READ every file. For each finding, document:
 - File path
@@ -517,6 +649,8 @@ Produce comprehensive review document.
 - **Reviewer**: Claude Code Review Agent
 - **Scope**: [files/directories reviewed]
 - **Commit**: [if available]
+- **LSP Available**: [Yes/No]
+- **Methodology**: [LSP semantic analysis / Grep text search]
 
 ## Executive Summary
 
@@ -672,6 +806,14 @@ If `--focus` argument provided, weight that dimension more heavily:
 <execution_instruction>
 
 ## Execution Sequence for Step 1
+
+### 0. LSP Availability Check
+
+```bash
+echo $ENABLE_LSP_TOOL
+```
+- If output is "1": LSP is available. **Inform subagents to use LSP operations.**
+- If empty/not "1": LSP unavailable. Note in report, use Grep fallback.
 
 ### 1. Detect Report Directory
 
@@ -1021,14 +1163,17 @@ Task(
 
   For EACH finding:
   1. READ the file completely to understand context
+     IF LSP AVAILABLE: Use goToDefinition to navigate to security-critical functions
   2. Implement secure fix:
      - Input validation: Use allowlists, escape outputs
      - Secrets: Move to environment variables
      - SQL: Use parameterized queries
      - Dependencies: Update to patched versions
   3. Add defensive measures beyond the immediate fix
+     IF LSP AVAILABLE: Use findReferences to find all entry points that need protection
   4. Write/update tests to verify and prevent regression
   5. Document the security consideration
+     IF LSP AVAILABLE: Use incomingCalls to trace data flow from user input
 
   Output: File modified, changes made, tests added, verification"
 )
@@ -1046,12 +1191,15 @@ Task(
 
   For EACH finding:
   1. READ the file to understand the hot path
+     IF LSP AVAILABLE: Use incomingCalls to identify hot paths (frequently called)
   2. Implement optimization:
      - N+1: Add eager loading, batch queries
      - Caching: Add appropriate cache with invalidation
      - Algorithms: Replace O(n²) with O(n) or O(n log n)
      - Memory: Add cleanup, use generators for large data
+     IF LSP AVAILABLE: Use outgoingCalls to trace expensive operation chains
   3. Ensure optimization doesn't change correctness
+     IF LSP AVAILABLE: Use findReferences to verify all callers still work
   4. Add performance test/benchmark
 
   Output: File modified, optimization, expected improvement"
@@ -1070,14 +1218,18 @@ Task(
 
   For EACH finding:
   1. READ all related files for full context
+     IF LSP AVAILABLE: Use goToDefinition to navigate to all dependencies
   2. Plan refactoring:
      - SOLID violations: Apply appropriate principle
      - God classes: Extract focused classes
      - Circular deps: Introduce interfaces
      - Layer violations: Move code to appropriate layer
+     IF LSP AVAILABLE: Use incomingCalls/outgoingCalls to detect circular deps
   3. Execute in small, verifiable steps
   4. Update imports and references
+     IF LSP AVAILABLE: Use findReferences to find ALL usages that need updating
   5. Ensure all tests pass
+     IF LSP AVAILABLE: Use goToImplementation to verify interface contracts
 
   Output: Files modified, pattern applied, tests passing"
 )
@@ -1097,9 +1249,12 @@ Task(
   1. READ the file to understand conventions
   2. Apply fixes:
      - Dead code: Remove after verifying unused
+       IF LSP AVAILABLE: Use findReferences to confirm 0 usages before removal
      - DRY: Extract common code
+       IF LSP AVAILABLE: Use workspaceSymbol to find similar patterns
      - Complexity: Break into smaller functions
      - Naming: Apply consistent naming
+       IF LSP AVAILABLE: Use findReferences to rename all usages
      - Magic values: Extract to constants
   3. Maintain consistency with surrounding style
   4. Run linter to verify improvements
@@ -1285,6 +1440,8 @@ Generate REMEDIATION_REPORT.md at ${REPORT_DIR}/ with:
 | Files modified      | [N]        |
 | Tests added         | [N]        |
 | Verification status | ✅/⚠️/❌   |
+| LSP Available       | [Yes/No]   |
+| Methodology         | [LSP semantic analysis / Grep text fallback] |
 
 ## User Selections
 
@@ -1334,6 +1491,14 @@ Check $ARGUMENTS for mode flags (precedence: `--all` > `--quick` > interactive):
 - **All Mode** (`--all`): Skip AskUserQuestion, remediate ALL severities with FULL verification
 - **Quick Mode** (`--quick`): Skip AskUserQuestion, use quick defaults (Critical+High, quick verification)
 - **Interactive Mode** (no flags): Use AskUserQuestion at each decision point
+
+### Step 0.5: LSP Availability Check
+
+```bash
+echo $ENABLE_LSP_TOOL
+```
+- If "1": LSP is available. **Inform all remediation agents to use LSP operations.**
+- If empty: LSP unavailable. Note in report, agents will use Grep fallback.
 
 ### Step 1: Verify Handoff Artifacts
 

@@ -5,6 +5,45 @@ model: claude-opus-4-5-20251101
 allowed-tools: Read, Write, Bash, Glob, Grep
 ---
 
+<help_check>
+## Help Check
+
+If `$ARGUMENTS` contains `--help` or `-h`:
+
+**Output this help and HALT (do not proceed further):**
+
+<help_output>
+```
+WORKTREE_CREATE(1)                                   User Commands                                   WORKTREE_CREATE(1)
+
+NAME
+    worktree-create - Create a worktree with Claude agent for spec work. Spaw...
+
+SYNOPSIS
+    /claude-spec:worktree-create <branch-name|project-slug> [--base <branch>] [--prompt <initial-prompt>]
+
+DESCRIPTION
+    Create a worktree with Claude agent for spec work. Spawns isolated environment with optional initial prompt.
+
+OPTIONS
+    --help, -h                Show this help message
+
+EXAMPLES
+    /claude-spec:worktree-create            
+    /claude-spec:worktree-create --help     
+
+SEE ALSO
+    /claude-spec:* for related commands
+
+                                                                      WORKTREE_CREATE(1)
+```
+</help_output>
+
+**After outputting help, HALT immediately. Do not proceed with command execution.**
+</help_check>
+
+---
+
 # /claude-spec:worktree-create - Create Worktree with Claude Agent
 
 <role>

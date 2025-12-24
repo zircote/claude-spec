@@ -5,6 +5,45 @@ model: claude-sonnet-4-5-20250929
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion, TodoWrite
 ---
 
+<help_check>
+## Help Check
+
+If `$ARGUMENTS` contains `--help` or `-h`:
+
+**Output this help and HALT (do not proceed further):**
+
+<help_output>
+```
+COMPLETE(1)                                          User Commands                                          COMPLETE(1)
+
+NAME
+    complete - Close out a completed spec project. Moves artifacts to ...
+
+SYNOPSIS
+    /claude-spec:complete <project-path|project-id>
+
+DESCRIPTION
+    Close out a completed spec project. Moves artifacts to completed/, generates retrospective, updates CLAUDE.md. Part of the /claude-spec suite - use /claude-spec:plan to plan, /claude-spec:status for s
+
+OPTIONS
+    --help, -h                Show this help message
+
+EXAMPLES
+    /claude-spec:complete                   
+    /claude-spec:complete --help            
+
+SEE ALSO
+    /claude-spec:* for related commands
+
+                                                                      COMPLETE(1)
+```
+</help_output>
+
+**After outputting help, HALT immediately. Do not proceed with command execution.**
+</help_check>
+
+---
+
 # /claude-spec:complete - Project Close-Out
 
 <role>
