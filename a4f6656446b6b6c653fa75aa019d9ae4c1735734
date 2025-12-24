@@ -149,3 +149,20 @@ tags:
 
         # Find the target directory - most recent completed project
         target_dir = find_latest_completed_project(cwd_path, "log_archiver")...
+
+---
+type: progress
+timestamp: '2025-12-24T19:37:59.949285+00:00'
+summary: '...log_archiver")'
+tags:
+- auto-captured
+- post-tool-use
+- file:log_archiver.py
+---
+
+...log_archiver")
+
+        if target_dir is None:
+            return StepResult.ok(
+                "No completed project directories found", archived=False
+            ).add_warning("Log file remains at...
