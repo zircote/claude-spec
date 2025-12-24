@@ -1,0 +1,135 @@
+---
+date: '2025-12-24'
+id: 20251224-combined-release-targets-in-makefile
+status: proposed
+title: Combined release targets in Makefile
+---
+
+# Combined release targets in Makefile
+
+Status: Accepted
+Date: 2025-12-24
+
+## Context and Problem Statement
+
+We added Makefile targets release-patch, release-minor, release-major (commit 09ce01e: "feat(make): add release-{patch,minor,major} combined targets") that perform the common release steps in one command. Historically the release workflow required developers to run multiple separate commands (bump version, run checks, create tag, push), which led to:
+
+- Repetition and friction for maintainers performing frequent releases.
+- Occasional mistakes (forgetting to run tests, forgetting to push tags, inconsistent tag format).
+- Poor discoverability of the correct sequence and ordering of steps.
+- Human errors that sometimes caused broken CI runs or incorrect published versions.
+
+We need a documented, reproducible, low-friction release command that:
+- Performs the version bump (semantic: patch/minor/major),
+- Ensures pre-release checks run,
+- Creates a consistent annotated git tag and pushes it,
+- Integrates with CI gating so we do not publish or finalize releases that fail CI.
+
+## Decision Drivers
+
+- Improve developer experience: single, discoverable command for releases.
+- Reduce human error: ensure checks run and tags follow a consistent format.
+- Keep the release workflow auditable and reproducible via Git history and tags.
+- Maintain CI gate: verify that the release still requires remote CI verification before publishing.
+- Minimal added complexity and maintainability cost in repo tooling.
+- Support semantic versioning: release type must map to semver bump semantics.
+- Safety: prevent accidental releases (require clean tree, correct branch).
+
+## Considered Options
+
+- Keep the existing split workflow (manual sequence of separate commands).
+- Add combined Makefile targets release-{patch,minor,major} that:
+  - run local pre-release checks (lint/test),
+  - bump the version,
+  - create an annotated tag,
+  - push commit + tag to origin (triggering CI).
+- Implement a dedicated release script (shell/Node/Python) that encapsulates the same steps, invoked from Makefile/CI.
+- Rely entirely on CI for releases: bump/version in code, then let CI perform tag creation and publish automatically when a release label or PR is merged.
+- Integrate a 3rd-party release tool (semantic-release, release-it) with automated release in CI and no local tag creation.
+
+## Decision Outcome (Chosen option with justification)
+
+Chosen: Add combined Makefile targets release-patch, release-minor, release-major that perform local pre-release checks, bump the version, create an annotated tag, and push the commit + tag to origin. This is the implementation added in commit 09ce01e.
+
+Justification:
+- Developer experience: a Makefile target is immediately discoverable and cross-platform friendly for our team (no extra language runtime required).
+- Minimal operational overhead: implementing in the Makefile keeps logic close to the repository and easy to review and change.
+- Safety: Makefile targets can and do enforce preconditions (clean working tree, on main branch) and run the same local checks (lint/test) that reduce accidental broken releases before pushing tags.
+- CI gating preserved: pushing the tag triggers CI, allowing the remote pipeline to perform final verification and publishing steps (we do not automatically publish artifacts locally).
+- Auditability and reproducibility: the approach leaves a commit and an annotated tag in git, providing a clear release history.
+- Incremental: this approach does not require migrating to a new toolchain (semantic-release) immediately; it can interoperate with future automation if desired.
+
+Technical behavior implemented (summary):
+- release-<type> target enforces:
+  - working tree is clean (no unstaged/unstaged changes),
+  - current branch is the configured release branch (usually main),
+  - the bump operation uses the canonical bump tool (repo uses e.g., tool X or package manager command),
+  - local pre-release checks executed (make test / make lint or equivalent),
+  - version commit produced if bump produces a commit,
+  - an annotated tag vMAJOR.MINOR.PATCH is created,
+  - commit and tag are pushed to origin (git push && git push --tags or git push --follow-tags),
+  - CI is expected to run the full pipeline and perform any publishing/verification.
+- The Makefile exposes a DRY pattern: release-% runs a common recipe accepting "patch", "minor", "major".
+
+## Consequences
+
+Good
+
+- Developer productivity:
+  - Releases become one-command operations: make release-patch | release-minor | release-major.
+  - Less cognitive overhead and fewer manual steps to remember.
+- Consistency:
+  - Standardized bump/tag format and steps reduce variance between releases.
+  - Annotated tags created uniformly, improving release notes and tooling integration.
+- Safety checks:
+  - Enforces preconditions (clean tree, branch) and local checks before tag creation, preventing many accidental releases.
+- Audit trail:
+  - Version commits and tags in Git provide a clear, searchable release history.
+- Low friction for adoption:
+  - Makefile targets are lightweight and require no extra runtime or dependency changes.
+
+Bad
+
+- Risk of accidental releases:
+  - A single command increases the chance an accidental invocation could create/push a tag. Mitigations: require interactive confirmation, require CI or branch protection for publishing, and check working tree/branch.
+- Local vs remote CI mismatch:
+  - Local prechecks may not fully mirror remote CI. A tag pushed after passing local tests can still fail remote CI; this yields pushed tags that subsequently fail verification.
+- Race conditions / concurrency:
+  - Two developers running release simultaneously may cause tag or version conflicts; this is an inherent risk when creating tags locally rather than performing an atomic release via a centralized CI job.
+- Increased Makefile complexity:
+  - Embedding release orchestration in the Makefile increases its size and logic, making maintenance slightly more complex than a purely separate CI job.
+- Permissions:
+  - The Makefile push step requires push permissions; contributors without push rights will need an alternative path (open PR for bump or use CI-based release).
+
+Neutral
+
+- CI integration unchanged:
+  - This decision does not remove the need for CI-based verification; it complements CI by ensuring local checks run first and that a tag triggers CI.
+- Compatibility with future tooling:
+  - The approach is compatible with migrating later to a pure CI-based release flow or integrating tools like semantic-release; Makefile targets can call those tools instead of the current bump/tag commands.
+- No change to publish pipeline:
+  - Artifact publishing or package registry push remains governed by CI; the Makefile targets only streamline the developer-facing portion of the workflow.
+
+Mitigations and operational notes
+
+- Preconditions enforced in the Makefile:
+  - fail if working tree is not clean,
+  - fail if not on the configured release branch (e.g., main),
+  - optional dry-run flag to show intended version and commands without pushing.
+- Safety policy:
+  - Branch protection and CI checks are required before merges to reduce accidental release or invalid state.
+- Conflict handling:
+  - On push failure due to remote changes, instruct users to fetch/rebase and re-run the make target.
+- Logging:
+  - Makefile emits clear logs showing the bump, tag, and push steps and prints the created tag for reference.
+
+Implementation notes (reference commands)
+- Example sequence:
+  - ensure clean tree: git status --porcelain | test -z
+  - ensure branch: [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ]
+  - run checks: make test && make lint
+  - bump: npm version patch -m "chore(release): %s" (or repo's bump tool)
+  - tag: git tag -a vX.Y.Z -m "release vX.Y.Z"  (often created by bump tool)
+  - push: git push origin main && git push --tags
+
+This ADR documents and justifies the repository-level decision to provide release-{patch,minor,major} combined Makefile targets as implemented in commit 09ce01e. The targets aim to balance improved developer experience with safety checks and CI-based final verification.
