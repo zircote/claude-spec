@@ -166,3 +166,16 @@ tags:
             return StepResult.ok(
                 "No completed project directories found", archived=False
             ).add_warning("Log file remains at...
+
+---
+type: progress
+timestamp: '2025-12-24T19:38:56.843093+00:00'
+summary: '# ARCH-HIGH-002: Use shared utility for finding completed project'
+tags:
+- auto-captured
+- post-tool-use
+- file:retrospective_gen.py
+---
+
+# ARCH-HIGH-002: Use shared utility for finding completed project
+        target_dir = find_latest_completed_project(cwd_path, "retrospective_gen")
