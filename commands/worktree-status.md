@@ -5,6 +5,45 @@ model: claude-sonnet-4-5-20250929
 allowed-tools: Read, Bash, Glob, Grep
 ---
 
+<help_check>
+## Help Check
+
+If `$ARGUMENTS` contains `--help` or `-h`:
+
+**Output this help and HALT (do not proceed further):**
+
+<help_output>
+```
+WORKTREE_STATUS(1)                                   User Commands                                   WORKTREE_STATUS(1)
+
+NAME
+    worktree-status - Show status of worktrees for this repository. Lists act...
+
+SYNOPSIS
+    /claude-spec:worktree-status [--all|--stale|--active]
+
+DESCRIPTION
+    Show status of worktrees for this repository. Lists active, stale, and orphaned worktrees.
+
+OPTIONS
+    --help, -h                Show this help message
+
+EXAMPLES
+    /claude-spec:worktree-status            
+    /claude-spec:worktree-status --help     
+
+SEE ALSO
+    /claude-spec:* for related commands
+
+                                                                      WORKTREE_STATUS(1)
+```
+</help_output>
+
+**After outputting help, HALT immediately. Do not proceed with command execution.**
+</help_check>
+
+---
+
 # /claude-spec:worktree-status - Worktree Status
 
 <role>

@@ -5,6 +5,45 @@ model: claude-opus-4-5-20251101
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, TodoWrite, AskUserQuestion
 ---
 
+<help_check>
+## Help Check
+
+If `$ARGUMENTS` contains `--help` or `-h`:
+
+**Output this help and HALT (do not proceed further):**
+
+<help_output>
+```
+IMPLEMENT(1)                                         User Commands                                         IMPLEMENT(1)
+
+NAME
+    implement - Implementation progress tracker for spec projects. Crea...
+
+SYNOPSIS
+    /claude-spec:implement [project-id|project-slug]
+
+DESCRIPTION
+    Implementation progress tracker for spec projects. Creates and maintains PROGRESS.md checkpoint file, tracks task completion, syncs state to planning documents. Part of the /claude-spec suite - use /c
+
+OPTIONS
+    --help, -h                Show this help message
+
+EXAMPLES
+    /claude-spec:implement                  
+    /claude-spec:implement --help           
+
+SEE ALSO
+    /claude-spec:* for related commands
+
+                                                                      IMPLEMENT(1)
+```
+</help_output>
+
+**After outputting help, HALT immediately. Do not proceed with command execution.**
+</help_check>
+
+---
+
 # /claude-spec:implement - Implementation Progress Manager
 
 <execution_mode>
