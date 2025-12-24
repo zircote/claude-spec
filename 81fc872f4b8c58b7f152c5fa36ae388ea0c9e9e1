@@ -1855,3 +1855,20 @@ tags:
 
         # ARCH-HIGH-002: Use shared utility for finding completed project
         target_dir = find_most_recent_completed_project(cwd_path, "retrospective_gen")...
+
+---
+type: progress
+timestamp: '2025-12-24T19:38:03.738475+00:00'
+summary: '...retrospective_gen")'
+tags:
+- auto-captured
+- post-tool-use
+- file:retrospective_gen.py
+---
+
+...retrospective_gen")
+
+        if target_dir is None:
+            return StepResult.ok(
+                "No completed projects directory found", generated=False
+            )
