@@ -134,3 +134,18 @@ tags:
         return None
 
     project_dirs = [d for d in completed_dir...
+
+---
+type: progress
+timestamp: '2025-12-24T19:37:59.928442+00:00'
+summary: '...prompt log to archive", archived=False)'
+tags:
+- auto-captured
+- post-tool-use
+- file:log_archiver.py
+---
+
+...prompt log to archive", archived=False)
+
+        # Find the target directory - most recent completed project
+        target_dir = find_latest_completed_project(cwd_path, "log_archiver")...
