@@ -1592,3 +1592,34 @@ Moved all embedded bash scripting for the GitHub Issues Worktree Workflow from `
 - scripts/github-issues/build-issue-prompt.sh:1-61
 - scripts/github-issues/tests/test_github_issues.sh:1-285
 - commands/plan.md:695-1265
+
+---
+type: progress
+timestamp: '2025-12-24T19:33:26.359008+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Completed code cleanup: 7 findings fixed (1 CRIT...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Completed code cleanup: 7 findings fixed (1 CRITICAL, 5 HIGH, 1 MEDIUM)
+## Summary
+Ran `/claude-spec:code-cleanup` with 6 parallel specialist agents analyzing security, performance, architecture, quality, testing, and documentation. Fixed all critical and most high-priority issues.
+
+## Changes Made
+- **SEC-001 (CRITICAL)**: Added JSON structure validation in `create-issue-worktree.sh` to prevent command injection
+- **SEC-002 (HIGH)**: Used `printf` with proper quoting in `generate-branch-name.sh` for safe title processing
+- **SEC-003 (HIGH)**: Added branch name regex validation before git commands
+- **SEC-005 (MEDIUM)**: Added canonical path validation to prevent directory traversal attacks
+- **QUAL-003 (HIGH)**: Added named constants `MAX_DECODED_LENGTH`, `MIN_BASE64_SEGMENT_LENGTH` in pipeline.py
+- **DOC-001 (HIGH)**: Updated CLAUDE.md with current active spec project
+
+## Related Files
+- scripts/github-issues/create-issue-worktree.sh:50-55,112-128
+- scripts/github-issues/generate-branch-name.sh:57-68
+- filters/pipeline.py:156-168,278,303
+- CLAUDE.md:143-150
+- docs/code-review/2025/12/24/CODE_REVIEW.md (full report)
+- docs/code-review/2025/12/24/REMEDIATION_TASKS.md (task tracking)
