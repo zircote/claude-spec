@@ -226,6 +226,64 @@ If both `--all` and `--quick` are present, `--all` takes precedence (more compre
 
 </all_mode>
 
+<progress_tracking>
+
+## Real-Time Progress Tracking
+
+**MANDATORY**: Every finding remediated MUST have its checkbox updated from `[ ]` to `[x]` in REMEDIATION_TASKS.md IMMEDIATELY after the fix is verified.
+
+### Progress Tracking Protocol
+
+```
+ON EACH FINDING FIXED:
+  1. Apply the fix to the source file(s)
+  2. Verify the fix (tests pass, no regressions)
+  3. IMMEDIATELY update REMEDIATION_TASKS.md:
+     - Change `- [ ] [FILE:LINE] [description]` to `- [x] [FILE:LINE] [description]`
+  4. Report progress inline: '[N/M] Fixed: [FILE:LINE] - [description] [x]'
+  5. Continue to next finding
+```
+
+### Checkpoint Frequency
+
+| Scenario | Checkpoint Action |
+|----------|-------------------|
+| After each finding fixed | Update checkbox in REMEDIATION_TASKS.md |
+| After each category complete | Add category completion note |
+| After all fixes applied | Generate final REMEDIATION_REPORT.md |
+
+### Progress Update Format
+
+The Edit tool MUST be used to update REMEDIATION_TASKS.md after EACH fix:
+
+```
+Edit REMEDIATION_TASKS.md:
+  old_string: "- [ ] filters/pipeline.py:42 SQL injection in query builder - Security"
+  new_string: "- [x] filters/pipeline.py:42 SQL injection in query builder - Security"
+```
+
+### Progress Visibility
+
+After updating checkboxes, report progress inline:
+
+```
+[1/12] Fixed: filters/pipeline.py:42 - SQL injection (Security) [x]
+[2/12] Fixed: analyzers/log_analyzer.py:87 - N+1 query (Performance) [x]
+...
+```
+
+### Agent Responsibility
+
+ALL remediation agents MUST include progress tracking in their workflow:
+- security-engineer: Update checkbox after each security fix
+- performance-engineer: Update checkbox after each performance fix
+- refactoring-specialist: Update checkbox after each architecture fix
+- code-reviewer: Update checkbox after each quality fix
+- test-automator: Update checkbox after tests added (for test coverage findings)
+- documentation-engineer: Update checkbox after docs updated
+
+</progress_tracking>
+
 <target>$ARGUMENTS</target>
 
 </shared_configuration>
@@ -1321,6 +1379,8 @@ Task(
   FINDINGS:
   ${SECURITY_FINDINGS}
 
+  REMEDIATION_TASKS_FILE: ${REPORT_DIR}/REMEDIATION_TASKS.md
+
   For EACH finding:
   1. READ the file completely to understand context
      IF LSP AVAILABLE: Use goToDefinition to navigate to security-critical functions
@@ -1335,7 +1395,13 @@ Task(
   5. Document the security consideration
      IF LSP AVAILABLE: Use incomingCalls to trace data flow from user input
 
-  Output: File modified, changes made, tests added, verification"
+  **6. IMMEDIATELY UPDATE PROGRESS** (MANDATORY):
+     After verifying the fix works, use Edit to update REMEDIATION_TASKS.md:
+     - Find the line: `- [ ] [FILE:LINE] [description] - Security`
+     - Change to: `- [x] [FILE:LINE] [description] - Security`
+     - Report: '[N/M] Fixed: [FILE:LINE] - [description] [x]'
+
+  Output: File modified, changes made, tests added, verification, checkbox updated"
 )
 ─────────────────────────────────────────────────────────────────────────
 
@@ -1348,6 +1414,8 @@ Task(
 
   FINDINGS:
   ${PERFORMANCE_FINDINGS}
+
+  REMEDIATION_TASKS_FILE: ${REPORT_DIR}/REMEDIATION_TASKS.md
 
   For EACH finding:
   1. READ the file to understand the hot path
@@ -1362,7 +1430,13 @@ Task(
      IF LSP AVAILABLE: Use findReferences to verify all callers still work
   4. Add performance test/benchmark
 
-  Output: File modified, optimization, expected improvement"
+  **5. IMMEDIATELY UPDATE PROGRESS** (MANDATORY):
+     After verifying the fix works, use Edit to update REMEDIATION_TASKS.md:
+     - Find the line: `- [ ] [FILE:LINE] [description] - Performance`
+     - Change to: `- [x] [FILE:LINE] [description] - Performance`
+     - Report: '[N/M] Fixed: [FILE:LINE] - [description] [x]'
+
+  Output: File modified, optimization, expected improvement, checkbox updated"
 )
 ─────────────────────────────────────────────────────────────────────────
 
@@ -1375,6 +1449,8 @@ Task(
 
   FINDINGS:
   ${ARCHITECTURE_FINDINGS}
+
+  REMEDIATION_TASKS_FILE: ${REPORT_DIR}/REMEDIATION_TASKS.md
 
   For EACH finding:
   1. READ all related files for full context
@@ -1391,7 +1467,13 @@ Task(
   5. Ensure all tests pass
      IF LSP AVAILABLE: Use goToImplementation to verify interface contracts
 
-  Output: Files modified, pattern applied, tests passing"
+  **6. IMMEDIATELY UPDATE PROGRESS** (MANDATORY):
+     After verifying the fix works, use Edit to update REMEDIATION_TASKS.md:
+     - Find the line: `- [ ] [FILE:LINE] [description] - Architecture`
+     - Change to: `- [x] [FILE:LINE] [description] - Architecture`
+     - Report: '[N/M] Fixed: [FILE:LINE] - [description] [x]'
+
+  Output: Files modified, pattern applied, tests passing, checkbox updated"
 )
 ─────────────────────────────────────────────────────────────────────────
 
@@ -1404,6 +1486,8 @@ Task(
 
   FINDINGS:
   ${QUALITY_FINDINGS}
+
+  REMEDIATION_TASKS_FILE: ${REPORT_DIR}/REMEDIATION_TASKS.md
 
   For EACH finding:
   1. READ the file to understand conventions
@@ -1419,7 +1503,13 @@ Task(
   3. Maintain consistency with surrounding style
   4. Run linter to verify improvements
 
-  Output: File modified, improvement applied, linter results"
+  **5. IMMEDIATELY UPDATE PROGRESS** (MANDATORY):
+     After verifying the fix works, use Edit to update REMEDIATION_TASKS.md:
+     - Find the line: `- [ ] [FILE:LINE] [description] - Code Quality`
+     - Change to: `- [x] [FILE:LINE] [description] - Code Quality`
+     - Report: '[N/M] Fixed: [FILE:LINE] - [description] [x]'
+
+  Output: File modified, improvement applied, linter results, checkbox updated"
 )
 ─────────────────────────────────────────────────────────────────────────
 ```
@@ -1444,6 +1534,8 @@ Task(
   FIXES APPLIED:
   ${FIX_SUMMARY}
 
+  REMEDIATION_TASKS_FILE: ${REPORT_DIR}/REMEDIATION_TASKS.md
+
   For each fix:
   1. READ source and existing tests
   2. Write comprehensive tests:
@@ -1453,7 +1545,12 @@ Task(
   3. Use existing test patterns and fixtures
   4. Aim for meaningful assertions
 
-  Output: Test files created/modified, coverage improvement"
+  **5. UPDATE PROGRESS for TEST_COVERAGE findings** (if any):
+     If TEST_COVERAGE findings exist in REMEDIATION_TASKS.md:
+     - Use Edit to change `- [ ]` to `- [x]` for each test gap addressed
+     - Report: '[N/M] Fixed: [test description] [x]'
+
+  Output: Test files created/modified, coverage improvement, checkboxes updated"
 )
 
 Task(
@@ -1464,17 +1561,65 @@ Task(
   CHANGES:
   ${ALL_CHANGES}
 
+  REMEDIATION_TASKS_FILE: ${REPORT_DIR}/REMEDIATION_TASKS.md
+
   Tasks:
   1. Update docstrings for modified functions
   2. Update README if behavior changed
   3. Add CHANGELOG entry for this remediation
   4. Document any new configuration
 
-  Output: Documentation files updated"
+  **5. UPDATE PROGRESS for DOCUMENTATION findings** (if any):
+     If DOCUMENTATION findings exist in REMEDIATION_TASKS.md:
+     - Use Edit to change `- [ ]` to `- [x]` for each doc gap addressed
+     - Report: '[N/M] Fixed: [doc description] [x]'
+
+  Output: Documentation files updated, checkboxes updated"
 )
 ```
 
 </supporting_specialists>
+
+## Phase 4.5: Progress Checkpoint
+
+After all remediation agents complete, verify progress tracking is accurate:
+
+```bash
+# Count fixed vs total findings
+TOTAL=$(grep -c "^- \[" "${REPORT_DIR}/REMEDIATION_TASKS.md" || echo 0)
+FIXED=$(grep -c "^- \[x\]" "${REPORT_DIR}/REMEDIATION_TASKS.md" || echo 0)
+PENDING=$(grep -c "^- \[ \]" "${REPORT_DIR}/REMEDIATION_TASKS.md" || echo 0)
+
+echo "Progress: ${FIXED}/${TOTAL} fixed, ${PENDING} pending"
+```
+
+**Progress Report:**
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REMEDIATION PROGRESS CHECKPOINT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+| Category      | Fixed | Total | Progress |
+|---------------|-------|-------|----------|
+| Security      | [n]   | [n]   | [n/n]    |
+| Performance   | [n]   | [n]   | [n/n]    |
+| Architecture  | [n]   | [n]   | [n/n]    |
+| Code Quality  | [n]   | [n]   | [n/n]    |
+| Test Coverage | [n]   | [n]   | [n/n]    |
+| Documentation | [n]   | [n]   | [n/n]    |
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Proceeding to verification phase...
+```
+
+**Reconciliation:**
+
+If any fix was applied but checkbox not updated:
+1. Read the modified files list from agent outputs
+2. Cross-reference with REMEDIATION_TASKS.md
+3. Update any missed checkboxes
+4. Log the reconciliation
 
 ## Phase 5: Verification
 
@@ -1703,7 +1848,19 @@ Parse CODE_REVIEW.md and REMEDIATION_TASKS.md from ${REPORT_DIR}/
 
 ### Step 6: Deploy Remediation Agents
 
-Launch parallel Task calls for selected categories
+Launch parallel Task calls for selected categories.
+
+**CRITICAL**: Each agent MUST update REMEDIATION_TASKS.md checkboxes in real-time:
+- Pass `REMEDIATION_TASKS_FILE=${REPORT_DIR}/REMEDIATION_TASKS.md` to each agent
+- Agents update `- [ ]` to `- [x]` immediately after each fix
+- Progress is visible to user as each checkbox is updated
+
+### Step 6.5: Progress Checkpoint
+
+After agents complete, run progress reconciliation:
+1. Count checkboxes: `grep -c "^\- \[x\]" ${REPORT_DIR}/REMEDIATION_TASKS.md`
+2. Report progress summary table
+3. Reconcile any missed updates
 
 ### Step 7: Deploy Supporting Specialists
 
