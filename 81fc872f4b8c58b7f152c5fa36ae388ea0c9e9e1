@@ -1787,3 +1787,20 @@ tags:
 ---
 
 ...todo list and add a note about Task 2.1 being already partially done (Filter Selection UI was implemented as part of Phase 1):
+
+---
+type: progress
+timestamp: '2025-12-24T19:37:33.431336+00:00'
+summary: '...= "step") -> Path | None:'
+tags:
+- auto-captured
+- post-tool-use
+- file:utils.py
+---
+
+...= "step") -> Path | None:
+    """
+    Find the most recently modified project in docs/spec/completed/.
+
+    ARCH-HIGH-002: Extracted from log_archiver.py and retrospective_gen.py
+    to eliminate...
