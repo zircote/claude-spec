@@ -1,0 +1,18 @@
+---
+type: progress
+timestamp: '2025-12-24T20:46:09.440045+00:00'
+summary: '...MUST have its checkbox updated from `[ ]` to `[x]` in REMEDIATION_TASKS.md
+  IMMEDIATELY after the '
+tags:
+- auto-captured
+- post-tool-use
+- file:code-cleanup.md
+---
+
+...MUST have its checkbox updated from `[ ]` to `[x]` in REMEDIATION_TASKS.md IMMEDIATELY after the fix is verified.
+
+### Progress Tracking Protocol
+
+```
+ON EACH FINDING FIXED:
+  1. Apply the fix to...
