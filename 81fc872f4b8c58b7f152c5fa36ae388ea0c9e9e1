@@ -76,3 +76,23 @@ tags:
 
 ...────────────────────────`
 The command injection vulnerability in bash scripts is a classic security pattern - when parsing JSON from external sources (GitHub API), values like issue titles can contain...
+
+---
+type: patterns
+timestamp: '2025-12-24T19:22:53.133163+00:00'
+summary: '...created from GitHub issue data without secret filtering.'
+tags:
+- auto-captured
+- post-tool-use
+- file:CODE_REVIEW.md
+---
+
+...created from GitHub issue data without secret filtering.
+
+---
+
+### PERF-MED-001: Multiple Regex Pattern Iterations
+
+**File:** `filters/pipeline.py:340-354`
+
+**Description:** `detect_secrets()` iterates...
