@@ -324,3 +324,18 @@ tags:
 ### Task 1.1: Document Task ID Regex Pattern
 - **Description**: Add explicit regex pattern for matching task IDs in PROGRESS.md
 - **Files**:...
+
+---
+type: patterns
+timestamp: '2025-12-25T19:00:19.239393+00:00'
+summary: '### Task 1.1: Document Task ID Regex Pattern'
+tags:
+- auto-captured
+- post-tool-use
+- file:IMPLEMENTATION_PLAN.md
+---
+
+### Task 1.1: Document Task ID Regex Pattern
+- **Description**: Add explicit regex pattern for matching task IDs in PROGRESS.md
+- **Files**: `commands/implement.md`
+- **Acceptance Criteria**:...
