@@ -11,3 +11,17 @@ tags:
 
 | 2.2 | Add `<error_recovery>` section to `commands/implement.md` | completed | 2025-12-25T20:20:00Z | 2025-12-25T20:25:00Z | Added after step_handoff section |
 | 2.3.1...
+
+---
+type: progress
+timestamp: '2025-12-25T20:14:21.798746+00:00'
+summary: '...2025-12-25T20:25:00Z | Added after step_handoff section |'
+tags:
+- auto-captured
+- post-tool-use
+- file:PROGRESS.md
+---
+
+...2025-12-25T20:25:00Z | Added after step_handoff section |
+| 2.3.1 | Detect exceptions/tracebacks | completed | 2025-12-25T20:20:00Z | 2025-12-25T20:25:00Z | In error_recovery sections |
+| 2.3.2 | Detect...
