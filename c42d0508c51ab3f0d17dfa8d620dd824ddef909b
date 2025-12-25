@@ -35,3 +35,18 @@ Tool result blocks must reference tool_use blocks from the immediately preceding
 
 ## Related Files
 - commands/implement.md:1-1502 (command being invoked)
+
+---
+type: learnings
+timestamp: '2025-12-25T16:40:15.619456+00:00'
+summary: The planning artifacts are preserved for future reference.
+tags:
+- auto-captured
+- post-tool-use
+- file:complete.md
+---
+
+The planning artifacts are preserved for future reference.
+```
+
+</close_out_protocol>
