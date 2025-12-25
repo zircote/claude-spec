@@ -227,3 +227,19 @@ tags:
 - **Description**: Add explicit regex pattern for matching task IDs in PROGRESS.md
 - **Files**: `commands/implement.md`
 - **Acceptance Criteria**:...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:40:48.040379+00:00'
+summary: '...IDs in PROGRESS.md'
+tags:
+- auto-captured
+- post-tool-use
+- file:IMPLEMENTATION_PLAN.md
+---
+
+...IDs in PROGRESS.md
+- **Files**: `commands/implement.md`
+- **Acceptance Criteria**:
+  - [ ] Pattern documented: `^\[([x ])\]\s+(\d+\.\d+)\s+(.*)$`
+  - [ ] Examples provided for each capture group...
