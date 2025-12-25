@@ -1,0 +1,20 @@
+---
+type: learnings
+timestamp: '2025-12-25T17:54:15.024020+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  Jumped directly to implementation instead of foll...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Jumped directly to implementation instead of following planning workflow
+## Summary
+When `/claude-spec:plan` is invoked with an issue reference, the correct behavior is to follow the full planning protocol (elicitation → research → spec documents), NOT to immediately start implementing the issue's solution.
+
+## Lesson
+The `/plan` command produces planning artifacts (REQUIREMENTS.md, ARCHITECTURE.md, IMPLEMENTATION_PLAN.md). Implementation only happens after `/approve` and `/implement` commands. This is the entire point of the issue #26 - to create explicit gates between phases.
+
+## Related Files
+- commands/plan.md:1-200 (planning protocol)
