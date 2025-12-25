@@ -69,3 +69,22 @@ tags:
 
 Work directly (no subagents) for:
 1. **Complex multi-file...
+
+---
+type: progress
+timestamp: '2025-12-25T15:59:56.675981+00:00'
+summary: '...retry attempt'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...retry attempt
+5. When context exhaustion warning detected
+6. At natural breaks (every 2-3 completed subtasks)
+
+CHECKPOINT PROCEDURE:
+1. Update PROGRESS.md with current state
+2. git add -A
+3....
