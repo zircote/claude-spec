@@ -132,3 +132,20 @@ tags:
 ```
 
 **Note**: This pattern uses `###` (three hashes) as that's the standard heading level for tasks in IMPLEMENTATION_PLAN.md....
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.322968+00:00'
+summary: '...heading level for tasks in IMPLEMENTATION_PLAN.md. Adjust if your format
+  uses `####`.'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...heading level for tasks in IMPLEMENTATION_PLAN.md. Adjust if your format uses `####`.
+
+##### Pattern 3: Acceptance Criteria Checkboxes
+
+Find checkbox items under a task's acceptance criteria section:...
