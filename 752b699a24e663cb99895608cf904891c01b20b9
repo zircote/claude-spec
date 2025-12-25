@@ -43,3 +43,18 @@ tags:
 - Sync algorithm is documented with regex patterns and pseudocode
 
 ##...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:37:53.838090+00:00'
+summary: '...Argument hint | Metadata in command frontmatter describing expected arguments
+  |'
+tags:
+- auto-captured
+- post-tool-use
+- file:REQUIREMENTS.md
+---
+
+...Argument hint | Metadata in command frontmatter describing expected arguments |
+| Task ID | Pattern like `1.1`, `2.3` identifying tasks within phases |
+| Acceptance criteria | Checkboxes under...
