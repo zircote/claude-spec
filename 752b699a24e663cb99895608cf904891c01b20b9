@@ -449,3 +449,19 @@ tags:
 ## ADR-006: Backward Compatibility for Simple Argument Hints
 
 **Date**:...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:41:41.099212+00:00'
+summary: '...over batched'
+tags:
+- auto-captured
+- post-tool-use
+- file:CHANGELOG.md
+---
+
+...over batched
+- ADR-002: Extended YAML object for argument hints
+- ADR-003: Error + suggestion pattern for validation
+- ADR-004: PROGRESS.md as source of truth
+- ADR-005: Atomic file writes with...
