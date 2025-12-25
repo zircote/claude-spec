@@ -135,3 +135,26 @@ completed: null
 expires: 2026-03-25T10:00:00Z
 ---
 ```
+
+---
+type: progress
+timestamp: '2025-12-25T17:14:01.313172+00:00'
+summary: '...YYYY-MM-DDTHH:MM:SSZ    # NEW'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...YYYY-MM-DDTHH:MM:SSZ    # NEW
+approved_by: "Name <email>"             # NEW
+started: null
+completed: null
+expires: YYYY-MM-DDTHH:MM:SSZ
+superseded_by: null
+tags: [...]
+stakeholders: []
+---
+```
+
+###...
