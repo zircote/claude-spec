@@ -97,3 +97,22 @@ tags:
 ##### Pattern 2: Task Heading in IMPLEMENTATION_PLAN.md
 
 Find task sections to locate their acceptance criteria:...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.283874+00:00'
+summary: '..."Document Task ID Regex Pattern")'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+..."Document Task ID Regex Pattern")
+
+**Examples:**
+```
+### Task 1.1: Document Task ID Regex Pattern
+    └─ Captures: ("1.1", "Document Task ID Regex Pattern")
+
+### Task 2.3: Update /implement...
