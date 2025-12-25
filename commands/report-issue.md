@@ -141,6 +141,8 @@ Use AskUserQuestion with:
       description: "Documentation improvement needed"
     - label: "chore"
       description: "Maintenance, refactoring, cleanup"
+    - label: "perf"
+      description: "Performance or efficiency issue"
 ```
 
 Store the selected type as `ISSUE_TYPE`.
@@ -302,6 +304,29 @@ OUTPUT:
 - Files to modify
 - Dependencies affected
 - Scope assessment
+```
+
+**For `perf` type:**
+```
+1. Search for performance-related keywords from description
+   -> Use Grep to find hot paths, loops, database queries
+
+2. Identify bottleneck candidates
+   -> Look for N+1 queries, nested loops, synchronous I/O
+   -> Find files with heavy computation
+
+3. Check for existing benchmarks or metrics
+   -> Glob for benchmark files, performance tests
+
+4. Find related profiling opportunities
+   -> Identify entry points for profiling
+
+OUTPUT:
+- Bottleneck locations: file:line with description
+- Code snippets showing performance-critical sections
+- Related benchmarks or performance tests
+- Metrics or profiling suggestions
+- Optimization targets and approaches
 ```
 
 ### Step 2.2: Build Findings Document
@@ -521,6 +546,35 @@ ${SCOPE_ASSESSMENT}
 
 ---
 *Investigated and reported via `/claude-spec:report-issue`*
+```
+
+**Perf Template:**
+```markdown
+## Description
+${ISSUE_DESCRIPTION}
+
+## Investigation Findings
+
+### Bottleneck Locations
+${BOTTLENECK_LOCATIONS}
+
+### Performance-Critical Code
+```${LANGUAGE}
+${CODE_SNIPPETS}
+```
+
+### Related Benchmarks/Tests
+${BENCHMARKS}
+
+### Metrics/Profiling
+${METRICS}
+
+### Optimization Targets
+${OPTIMIZATION_TARGETS}
+
+---
+*Investigated and reported via `/claude-spec:report-issue`*
+*AI-actionable: This issue contains detailed context for automated resolution*
 ```
 
 ### Step 5.2: Display Preview
