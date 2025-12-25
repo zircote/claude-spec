@@ -73,7 +73,7 @@ echo "=== APPROVED (Awaiting Implementation) ==="
 for dir in docs/spec/approved/*/ docs/architecture/approved/*/; do
   if [ -d "$dir" ]; then
     echo "DIR: $dir"
-    grep -E "^(project_id|project_name|status|approved):" "$dir/README.md" 2>/dev/null | head -4
+    grep -E "^(project_id|project_name|status|approved|approved_by):" "$dir/README.md" 2>/dev/null | head -5
     echo ""
   fi
 done
@@ -139,6 +139,7 @@ Project Details: ${PROJECT_NAME}
 +----------------------------------------------------------------+
 | Created:       2025-12-11                                      |
 | Approved:      2025-12-13                                      |
+| Approved By:   Robert Allen <zircote@gmail.com>                |
 | Started:       2025-12-14                                      |
 | Expires:       2026-03-11 (90 days remaining)                  |
 +----------------------------------------------------------------+

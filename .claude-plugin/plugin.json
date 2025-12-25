@@ -14,9 +14,13 @@
     "specification",
     "worktree",
     "implementation-tracking",
-    "opus-4-5"
+    "opus-4-5",
+    "approval",
+    "governance"
   ],
+  "hooks": "./hooks.json",
   "commands": [
+    "./commands/approve.md",
     "./commands/code-cleanup.md",
     "./commands/complete.md",
     "./commands/deep-explore.md",
