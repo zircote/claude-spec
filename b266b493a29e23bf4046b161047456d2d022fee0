@@ -116,3 +116,22 @@ tags:
 |--------|--------|-------------------|
 | Approval rate | 100% of implemented specs have approval record | Query README.md frontmatter |
 | Planning compliance | 0 instances...
+
+---
+type: progress
+timestamp: '2025-12-25T17:12:28.335337+00:00'
+summary: '...00:00Z'
+tags:
+- auto-captured
+- post-tool-use
+- file:REQUIREMENTS.md
+---
+
+...00:00Z
+approved_date: 2025-12-25T15:30:00Z
+approved_by: "John Doe <john@example.com>"
+started: null
+completed: null
+expires: 2026-03-25T10:00:00Z
+---
+```
