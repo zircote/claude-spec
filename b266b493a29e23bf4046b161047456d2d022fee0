@@ -427,3 +427,18 @@ Created complete spec documents for GitHub Issue #26 plus additional /plan workf
 - docs/spec/active/2025-12-25-approve-command/ARCHITECTURE.md:1-300
 - docs/spec/active/2025-12-25-approve-command/IMPLEMENTATION_PLAN.md:1-250
 - docs/spec/active/2025-12-25-approve-command/DECISIONS.md:1-150
+
+---
+type: progress
+timestamp: '2025-12-25T17:30:12.580691+00:00'
+summary: '...ARCHITECTURE.md'
+tags:
+- auto-captured
+- post-tool-use
+- file:CLAUDE.md
+---
+
+...ARCHITECTURE.md
+    │       └── IMPLEMENTATION_PLAN.md, PROGRESS.md, DECISIONS.md
+    ├── completed/        # Archived with RETROSPECTIVE.md
+    └── rejected/         # Rejected specs (preserved...
