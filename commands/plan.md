@@ -236,9 +236,13 @@ echo "BRANCH=${BRANCH}"
 
 ```
 IF NO_WORKTREE == true:
-    → Display: "Skipping worktree creation (--no-worktree or --inline flag set)"
+    → Display: "Skipping worktree creation (--no-worktree flag set)"
     → IF NO_BRANCH == true:
         → Display: "Staying on current branch: ${BRANCH}"
+    → ELSE:
+        → Generate SLUG from project seed (lowercase, hyphens, max 30 chars)
+        → Create branch: git checkout -b plan/${SLUG}
+        → Display: "Created branch: plan/${SLUG}"
     → PROCEED to <role> section below (planning in current directory)
 
 IF BRANCH in [main, master, develop]:
