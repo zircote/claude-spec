@@ -62,3 +62,23 @@ tags:
 # Check if file matches any exempt pattern
 for pattern in "${EXEMPT_PATTERNS[@]}"; do
     if [[ "$FILE_PATH" =~ $pattern ]]; then...
+
+---
+type: patterns
+timestamp: '2025-12-25T17:28:11.481572+00:00'
+summary: '..."Makefile"'
+tags:
+- auto-captured
+- post-tool-use
+- file:check-approved-spec.sh
+---
+
+..."Makefile"
+    ".claude/"
+    "hooks/"
+)
+
+# Check if file matches any exempt pattern
+for pattern in "${EXEMPT_PATTERNS[@]}"; do
+    if [[ "$FILE_PATH" =~ $pattern ]]; then
+        echo '{"decision"...
