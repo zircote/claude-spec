@@ -1,0 +1,24 @@
+---
+type: decisions
+timestamp: '2025-12-25T18:43:12.279707+00:00'
+summary: 'Scope decision: Combined spec covering both features'
+---
+
+Scope decision: Combined spec covering both features
+## Summary
+User chose to create a single specification covering Issue #25 (checkbox sync) AND detailed argument hinting.
+
+## Rationale
+- Both features improve the `/claude-spec:implement` command UX
+- Argument hinting also applies to `/claude-spec:plan`
+- Single spec reduces overhead for related improvements
+
+## Scope Includes
+1. Issue #25: Checkbox sync between PROGRESS.md and IMPLEMENTATION_PLAN.md
+2. Richer argument-hint frontmatter fields
+3. Improved --help output
+4. Better validation error messages
+
+## Related Files
+- commands/plan.md:1-6 (current argument-hint)
+- commands/implement.md:1-6 (current argument-hint)
