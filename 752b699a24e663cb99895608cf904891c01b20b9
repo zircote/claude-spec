@@ -96,3 +96,25 @@ tags:
     3. Look for "- **Acceptance Criteria**:" pattern
     4. Collect all lines starting with "  - [ ]" or "  - [x]"
        until next heading (####)...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:39:31.758637+00:00'
+summary: '...*Dependencies**: YAML parsing (native to command loader)'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...*Dependencies**: YAML parsing (native to command loader)
+
+**Technology**: YAML in frontmatter, bash pattern matching for validation
+
+#### Schema Definition
+
+**Extended argument-hint format**:
+
+```yaml
+---
+argument...
