@@ -326,3 +326,20 @@ tags:
   - [ ] Examples of valid project references
 
 ### Task 2.4: Define...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:40:48.159437+00:00'
+summary: '...Acceptance Criteria**:'
+tags:
+- auto-captured
+- post-tool-use
+- file:IMPLEMENTATION_PLAN.md
+---
+
+...Acceptance Criteria**:
+  - [ ] Type checking documented (boolean flags, string positionals)
+  - [ ] Pattern validation for string args
+  - [ ] Required arg checking
+
+### Task 4.2: Document Suggestion...
