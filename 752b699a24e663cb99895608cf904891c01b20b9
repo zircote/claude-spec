@@ -343,3 +343,18 @@ tags:
   - [ ] Required arg checking
 
 ### Task 4.2: Document Suggestion...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:40:48.178676+00:00'
+summary: '...Unit tests for task ID regex extraction'
+tags:
+- auto-captured
+- post-tool-use
+- file:IMPLEMENTATION_PLAN.md
+---
+
+...Unit tests for task ID regex extraction
+- [ ] Unit tests for acceptance criteria checkbox pattern
+- [ ] Unit tests for Levenshtein distance calculation
+- [ ] Integration test for full sync...
