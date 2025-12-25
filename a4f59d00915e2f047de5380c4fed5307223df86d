@@ -153,3 +153,21 @@ summary: '...**Find next pending task**'
 3. **Update draft PR** (if exists)  ← References PR from never-completed gh pr create
 4. **Display brief status**
 5. **Immediately start implementing**  ← "Immediately"...
+
+---
+type: progress
+timestamp: '2025-12-25T15:17:19.323472+00:00'
+summary: '...**After state is verified**, proceed to the next pending task'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...**After state is verified**, proceed to the next pending task
+
+```
+Resuming ${PROJECT_NAME} - ${COMPLETED}/${TOTAL} tasks done.
+PR: ${PR_URL}  # Only if PR was found in step 3
+
+Continuing with Task...
