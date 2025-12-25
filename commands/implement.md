@@ -2083,3 +2083,137 @@ The handoff is automatic. User has already consented by running `/claude-spec:im
 
 </step_handoff>
 
+<error_recovery>
+## Proactive Error Reporting
+
+**MANDATORY**: When you encounter unexpected errors, exceptions, or failures during implementation, you SHOULD offer the user the opportunity to report the issue.
+
+### Error Detection Triggers
+
+Monitor for these conditions during execution:
+
+1. **Exceptions/Tracebacks** - Python errors, command failures with stack traces
+2. **Command Failures** - Non-zero exit codes from bash commands
+3. **Unexpected Patterns** - Empty results when data was expected, malformed responses
+4. **Tool Failures** - Read/Write/Grep failures, API timeouts
+5. **Subagent Failures** - Task tool returns with errors or incomplete work
+6. **Quality Gate Failures** - Repeated CI/test failures after retries exhausted
+
+### Error Response Protocol
+
+When an error is detected:
+
+1. **Capture Context**:
+   - Error message and traceback (if available)
+   - Command or operation that failed
+   - Files being processed at the time
+   - Current task ID and description
+   - Recent actions leading to the error
+
+2. **Check Suppression State**:
+   ```
+   IF SESSION_SUPPRESS_REPORTS == true:
+     → Skip error reporting prompt
+     → Continue with error handling as normal
+
+   IF PERMANENT_SUPPRESS_REPORTS == true (from settings):
+     → Skip error reporting prompt
+     → Continue with error handling as normal
+   ```
+
+3. **Offer Reporting Option** (if not suppressed):
+
+```
+Use AskUserQuestion with:
+  header: "Error"
+  question: "An error occurred during implementation. Would you like to report this issue?"
+  multiSelect: false
+  options:
+    - label: "Yes, report it"
+      description: "Open /claude-spec:report-issue with error context pre-filled"
+    - label: "No, continue"
+      description: "Dismiss and continue with current task"
+    - label: "Don't ask again (this session)"
+      description: "Skip error reporting prompts for rest of session"
+    - label: "Never ask"
+      description: "Permanently disable error reporting prompts"
+```
+
+4. **Handle Response**:
+
+```
+IF "Yes, report it":
+  → Checkpoint current progress (update PROGRESS.md, commit)
+  → Build error context object:
+    error_context:
+      triggering_command: "/implement"
+      error_message: "${ERROR_MESSAGE}"
+      traceback: "${TRACEBACK}"
+      current_task: "${TASK_ID} - ${TASK_DESCRIPTION}"
+      files_being_processed: [list of files]
+      recent_actions: [list of recent operations]
+  → Display: "Launching issue reporter with error context..."
+  → Invoke: /claude-spec:report-issue with error context
+  → After report-issue completes, offer to resume implementation
+
+IF "No, continue":
+  → Continue with normal error handling
+  → Attempt recovery or inform user of failure
+
+IF "Don't ask again (this session)":
+  → Set SESSION_SUPPRESS_REPORTS = true
+  → Continue with normal error handling
+
+IF "Never ask":
+  → Record preference (note: actual storage mechanism TBD)
+  → Set PERMANENT_SUPPRESS_REPORTS = true
+  → Continue with normal error handling
+```
+
+### Integration with /report-issue
+
+When invoking `/report-issue` from an error context:
+
+1. The error context is passed as structured data
+2. `/report-issue` pre-fills:
+   - Issue type as `bug`
+   - Description from error message
+   - Investigation findings from traceback parsing
+   - Current task context for better debugging
+3. User still confirms before issue creation
+4. After issue is filed, control returns here with option to resume
+
+### Checkpoint Before Reporting
+
+**CRITICAL**: Before launching `/report-issue`, always checkpoint:
+
+```bash
+# Save current state
+git add -A
+git commit -m "checkpoint: before error report - task ${TASK_ID}"
+git push  # if draft PR exists
+```
+
+This ensures no progress is lost if the issue reporting process is interrupted.
+
+### Low-Friction Design Principles
+
+- **Single prompt**: All options in one question, not a dialog
+- **No guilt-tripping**: "No, continue" is a valid choice
+- **Session memory**: "Don't ask again" respects user's time
+- **Permanent opt-out**: "Never ask" for users who don't want this feature
+- **Non-blocking**: Error reporting is offered, not required
+- **Progress preservation**: Always checkpoint before reporting
+
+### Error Types That Trigger Reporting Offer
+
+| Error Type | Trigger Condition | Context Captured |
+|------------|-------------------|------------------|
+| CI Failure | Quality gate fails after max retries | Test output, failing commands |
+| Subagent Error | Task tool returns with failure | Subagent prompt, claimed vs actual work |
+| File Operation | Read/Write/Edit fails unexpectedly | File path, operation, error message |
+| Git Operation | Commit/push/PR creation fails | Git status, command output |
+| Parse Error | Cannot parse PROGRESS.md or other docs | File content, parsing error |
+
+</error_recovery>
+

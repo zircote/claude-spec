@@ -18,6 +18,8 @@ A comprehensive Claude Code plugin for project specification and implementation 
   - `/claude-spec:implement` - Implementation progress tracking with document sync
   - `/claude-spec:status` - Portfolio and project status monitoring
   - `/claude-spec:complete` - Project close-out and archival
+  - `/claude-spec:report-issue` - Investigate and create AI-actionable GitHub issues
+    - Flags: `--type bug|feat|docs|chore|perf`, `--repo owner/repo`
 
 - **Worktree Commands** - Git worktree automation
   - `/claude-spec:worktree-create` - Create worktrees with Claude agents
@@ -117,6 +119,43 @@ Shows warning if spec not approved (advisory, non-blocking).
 ```
 
 Generates RETROSPECTIVE.md, archives to `docs/spec/completed/`.
+
+### Report an Issue
+
+```
+/claude-spec:report-issue
+/claude-spec:report-issue --type bug
+/claude-spec:report-issue --type feat --repo zircote/claude-spec
+```
+
+Investigates the codebase before filing, producing GitHub issues with rich technical context that AI tools can immediately leverage for resolution.
+
+#### Issue Types
+
+| Type | Label | Investigation Focus |
+|------|-------|---------------------|
+| `bug` | bug | Error traces, affected code paths, reproduction context |
+| `feat` | enhancement | Related existing code, integration points, patterns to follow |
+| `docs` | documentation | Current doc state, code it should reflect |
+| `chore` | chore | Files to change, dependencies, scope of work |
+| `perf` | performance | Bottleneck locations, metrics, optimization targets |
+
+#### Workflow
+
+1. **Input Gathering** - Collect issue type, title, description
+2. **Investigation** - Explore codebase (30-60 seconds) to gather file paths, code snippets, and context
+3. **Findings Review** - Present investigation results for user confirmation
+4. **Repository Selection** - Detect target repo from context, confirm with user
+5. **Issue Creation** - Preview and create GitHub issue with AI-actionable findings
+
+#### Key Differentiator
+
+Issues created by this command include investigatory findings with enough detail that an AI can immediately begin working on a fix:
+- File paths with line numbers
+- Code snippets showing the problem area
+- Related code references (callers, tests, config)
+- Root cause hypothesis
+- Suggested approach (when apparent)
 
 ### Worktree Management
 
