@@ -355,3 +355,17 @@ tags:
 - **Acceptance Criteria**:
   - [x] Pattern documented: `^\[([x ])\]\s+(\d+\.\d+)\s+(.*)$`
   - [x] Examples provided for each capture group...
+
+---
+type: patterns
+timestamp: '2025-12-25T19:00:29.106606+00:00'
+summary: '### Task 1.2: Document IMPLEMENTATION_PLAN.md Task Heading Pattern'
+tags:
+- auto-captured
+- post-tool-use
+- file:IMPLEMENTATION_PLAN.md
+---
+
+### Task 1.2: Document IMPLEMENTATION_PLAN.md Task Heading Pattern
+- **Description**: Add regex for finding task sections in IMPLEMENTATION_PLAN.md
+- **Files**:...
