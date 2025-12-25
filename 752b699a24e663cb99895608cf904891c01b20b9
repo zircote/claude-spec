@@ -1,0 +1,12 @@
+---
+type: patterns
+timestamp: '2025-12-25T18:37:53.786005+00:00'
+summary: '...in IMPLEMENTATION_PLAN.md are checked within same tool execution |'
+tags:
+- auto-captured
+- post-tool-use
+- file:REQUIREMENTS.md
+---
+
+...in IMPLEMENTATION_PLAN.md are checked within same tool execution |
+| FR-002 | Task ID regex pattern documented | Enables reliable matching | Pattern matches `#### Task X.Y:` format used in IMPLEMENTATION...
