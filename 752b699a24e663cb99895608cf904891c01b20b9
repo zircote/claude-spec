@@ -104,3 +104,21 @@ completed: null
 expires: 2026-03-25T18:30:00Z
 superseded_by: null
 tags: [ux, argument-hinting, checkbox-sync,...
+
+---
+type: progress
+timestamp: '2025-12-25T18:37:53.765733+00:00'
+summary: '...Shell-level tab completion (out of scope for Claude Code commands)'
+tags:
+- auto-captured
+- post-tool-use
+- file:REQUIREMENTS.md
+---
+
+...Shell-level tab completion (out of scope for Claude Code commands)
+- Retroactive sync of already-completed projects
+- Changes to commands other than `/plan` and `/implement`
+
+## User Analysis
+
+###...
