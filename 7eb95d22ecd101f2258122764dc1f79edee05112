@@ -216,3 +216,21 @@ tags:
        - Match pattern: ^(\s*-\s+)\[([ x])\]\s+(.*)$
        - Store: (line_number, group2, group3)
        - STOP when...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.424367+00:00'
+summary: '...memory'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...memory
+       FOR each (line_number, new_state) in updates:
+         - Parse line with checkbox pattern
+         - Replace [ ] with [x] or vice versa
+         - Store modified line
+
+    5. WRITE...
