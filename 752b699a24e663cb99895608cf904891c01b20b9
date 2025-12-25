@@ -427,3 +427,25 @@ Use **Error + Suggestion** pattern (Levenshtein-based).
 
 **Positive:**
 - Matches familiar CLI patterns (git,...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:41:24.482388+00:00'
+summary: '...I/O operations (2x writes per sync)'
+tags:
+- auto-captured
+- post-tool-use
+- file:DECISIONS.md
+---
+
+...I/O operations (2x writes per sync)
+- Temporary disk space usage
+
+**Neutral:**
+- Standard pattern in file systems
+
+---
+
+## ADR-006: Backward Compatibility for Simple Argument Hints
+
+**Date**:...
