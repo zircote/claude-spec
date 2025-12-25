@@ -249,3 +249,22 @@ tags:
 ...Extended YAML object for argument hints                          |
 | - Error + suggestion pattern for validation                        |
 | - PROGRESS.md as source of truth...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:58:09.194635+00:00'
+summary: '...https://github.com/zircote/claude-spec/pull/34
+
+  Starting Task 1.1: Document Task ID Regex Patt...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...https://github.com/zircote/claude-spec/pull/34
+
+Starting Task 1.1: Document Task ID Regex Pattern
+```
+
+▶ progress ─────────────────────────────────────
+Implementation initialized for SPEC-2025-12-25...
