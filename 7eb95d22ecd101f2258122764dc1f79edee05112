@@ -167,3 +167,19 @@ tags:
 ```
   - [ ] Pattern documented: `^\[([x ])\]\s+(\d+\.\d+)\s+(.*)$`
       └─ Captures: ("  - ", " ", "Pattern documented:...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.362107+00:00'
+summary: '...] Pattern documented: `^\[([x ])\]\s+(\d+\.\d+)\s+(.*)$`'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...] Pattern documented: `^\[([x ])\]\s+(\d+\.\d+)\s+(.*)$`
+      └─ Captures: ("  - ", " ", "Pattern documented: `^\\[([x ])\\]...")
+
+  - [x] Examples provided for each capture group
+      └─...
