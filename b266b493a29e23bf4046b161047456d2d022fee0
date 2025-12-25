@@ -337,3 +337,21 @@ tags:
 IF STATUS == "completed" OR STATUS == "rejected":
   -> Display error:
     "❌ Cannot approve a spec with status '${STATUS}'....
+
+---
+type: progress
+timestamp: '2025-12-25T17:21:22.414586+00:00'
+summary: '...Cannot approve this spec.'
+tags:
+- auto-captured
+- post-tool-use
+- file:approve.md
+---
+
+...Cannot approve this spec.
+
+Current status: ${STATUS}
+Expected status: draft or in-review
+
+[If completed]: This spec has already been implemented and closed.
+[If rejected]: This spec was previously...
