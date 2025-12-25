@@ -80,3 +80,20 @@ Investigated, patched, and submitted hotfix for subagent context exhaustion that
 - commands/implement.md:190-348 (new context management and parallel execution sections)
 - commands/implement.md:866-886 (mandatory checkpointing)
 - commands/implement.md:1107-1141 (context exhaustion recovery)
+
+---
+type: progress
+timestamp: '2025-12-25T16:06:28.729761+00:00'
+summary: '...-> Suggest starting new session for remaining work'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...-> Suggest starting new session for remaining work
+
+KEY PRINCIPLE:
+Parallelism is GOOD - the fix is checkpointing and graceful degradation,
+not artificial limits on concurrency.
+```
