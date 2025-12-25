@@ -31,3 +31,23 @@ Starting Task 1.1: Document Task ID Regex Pattern
 
 ▶ progress ─────────────────────────────────────
 Implementation initialized for SPEC-2025-12-25...
+
+---
+type: patterns
+timestamp: '2025-12-25T20:25:55.306468+00:00'
+summary: '...within 3 edits (e.g., "--inlin" → "Did you mean ''--inline''?")
+
+  - Invalid project-ref: show patt...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...within 3 edits (e.g., "--inlin" → "Did you mean '--inline'?")
+- Invalid project-ref: show pattern and examples
+- Include `--help` hint in error messages
+```
+
+That's 4 lines vs. 200+.
+
+## Why...
