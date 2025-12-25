@@ -84,3 +84,23 @@ Added workflow flexibility flags and critical implementation prevention to /plan
 - commands/plan.md:188-210 (branch decision gate)
 - commands/plan.md:265-323 (never_implement section)
 - commands/plan.md:22-38 (help text)
+
+---
+type: progress
+timestamp: '2025-12-25T18:34:55.707096+00:00'
+summary: '...implement-ux-improvements'
+tags:
+- auto-captured
+- post-tool-use
+- file:README.md
+---
+
+...implement-ux-improvements
+status: draft
+created: 2025-12-25T18:30:00Z
+approved: null
+started: null
+completed: null
+expires: 2026-03-25T18:30:00Z
+superseded_by: null
+tags: [ux, argument-hinting, checkbox-sync,...
