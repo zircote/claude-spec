@@ -45,5 +45,5 @@ Combined improvements for `/claude-spec:plan` and `/claude-spec:implement` comma
 - **6 P0 requirements** (checkbox sync patterns, argument schema, help generation)
 - **4 P1 requirements** (verification output, divergence detection, partial completion, type validation)
 - **3 P2 requirements** (bidirectional sync, deprecation support, example generation)
-- **5 implementation phases**, 18 tasks
+- **5 implementation phases**, 20 tasks
 - **6 ADRs** documenting key decisions
