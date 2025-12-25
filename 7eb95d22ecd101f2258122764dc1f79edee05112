@@ -183,3 +183,19 @@ tags:
 
   - [x] Examples provided for each capture group
       └─...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.381819+00:00'
+summary: '...criteria_text)'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...criteria_text)
+
+    1. Find line matching "### Task {task_id}:" or "#### Task {task_id}:"
+       - Pattern: ^#{3,4}\s+Task\s+{task_id}:\s+
+       - If not found: return empty list with warning...
