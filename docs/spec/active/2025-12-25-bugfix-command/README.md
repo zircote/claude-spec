@@ -2,10 +2,11 @@
 
 ```yaml
 spec-id: SPEC-2025-12-25-002
-status: approved
+status: completed
 created: 2025-12-25
 approved: 2025-12-25T20:03:24Z
 approved_by: "Robert Allen <zircote@gmail.com>"
+completed: 2025-12-25T20:25:00Z
 expires: 2026-01-24
 github-issue: 27
 priority: P1
