@@ -989,3 +989,24 @@ tags:
     │       └── IMPLEMENTATION_PLAN.md, PROGRESS.md, DECISIONS.md
     ├── completed/        # Archived with RETROSPECTIVE.md
     └── rejected/         # Rejected specs (preserved...
+
+---
+type: progress
+timestamp: '2025-12-25T17:49:19.960429+00:00'
+summary: '...status across all specs'
+tags:
+- auto-captured
+- post-tool-use
+- file:CLAUDE.md
+---
+
+...status across all specs
+       |
+/complete slug   ->  Close out with retrospective, move to completed/
+```
+
+### Approval Workflow
+
+The `/approve` command provides governance controls:
+
+| Decision...
