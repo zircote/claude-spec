@@ -3,8 +3,8 @@ document_type: progress
 format_version: "1.0.0"
 project_id: SPEC-2025-12-25-001
 project_name: "Implement Command UX Improvements"
-project_status: in-progress
-current_phase: 2
+project_status: done
+current_phase: 5
 implementation_started: 2025-12-25T18:54:54Z
 last_session: 2025-12-25T19:10:00Z
 last_updated: 2025-12-25T19:10:00Z
@@ -32,21 +32,21 @@ This document tracks implementation progress against the spec plan.
 | 1.3 | Document Acceptance Criteria Section Discovery | done | 2025-12-25 | 2025-12-25 | Algorithm with pseudocode added |
 | 1.4 | Document Atomic Write Protocol | done | 2025-12-25 | 2025-12-25 | Backup/restore protocol documented |
 | 1.5 | Add Sync Output Format | done | 2025-12-25 | 2025-12-25 | Output format specification added |
-| 2.1 | Define Schema Structure | pending | | | |
-| 2.2 | Update /plan Frontmatter | pending | | | |
-| 2.3 | Update /implement Frontmatter | pending | | | |
-| 2.4 | Define Backward Compatibility Rules | pending | | | |
-| 3.1 | Document Help Generation Algorithm | pending | | | |
-| 3.2 | Update /plan Help Block | pending | | | |
-| 3.3 | Update /implement Help Block | pending | | | |
-| 4.1 | Document Validation Algorithm | pending | | | |
-| 4.2 | Document Suggestion Algorithm | pending | | | |
-| 4.3 | Add Validation to /plan | pending | | | |
-| 4.4 | Add Validation to /implement | pending | | | |
-| 5.1 | Add Test Cases for Checkbox Sync | pending | | | |
-| 5.2 | Add Test Cases for Argument Validation | pending | | | |
-| 5.3 | Update CLAUDE.md | pending | | | |
-| 5.4 | Update Plugin README | pending | | | |
+| 2.1 | Define Schema Structure | done | 2025-12-25 | 2025-12-25 | Schema fields, types, examples documented |
+| 2.2 | Update /plan Frontmatter | done | 2025-12-25 | 2025-12-25 | argument_schema section added |
+| 2.3 | Update /implement Frontmatter | done | 2025-12-25 | 2025-12-25 | argument_schema section added |
+| 2.4 | Define Backward Compatibility Rules | done | 2025-12-25 | 2025-12-25 | Compatibility rules and upgrade path |
+| 3.1 | Document Help Generation Algorithm | done | 2025-12-25 | 2025-12-25 | Pseudocode algorithm in help_generation section |
+| 3.2 | Update /plan Help Block | done | 2025-12-25 | 2025-12-25 | Added ARGUMENTS section, schema reference |
+| 3.3 | Update /implement Help Block | done | 2025-12-25 | 2025-12-25 | Added ARGUMENTS section, pattern, examples |
+| 4.1 | Document Validation Algorithm | done | 2025-12-25 | 2025-12-25 | Pseudocode in argument_validation section |
+| 4.2 | Document Suggestion Algorithm | done | 2025-12-25 | 2025-12-25 | Levenshtein distance, threshold ≤3 |
+| 4.3 | Add Validation to /plan | done | 2025-12-25 | 2025-12-25 | Validation notes added to argument_schema |
+| 4.4 | Add Validation to /implement | done | 2025-12-25 | 2025-12-25 | Pattern validation, existence check |
+| 5.1 | Add Test Cases for Checkbox Sync | done | 2025-12-25 | 2025-12-25 | test_cases section in implement.md |
+| 5.2 | Add Test Cases for Argument Validation | done | 2025-12-25 | 2025-12-25 | Validation test cases in test_cases |
+| 5.3 | Update CLAUDE.md | done | 2025-12-25 | 2025-12-25 | Added Argument Hinting System, Checkbox Sync |
+| 5.4 | Update Plugin README | done | 2025-12-25 | 2025-12-25 | Updated implement section with features |
 
 ---
 
@@ -55,10 +55,10 @@ This document tracks implementation progress against the spec plan.
 | Phase | Name | Progress | Status |
 |-------|------|----------|--------|
 | 1 | Checkbox Sync Engine | 100% | done |
-| 2 | Argument Schema Definition | 0% | pending |
-| 3 | Dynamic Help Generator | 0% | pending |
-| 4 | Validation and Error Messages | 0% | pending |
-| 5 | Testing and Documentation | 0% | pending |
+| 2 | Argument Schema Definition | 100% | done |
+| 3 | Dynamic Help Generator | 100% | done |
+| 4 | Validation and Error Messages | 100% | done |
+| 5 | Testing and Documentation | 100% | done |
 
 ---
 
@@ -84,3 +84,10 @@ This document tracks implementation progress against the spec plan.
 - Added pseudocode algorithm for acceptance criteria discovery
 - Documented atomic write protocol with backup/rollback
 - Added sync output format specification
+
+### 2025-12-25 - Phase 2 Complete
+- **Phase 2 Completed**: All 4 tasks (2.1-2.4) done
+- Added `<argument_schema>` section to commands/implement.md and commands/plan.md
+- Defined schema structure with positional args and flags
+- Documented type system (string, boolean, integer, path)
+- Added backward compatibility rules and upgrade path per ADR-006

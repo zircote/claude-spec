@@ -176,13 +176,52 @@ The `/approve` command provides governance controls:
 | `/claude-spec:deep-explore` | Exhaustive codebase exploration (Opus 4.5 optimized) |
 | `/claude-spec:deep-research` | Multi-phase investigation with structured analysis workflows |
 
+### Argument Hinting System
+
+Commands support extended argument schemas for better UX:
+
+**Schema Format** (in frontmatter):
+```yaml
+argument-hint:
+  positional:
+    - name: project-ref
+      type: string
+      description: "Project identifier"
+      pattern: "^SPEC-\\d{4}-\\d{2}-\\d{2}-\\d{3}$"
+      examples: ["SPEC-2025-12-25-001"]
+  flags:
+    - name: inline
+      type: boolean
+      description: "Skip worktree and branch creation"
+```
+
+**Features:**
+- Dynamic help generation (`--help` shows schema-derived output)
+- Typo suggestions (Levenshtein distance ≤3)
+- Pattern validation for positional arguments
+- Backward compatible with simple string hints
+
+### Checkbox Sync
+
+`/implement` automatically syncs task completion between PROGRESS.md and IMPLEMENTATION_PLAN.md:
+- Regex patterns match task IDs and acceptance criteria
+- Atomic writes with backup/rollback
+- Sync output shows updated checkbox count
+
+See `commands/implement.md` sections:
+- `<checkbox_sync_patterns>` - Regex patterns and algorithm
+- `<argument_schema>` - Extended schema format
+- `<help_generation>` - Dynamic help algorithm
+- `<argument_validation>` - Validation and suggestion system
+
 ## Active Spec Projects
 
 - `docs/spec/active/2025-12-25-implement-ux-improvements/` - Implement Command UX Improvements
-  - Status: in-review (awaiting approval)
+  - Status: approved, implementation in progress (Phase 5)
   - GitHub Issue: #25
-  - Features: Checkbox sync engine (PROGRESS.md ↔ IMPLEMENTATION_PLAN.md), extended argument-hint YAML schema, dynamic --help generation, validation with suggestions
-  - Key docs: REQUIREMENTS.md (6 P0, 4 P1, 3 P2), ARCHITECTURE.md, IMPLEMENTATION_PLAN.md (5 phases, 18 tasks), DECISIONS.md (6 ADRs)
+  - PR: #34
+  - Features: Checkbox sync engine (PROGRESS.md ↔ IMPLEMENTATION_PLAN.md), extended argument-hint YAML schema, dynamic --help generation, validation with Levenshtein suggestions
+  - Key docs: REQUIREMENTS.md (6 P0, 4 P1, 3 P2), ARCHITECTURE.md, IMPLEMENTATION_PLAN.md (5 phases, 20 tasks), DECISIONS.md (6 ADRs)
 
 - `docs/spec/active/2025-12-24-github-issues-worktree-wf/` - GitHub Issues Worktree Workflow
   - Status: Implementation complete, in review

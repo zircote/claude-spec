@@ -89,10 +89,18 @@ Reviews the spec and records approval decision:
 
 ```
 /claude-spec:implement project-slug
+/claude-spec:implement SPEC-2025-12-25-001
+/claude-spec:implement docs/spec/active/2025-12-25-my-project/
+/claude-spec:implement --help
 ```
 
 Creates and maintains PROGRESS.md, syncs checkboxes across documents.
 Shows warning if spec not approved (advisory, non-blocking).
+
+**Features:**
+- **Checkbox Sync**: Automatically syncs task status between PROGRESS.md and IMPLEMENTATION_PLAN.md
+- **Extended Argument Hints**: Rich help output with argument patterns and examples
+- **Validation with Suggestions**: Typo detection with "Did you mean...?" suggestions (Levenshtein ≤3)
 
 ### Check Project Status
 
