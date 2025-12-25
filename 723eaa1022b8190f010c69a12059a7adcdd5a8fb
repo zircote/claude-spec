@@ -1,0 +1,35 @@
+---
+type: learnings
+timestamp: '2025-12-25T15:21:34.895823+00:00'
+summary: '...session interruption'
+tags:
+- auto-captured
+- post-tool-use
+- file:pr-body.md
+---
+
+...session interruption
+- [ ] Manual test: Run `/claude-spec:plan` with worktree creation
+
+## Key Insight
+
+The core fix is establishing **session boundaries**: each command invocation is treated as...
+
+---
+type: learnings
+timestamp: '2025-12-25T15:22:06.138296+00:00'
+summary: API error 400 with "unexpected tool_use_id" indicates conversation state
+  corruption
+---
+
+API error 400 with "unexpected tool_use_id" indicates conversation state corruption
+## Summary
+Tool result blocks must reference tool_use blocks from the immediately preceding message. When this invariant is violated, the API rejects the request.
+
+## Common Causes
+- Interrupted responses during tool calls
+- Context compaction mishandling tool call pairs
+- Session resume with incomplete state
+
+## Related Files
+- commands/implement.md:1-1502 (command being invoked)
