@@ -4,6 +4,13 @@ A comprehensive Claude Code plugin for project specification and implementation 
 
 ## Features
 
+- **Deep Analysis Commands** - Opus 4.5 optimized, parallel agent orchestration
+  - `/claude-spec:deep-clean` - Comprehensive code review and remediation (6-12+ specialists)
+    - Focus modes: `--focus=security`, `--focus=performance`, `--focus=maintainability`
+    - Maximum coverage: `--focus=MAX` / `--focus=MAXALL`
+  - `/claude-spec:deep-explore` - Exhaustive codebase exploration
+  - `/claude-spec:deep-research` - Multi-phase investigation
+
 - **Specification Lifecycle Commands** - Full project planning lifecycle
   - `/claude-spec:plan` - Strategic project planning with Socratic requirements elicitation
     - Flags: `--inline`, `--no-worktree`, `--no-branch`
@@ -12,20 +19,10 @@ A comprehensive Claude Code plugin for project specification and implementation 
   - `/claude-spec:status` - Portfolio and project status monitoring
   - `/claude-spec:complete` - Project close-out and archival
 
-- **`/claude-spec:deep-clean`** - Comprehensive code review and remediation
-  - Multi-agent parallel review (6-12+ specialists)
-  - Automated remediation with verification
-  - Focus modes for security, performance, maintainability
-  - `--focus=MAX` / `--focus=MAXALL` for maximum coverage
-
-- **`/claude-spec:worktree-*` Worktree Commands** - Git worktree automation
+- **Worktree Commands** - Git worktree automation
   - `/claude-spec:worktree-create` - Create worktrees with Claude agents
   - `/claude-spec:worktree-status` - View worktree status
   - `/claude-spec:worktree-cleanup` - Clean up worktrees
-
-- **Exploration and Research Commands** - Opus 4.5 optimized
-  - `/claude-spec:deep-explore` - Exhaustive codebase exploration
-  - `/claude-spec:deep-research` - Multi-phase investigation
 
 - **Approval Workflow** - Governance controls
   - PreToolUse hook blocks implementation without approved spec
