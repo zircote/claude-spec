@@ -1,0 +1,18 @@
+---
+type: patterns
+timestamp: '2025-12-25T15:59:24.190190+00:00'
+summary: '...impl | **Work directly** | N/A |'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...impl | **Work directly** | N/A |
+| Testing | `test-automator` | Medium-High |
+
+### Execution Pattern (Context-Aware)
+
+```
+# PREFERRED: Sequential with selective parallelism
+1. Implement core logic...
