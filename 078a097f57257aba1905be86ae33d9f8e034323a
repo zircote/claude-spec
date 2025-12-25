@@ -56,3 +56,15 @@ Tool result blocks must reference tool_use blocks from the immediately preceding
 
 ## Related Files
 - commands/implement.md:1-1502 (command being invoked)
+
+---
+type: learnings
+timestamp: '2025-12-25T16:06:31.733447+00:00'
+summary: You're right - 2 is conservative. The key insight is that the limit should
+  be **dynamic based on ...
+tags:
+- auto-captured
+- pre-compact
+---
+
+You're right - 2 is conservative. The key insight is that the limit should be **dynamic based on session phase**, not a blanket restriction....
