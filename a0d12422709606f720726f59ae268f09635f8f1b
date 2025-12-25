@@ -137,3 +137,16 @@ tags:
 ...2025-12-25T20:25:00Z | In AskUserQuestion protocol |
 | 2.5 | Implement session-level suppression | completed | 2025-12-25T20:20:00Z | 2025-12-25T20:25:00Z | SESSION_SUPPRESS_REPORTS flag |
 | 2.6 | Implement...
+
+---
+type: progress
+timestamp: '2025-12-25T20:14:21.969280+00:00'
+summary: '...| SESSION_SUPPRESS_REPORTS flag |'
+tags:
+- auto-captured
+- post-tool-use
+- file:PROGRESS.md
+---
+
+...| SESSION_SUPPRESS_REPORTS flag |
+| 2.6 | Implement permanent opt-out (settings storage) | completed | 2025-12-25T20:20:00Z | 2025-12-25T20:25:00Z | PERMANENT_SUPPRESS_REPORTS flag (storage TBD)...
