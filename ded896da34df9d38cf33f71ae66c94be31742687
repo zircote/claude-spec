@@ -1,0 +1,16 @@
+---
+type: learnings
+timestamp: '2025-12-25T15:21:34.895823+00:00'
+summary: '...session interruption'
+tags:
+- auto-captured
+- post-tool-use
+- file:pr-body.md
+---
+
+...session interruption
+- [ ] Manual test: Run `/claude-spec:plan` with worktree creation
+
+## Key Insight
+
+The core fix is establishing **session boundaries**: each command invocation is treated as...
