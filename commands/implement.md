@@ -115,7 +115,7 @@ EXECUTION CONTRACT:
 AUTO-COMPLETION BEHAVIOR:
 When project_status transitions to "completed":
 - Skip user confirmation
-- Invoke code-cleanup with --all flag for full remediation
+- Invoke deep-clean with --all flag for full remediation
 - Report handoff to user after initiation
 </execution_mode>
 
@@ -503,7 +503,7 @@ ON first task marked in-progress:
 ON project completion:
   -> Update PR body with final status
   -> Add completion summary
-  -> PR remains draft until code-cleanup completes
+  -> PR remains draft until deep-clean completes
 ```
 
 ### PR Creation Command
@@ -1703,7 +1703,7 @@ When resuming and ALL tasks are already `done` or `skipped`:
 1. **Verify completion** (all tasks in final state)
 2. **Run documentation gate** (final)
 3. **Update draft PR** with completion summary
-4. **Auto-handoff to code-cleanup**
+4. **Auto-handoff to deep-clean**
 
 ```
 🎉 Implementation Complete!
@@ -1724,7 +1724,7 @@ Then INVOKE `/code/cleanup --all`. No user confirmation required.
 
 </first_run_behavior>
 
-<step_handoff from="implement" to="code-cleanup">
+<step_handoff from="implement" to="deep-clean">
 
 ## Handoff from Implementation to Code Cleanup
 
@@ -1759,7 +1759,7 @@ fi
 1. Display completion summary
 2. Update draft PR body with final status
 3. Invoke: /code/cleanup --all
-4. Report: "Handed off to code-cleanup for full remediation"
+4. Report: "Handed off to deep-clean for full remediation"
 ```
 
 ### No User Interaction

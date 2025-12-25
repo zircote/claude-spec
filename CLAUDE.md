@@ -45,7 +45,7 @@ commands/
 ├── implement.md        # /implement - Implementation progress tracking
 ├── status.md           # /status - Status monitoring
 ├── complete.md         # /complete - Project close-out
-├── code-cleanup.md     # /code-cleanup - Comprehensive code review and remediation
+├── deep-clean.md       # /deep-clean - Comprehensive code review and remediation
 ├── deep-explore.md     # /deep-explore - Exhaustive codebase exploration (Opus 4.5)
 ├── deep-research.md    # /deep-research - Multi-phase investigation (Opus 4.5)
 ├── worktree-setup.md   # /worktree-setup - Configuration wizard
@@ -172,7 +172,7 @@ The `/approve` command provides governance controls:
 
 | Command | Description |
 |---------|-------------|
-| `/claude-spec:code-cleanup` | Comprehensive code review and remediation with parallel specialist agents |
+| `/claude-spec:deep-clean` | Comprehensive code review and remediation with parallel specialist agents |
 | `/claude-spec:deep-explore` | Exhaustive codebase exploration (Opus 4.5 optimized) |
 | `/claude-spec:deep-research` | Multi-phase investigation with structured analysis workflows |
 

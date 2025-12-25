@@ -12,7 +12,7 @@ A comprehensive Claude Code plugin for project specification and implementation 
   - `/claude-spec:status` - Portfolio and project status monitoring
   - `/claude-spec:complete` - Project close-out and archival
 
-- **`/claude-spec:code-cleanup`** - Comprehensive code review and remediation
+- **`/claude-spec:deep-clean`** - Comprehensive code review and remediation
   - Multi-agent parallel review (6-12+ specialists)
   - Automated remediation with verification
   - Focus modes for security, performance, maintainability
@@ -131,24 +131,24 @@ Generates RETROSPECTIVE.md, archives to `docs/spec/completed/`.
 
 ```bash
 # Interactive mode (asks for confirmation at each step)
-/claude-spec:code-cleanup
+/claude-spec:deep-clean
 
 # Quick mode (Critical+High, no prompts)
-/claude-spec:code-cleanup --quick
+/claude-spec:deep-clean --quick
 
 # Fix everything (all severities, full verification)
-/claude-spec:code-cleanup --all
+/claude-spec:deep-clean --all
 
 # Focus on specific dimension
-/claude-spec:code-cleanup --focus=security
-/claude-spec:code-cleanup --focus=performance
-/claude-spec:code-cleanup --focus=maintainability
+/claude-spec:deep-clean --focus=security
+/claude-spec:deep-clean --focus=performance
+/claude-spec:deep-clean --focus=maintainability
 
 # Maximum coverage (11+ agents)
-/claude-spec:code-cleanup --focus=MAX
+/claude-spec:deep-clean --focus=MAX
 
 # Maximum coverage + auto-remediate everything (nuclear option)
-/claude-spec:code-cleanup --focus=MAXALL
+/claude-spec:deep-clean --focus=MAXALL
 ```
 
 #### Focus Modes

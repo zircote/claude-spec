@@ -5,12 +5,12 @@ All notable changes to the claude-spec plugin will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- **code-cleanup**: Added `--focus=MAX` mode for maximum coverage (12+ specialist agents)
+- **deep-clean**: Added `--focus=MAX` mode for maximum coverage (12+ specialist agents)
   - Deploys all 6 base agents with all focus enhancements combined
   - Adds 6 additional specialists: Database Expert, Penetration Tester, Compliance Auditor, Chaos Engineer, Accessibility Tester, Prompt Engineer
   - Prompt Engineer uses `claude-code-guide` for Anthropic best practices and Claude patterns
   - Full verification with pr-review-toolkit agents
-- **code-cleanup**: Added `--focus=MAXALL` convenience wrapper
+- **deep-clean**: Added `--focus=MAXALL` convenience wrapper
   - Equivalent to `--focus=MAX --all`
   - Maximum agents + auto-remediate all findings + no user prompts
   - One command for fully autonomous comprehensive review and fix
