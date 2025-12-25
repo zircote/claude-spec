@@ -178,6 +178,12 @@ The `/approve` command provides governance controls:
 
 ## Active Spec Projects
 
+- `docs/spec/active/2025-12-25-implement-ux-improvements/` - Implement Command UX Improvements
+  - Status: in-review (awaiting approval)
+  - GitHub Issue: #25
+  - Features: Checkbox sync engine (PROGRESS.md ↔ IMPLEMENTATION_PLAN.md), extended argument-hint YAML schema, dynamic --help generation, validation with suggestions
+  - Key docs: REQUIREMENTS.md (6 P0, 4 P1, 3 P2), ARCHITECTURE.md, IMPLEMENTATION_PLAN.md (5 phases, 18 tasks), DECISIONS.md (6 ADRs)
+
 - `docs/spec/active/2025-12-24-github-issues-worktree-wf/` - GitHub Issues Worktree Workflow
   - Status: Implementation complete, in review
   - Branch: plan/github-issues-worktree-wf
