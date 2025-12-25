@@ -4,12 +4,13 @@ A comprehensive Claude Code plugin for project specification and implementation 
 
 ## Features
 
-- **`/*` Commands** - Full project planning lifecycle
-  - `/p` - Strategic project planning with Socratic requirements elicitation
-  - `/i` - Implementation progress tracking with document sync
-  - `/s` - Portfolio and project status monitoring
-  - `/c` - Project close-out and archival
-  - `/migrate` - Migration from legacy `/arch:*` commands
+- **Specification Lifecycle Commands** - Full project planning lifecycle
+  - `/claude-spec:plan` - Strategic project planning with Socratic requirements elicitation
+    - Flags: `--inline`, `--no-worktree`, `--no-branch`
+  - `/claude-spec:approve` - Review and approve/reject specs before implementation
+  - `/claude-spec:implement` - Implementation progress tracking with document sync
+  - `/claude-spec:status` - Portfolio and project status monitoring
+  - `/claude-spec:complete` - Project close-out and archival
 
 - **`/claude-spec:code-cleanup`** - Comprehensive code review and remediation
   - Multi-agent parallel review (6-12+ specialists)
@@ -21,6 +22,15 @@ A comprehensive Claude Code plugin for project specification and implementation 
   - `/claude-spec:worktree-create` - Create worktrees with Claude agents
   - `/claude-spec:worktree-status` - View worktree status
   - `/claude-spec:worktree-cleanup` - Clean up worktrees
+
+- **Exploration and Research Commands** - Opus 4.5 optimized
+  - `/claude-spec:deep-explore` - Exhaustive codebase exploration
+  - `/claude-spec:deep-research` - Multi-phase investigation
+
+- **Approval Workflow** - Governance controls
+  - PreToolUse hook blocks implementation without approved spec
+  - Audit trail with approver identity and timestamps
+  - Rejection workflow with spec preservation
 
 - **Parallel Agent Orchestration** - Built-in directives for parallel specialist agent usage
 
@@ -46,7 +56,7 @@ claude plugins install --marketplace ./.claude-plugin/marketplace.json cs
 ### Start a New Project
 
 ```
-/p my new feature idea
+/claude-spec:plan my new feature idea
 ```
 
 This initiates Socratic requirements elicitation, parallel research, and generates:
@@ -59,26 +69,46 @@ This initiates Socratic requirements elicitation, parallel research, and generat
   - RESEARCH_NOTES.md
   - CHANGELOG.md
 
+#### Plan Flags
+
+| Flag | Description |
+|------|-------------|
+| `--inline` | Skip worktree and branch creation, work in current directory |
+| `--no-worktree` | Skip worktree creation only |
+| `--no-branch` | Skip branch creation only |
+
+### Approve the Specification
+
+```
+/claude-spec:approve project-slug
+```
+
+Reviews the spec and records approval decision:
+- **Approve**: Updates status, records approver and timestamp
+- **Request Changes**: Adds feedback, keeps in review status
+- **Reject**: Moves spec to `docs/spec/rejected/`
+
 ### Track Implementation Progress
 
 ```
-/i project-slug
+/claude-spec:implement project-slug
 ```
 
 Creates and maintains PROGRESS.md, syncs checkboxes across documents.
+Shows warning if spec not approved (advisory, non-blocking).
 
 ### Check Project Status
 
 ```
-/s              # Current project status
-/s --list       # List all active projects
-/s --expired    # Find expired plans
+/claude-spec:status              # Current project status
+/claude-spec:status --list       # List all active projects
+/claude-spec:status --expired    # Find expired plans
 ```
 
 ### Close Out Project
 
 ```
-/c project-slug
+/claude-spec:complete project-slug
 ```
 
 Generates RETROSPECTIVE.md, archives to `docs/spec/completed/`.
@@ -152,13 +182,25 @@ Generates RETROSPECTIVE.md, archives to `docs/spec/completed/`.
 - **Accessibility Tester** - WCAG compliance (if UI code)
 - **Prompt Engineer** - Anthropic best practices, Claude patterns (if prompts)
 
-### Migration from /arch:*
+## Workflow
+
+The recommended workflow with governance controls:
 
 ```
-/migrate
+/claude-spec:plan "idea"     Create spec in draft status
+          |
+/claude-spec:approve slug    Review and approve plan
+          |
+/claude-spec:implement slug  Track implementation (warns if not approved)
+          |
+/claude-spec:complete slug   Close out with retrospective
 ```
 
-Moves `docs/architecture/` to `docs/spec/` and updates CLAUDE.md references.
+### Prevention Mechanisms
+
+1. **`<never_implement>` section in plan.md** - Prevents jumping to implementation during planning
+2. **`/implement` warning** - Shows advisory if spec not approved
+3. **PreToolUse hook** - Optional blocking of Write/Edit without approved spec
 
 ## Configuration
 
@@ -179,25 +221,43 @@ Run `/claude-spec:worktree-setup` to configure, or see `~/.claude/plugins/skills
 }
 ```
 
-Config lookup: user config → `./claude-spec.config.json` (plugin root) → defaults
+Config lookup: user config -> `./claude-spec.config.json` (plugin root) -> defaults
+
+### Hook Configuration
+
+The PreToolUse hook that blocks implementation without approved specs is configured in `.claude-plugin/hooks.json`:
+
+```json
+{
+  "hooks": [
+    {
+      "event": "PreToolUse",
+      "matcher": { "tool_name": ["Write", "Edit"] },
+      "command": "${CLAUDE_PLUGIN_ROOT}/../hooks/check-approved-spec.sh",
+      "enabled": true
+    }
+  ]
+}
+```
+
+To disable the hook, set `"enabled": false`.
 
 ## Project Structure
 
 ```
 docs/spec/
-├── active/           # In-progress projects
-│   └── YYYY-MM-DD-slug/
-│       ├── README.md
-│       ├── REQUIREMENTS.md
-│       ├── ARCHITECTURE.md
-│       ├── IMPLEMENTATION_PLAN.md
-│       ├── PROGRESS.md
-│       ├── DECISIONS.md
-│       ├── RESEARCH_NOTES.md
-│       └── CHANGELOG.md
-└── completed/        # Archived projects
-    └── YYYY-MM-DD-slug/
-        └── (same + RETROSPECTIVE.md)
++-- active/           # In-progress projects (draft, in-review, approved)
+|   +-- YYYY-MM-DD-slug/
+|       +-- README.md
+|       +-- REQUIREMENTS.md
+|       +-- ARCHITECTURE.md
+|       +-- IMPLEMENTATION_PLAN.md
+|       +-- PROGRESS.md
+|       +-- DECISIONS.md
+|       +-- RESEARCH_NOTES.md
+|       +-- CHANGELOG.md
++-- completed/        # Archived projects (with RETROSPECTIVE.md)
++-- rejected/         # Rejected specs (preserved for reference)
 ```
 
 ## Requirements

@@ -38,11 +38,16 @@ make clean
 ```
 .claude-plugin/
 ├── plugin.json         # Plugin manifest
+├── hooks.json          # PreToolUse hook configuration
 commands/
 ├── plan.md             # /plan - Strategic project planning
+├── approve.md          # /approve - Review and approve specs before implementation
 ├── implement.md        # /implement - Implementation progress tracking
 ├── status.md           # /status - Status monitoring
 ├── complete.md         # /complete - Project close-out
+├── code-cleanup.md     # /code-cleanup - Comprehensive code review and remediation
+├── deep-explore.md     # /deep-explore - Exhaustive codebase exploration (Opus 4.5)
+├── deep-research.md    # /deep-research - Multi-phase investigation (Opus 4.5)
 ├── worktree-setup.md   # /worktree-setup - Configuration wizard
 ├── worktree-create.md  # /worktree-create - Create worktrees
 ├── worktree-status.md  # /worktree-status - Worktree status
@@ -62,6 +67,8 @@ steps/
 ├── marker_cleaner.py   # Clean up temp files
 └── retrospective_gen.py # Generate RETROSPECTIVE.md
 skills/worktree-manager/ # Worktree automation skill
+hooks/
+└── check-approved-spec.sh  # PreToolUse hook - blocks impl without approved spec
 tests/                   # Pytest test suite
 ```
 
@@ -82,11 +89,12 @@ tests/                   # Pytest test suite
 ```
 project-root/
 └── docs/spec/
-    ├── active/           # In-progress projects
+    ├── active/           # In-progress projects (draft, in-review, approved)
     │   └── YYYY-MM-DD-slug/
     │       ├── README.md, REQUIREMENTS.md, ARCHITECTURE.md
-    │       └── IMPLEMENTATION_PLAN.md, PROGRESS.md
-    └── completed/        # Archived with RETROSPECTIVE.md
+    │       └── IMPLEMENTATION_PLAN.md, PROGRESS.md, DECISIONS.md
+    ├── completed/        # Archived with RETROSPECTIVE.md
+    └── rejected/         # Rejected specs (preserved for reference)
 ```
 
 ## Key Patterns
@@ -122,14 +130,34 @@ def test_something(temp_project_dir, monkeypatch):
 ## Plugin Command Workflow
 
 ```
-/plan "idea"  ->  Plan with Socratic elicitation
+/plan "idea"     ->  Create specification documents (Socratic elicitation)
+       |             Flags: --inline (no worktree/branch), --no-worktree, --no-branch
        |
-/implement slug ->  Track implementation (PROGRESS.md)
+/approve slug    ->  Review and approve/reject spec (records audit trail)
+       |             Records: approver identity, timestamp, decision
        |
-/status        ->  Monitor status
+/implement slug  ->  Track implementation (PROGRESS.md checkpoint)
+       |             Warns if spec not approved (advisory, non-blocking)
        |
-/complete slug ->  Close out with retrospective
+/status          ->  Monitor project status across all specs
+       |
+/complete slug   ->  Close out with retrospective, move to completed/
 ```
+
+### Approval Workflow
+
+The `/approve` command provides governance controls:
+
+| Decision | Action |
+|----------|--------|
+| Approve | Updates status to `approved`, records approver and timestamp |
+| Request Changes | Adds feedback notes, keeps in `in-review` status |
+| Reject | Moves spec to `docs/spec/rejected/`, preserves for reference |
+
+**Prevention Mechanisms:**
+1. `/plan` has `<never_implement>` section - prevents jumping to implementation
+2. `/implement` shows warning for unapproved specs
+3. `hooks/check-approved-spec.sh` - optional PreToolUse hook that blocks Write/Edit without approved spec
 
 ### Worktree Commands
 
@@ -140,6 +168,14 @@ def test_something(temp_project_dir, monkeypatch):
 | `/claude-spec:worktree-status` | Show worktree status |
 | `/claude-spec:worktree-cleanup` | Clean up stale worktrees |
 
+### Code Review & Exploration Commands
+
+| Command | Description |
+|---------|-------------|
+| `/claude-spec:code-cleanup` | Comprehensive code review and remediation with parallel specialist agents |
+| `/claude-spec:deep-explore` | Exhaustive codebase exploration (Opus 4.5 optimized) |
+| `/claude-spec:deep-research` | Multi-phase investigation with structured analysis workflows |
+
 ## Active Spec Projects
 
 - `docs/spec/active/2025-12-24-github-issues-worktree-wf/` - GitHub Issues Worktree Workflow
@@ -149,6 +185,15 @@ def test_something(temp_project_dir, monkeypatch):
   - Scripts: `scripts/github-issues/` (6 scripts, 47 tests)
 
 ## Recent Completed Spec Projects
+
+- `docs/spec/completed/2025-12-25-approve-command/` - Add /approve Command for Explicit Plan Acceptance
+  - Completed: 2025-12-25
+  - Outcome: success
+  - Duration: 15 minutes (planned: 4-6 hours)
+  - GitHub Issue: #26
+  - Deliverables: `/approve` command, `/plan` flags (--inline, --no-worktree, --no-branch), PreToolUse hook, `<never_implement>` section
+  - Impact: Closes workflow gap, provides governance/audit trail, prevents jumping to implementation
+  - Key docs: REQUIREMENTS.md (13 P0, 4 P1, 3 P2), ARCHITECTURE.md (5 components), RETROSPECTIVE.md (5 ADRs)
 
 - `docs/spec/completed/2025-12-19-remove-memory-hooks/` - Remove Memory and Hook Components
   - Completed: 2025-12-19
@@ -162,7 +207,7 @@ def test_something(temp_project_dir, monkeypatch):
 - Use LSP `goToDefinition` before modifying unfamiliar functions, classes, or modules
 - Use LSP `findReferences` before refactoring any symbol to understand full impact
 - Use LSP `documentSymbol` to get file structure overview before major edits
-- Prefer LSP navigation over grep—it resolves through imports and re-exports
+- Prefer LSP navigation over grep--it resolves through imports and re-exports
 
 ### Verification Workflow
 - Check LSP diagnostics after each edit to catch type errors immediately
@@ -177,7 +222,7 @@ def test_something(temp_project_dir, monkeypatch):
 
 ### Error Handling
 - If LSP reports errors, fix them before proceeding to next task
-- Treat type errors as blocking—this project enforces strict type checking
+- Treat type errors as blocking--this project enforces strict type checking
 - Use LSP diagnostics output to guide fixes, not guesswork
 
 ### LSP Hooks Installed
