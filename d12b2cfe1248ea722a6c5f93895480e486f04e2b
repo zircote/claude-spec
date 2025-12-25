@@ -14,3 +14,21 @@ tags:
 #### Key Differentiator
 
 Issues created by this command include investigatory...
+
+---
+type: blockers
+timestamp: '2025-12-25T20:12:42.060794+00:00'
+summary: '...Current task context for better debugging'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...Current task context for better debugging
+3. User still confirms before issue creation
+4. After issue is filed, control returns here with option to resume
+
+### Checkpoint Before Reporting
+
+**CRITICAL**:...
