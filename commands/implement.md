@@ -200,14 +200,37 @@ Subagents and the main session share finite context. Uncontrolled parallelism ca
 - `/compact` failing due to insufficient remaining context
 - **Progress loss** when session must be abandoned
 
-### Subagent Limits (MANDATORY)
+### Subagent Limits (GUIDELINES)
 
 ```
-HARD LIMITS:
-- Maximum 2 concurrent Task subagents at any time
-- Each subagent should target small, focused tasks (single file or component)
-- Prefer sequential execution for complex multi-file changes
-- If a subagent exhausts context, DO NOT retry - checkpoint and continue manually
+CONTEXT-AWARE SCALING (not hard limits):
+
+EARLY SESSION (fresh context):
+- No hard limit on concurrent subagents
+- Parallel execution of 8-12+ subagents can work well for independent tasks
+- CHECKPOINT before launching large parallel batches
+- This is the optimal time for aggressive parallelism
+
+MID-SESSION (moderate usage):
+- Continue parallelism as long as subagents complete successfully
+- Start monitoring for warning signs (truncated responses, incomplete work)
+- Reduce batch size if any subagent shows stress
+- Checkpoint between parallel batches
+
+LATE SESSION (extended work):
+- Be more conservative - context headroom is lower
+- Consider smaller parallel batches (2-4 subagents)
+- Checkpoint more frequently
+- If approaching limits, switch to sequential
+
+AFTER ANY EXHAUSTION EVENT:
+- STOP new subagents immediately
+- Complete current task directly
+- Suggest new session for remaining work
+
+KEY PRINCIPLE:
+The goal is not to limit parallelism but to DETECT problems early and DEGRADE gracefully.
+Aggressive parallelism is encouraged when context is healthy.
 ```
 
 ### Pre-emptive Checkpointing
@@ -278,23 +301,32 @@ Current task: ${TASK_ID} - ${TASK_DESCRIPTION}
 ```
 EXECUTION MODE SELECTION:
 
-IF early in session (fresh context):
-  -> May use up to 2 parallel subagents for independent work
-  -> Checkpoint before and after parallel execution
+EARLY SESSION (fresh context):
+  -> Aggressive parallelism encouraged (8-12+ subagents can work)
+  -> Launch independent tasks in parallel batches
+  -> CHECKPOINT before each parallel batch
+  -> This is when parallelism provides the most value
 
-IF mid-session (moderate context usage):
-  -> Limit to 1 subagent at a time
-  -> Prefer direct implementation over delegation
+MID-SESSION (moderate usage):
+  -> Continue parallel execution as long as subagents succeed
+  -> Monitor for warning signs (truncated responses, incomplete artifacts)
+  -> If any subagent shows stress, reduce next batch size
+  -> Checkpoint between batches
 
-IF late in session OR after any context warning:
-  -> NO subagents - work directly
-  -> Focus on completing current task
-  -> Checkpoint frequently
+LATE SESSION (extended work):
+  -> More conservative batch sizes (2-4 subagents)
+  -> Checkpoint after each batch completes
+  -> Be prepared to switch to sequential if needed
 
-ALWAYS:
-  -> Maximum 2 concurrent subagents (hard limit)
-  -> Subagents should handle small, focused tasks only
-  -> Never retry a subagent that exhausted context
+AFTER ANY EXHAUSTION EVENT:
+  -> STOP launching new subagents
+  -> Complete current work directly (no delegation)
+  -> Save all progress
+  -> Suggest starting new session for remaining work
+
+KEY PRINCIPLE:
+Parallelism is GOOD - the fix is checkpointing and graceful degradation,
+not artificial limits on concurrency.
 ```
 
 ### When to Use Subagents
