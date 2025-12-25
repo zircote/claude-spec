@@ -1,0 +1,15 @@
+---
+type: patterns
+timestamp: '2025-12-25T16:06:31.854347+00:00'
+summary: '`★ Insight ─────────────────────────────────────`
+
+  The issue is a **cascading context exhaustion**...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+`★ Insight ─────────────────────────────────────`
+The issue is a **cascading context exhaustion** pattern:
+1. `/implement` mandates parallel subagent deployment (lines 190-252)
+2. No limits on concurrent...
