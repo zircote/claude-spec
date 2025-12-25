@@ -300,3 +300,20 @@ tags:
 ### Completed
 - Implementation complete - all 28 tasks across 2 phases done/skipped
 - Phase 1: Core Command...
+
+---
+type: progress
+timestamp: '2025-12-25T20:15:24.267139+00:00'
+summary: '...tasks) - 100% complete'
+tags:
+- auto-captured
+- post-tool-use
+- file:CHANGELOG.md
+---
+
+...tasks) - 100% complete
+- Task 2.8 skipped (manual testing for prompt-based commands)
+
+### Implemented
+- Created `commands/report-issue.md` with full 5-phase execution protocol
+- Added `<error_recovery>...
