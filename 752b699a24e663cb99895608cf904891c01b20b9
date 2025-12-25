@@ -405,3 +405,25 @@ tags:
 ### Context
 
 How...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:41:24.460163+00:00'
+summary: '...AskUserQuestion'
+tags:
+- auto-captured
+- post-tool-use
+- file:DECISIONS.md
+---
+
+...AskUserQuestion
+4. Combination based on context
+
+### Decision
+
+Use **Error + Suggestion** pattern (Levenshtein-based).
+
+### Consequences
+
+**Positive:**
+- Matches familiar CLI patterns (git,...
