@@ -149,3 +149,21 @@ tags:
 ##### Pattern 3: Acceptance Criteria Checkboxes
 
 Find checkbox items under a task's acceptance criteria section:...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.342694+00:00'
+summary: '...state (space = unchecked, "x" = checked)'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...state (space = unchecked, "x" = checked)
+- Group 3: Criteria text
+
+**Examples:**
+```
+  - [ ] Pattern documented: `^\[([x ])\]\s+(\d+\.\d+)\s+(.*)$`
+      └─ Captures: ("  - ", " ", "Pattern documented:...
