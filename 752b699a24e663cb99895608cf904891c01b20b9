@@ -243,3 +243,19 @@ tags:
 - **Acceptance Criteria**:
   - [ ] Pattern documented: `^\[([x ])\]\s+(\d+\.\d+)\s+(.*)$`
   - [ ] Examples provided for each capture group...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:40:48.059345+00:00'
+summary: '...multi-digit phases, special characters)'
+tags:
+- auto-captured
+- post-tool-use
+- file:IMPLEMENTATION_PLAN.md
+---
+
+...multi-digit phases, special characters)
+
+### Task 1.2: Document IMPLEMENTATION_PLAN.md Task Heading Pattern
+- **Description**: Add regex for finding task sections in IMPLEMENTATION_PLAN.md
+- **Files**:...
