@@ -102,7 +102,7 @@ If you detect conflicting directives:
 
 **EXECUTION MODEL**: phase-gated with parallel optimization within phases
 
-Each phase MUST complete before proceeding to next. Within phases, independent operations MAY run in parallel. Dependent operations MUST be sequential.
+Each phase MUST complete before proceeding to the next. Within phases, independent operations MAY run in parallel. Dependent operations MUST be sequential.
 
 EXECUTION CONTRACT:
 
