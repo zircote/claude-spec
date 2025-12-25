@@ -87,15 +87,23 @@ $ARGUMENTS
 ## Argument Parsing
 
 ```bash
-# Parse flags
+# Parse flags using array indexing (shift doesn't work in for loops)
 ISSUE_TYPE=""
 TARGET_REPO=""
 
-for arg in $ARGUMENTS; do
+# Convert arguments to array
+args=($ARGUMENTS)
+i=0
+
+while [ $i -lt ${#args[@]} ]; do
+  arg="${args[$i]}"
   case "$arg" in
     --type)
-      shift
-      ISSUE_TYPE="$1"
+      # Next argument is the type value
+      i=$((i + 1))
+      if [ $i -lt ${#args[@]} ]; then
+        ISSUE_TYPE="${args[$i]}"
+      fi
       ;;
     bug|feat|docs|chore|perf)
       if [ -z "$ISSUE_TYPE" ]; then
@@ -103,8 +111,11 @@ for arg in $ARGUMENTS; do
       fi
       ;;
     --repo)
-      shift
-      TARGET_REPO="$1"
+      # Next argument is the repo value
+      i=$((i + 1))
+      if [ $i -lt ${#args[@]} ]; then
+        TARGET_REPO="${args[$i]}"
+      fi
       ;;
     */*)
       if [ -z "$TARGET_REPO" ]; then
@@ -112,6 +123,7 @@ for arg in $ARGUMENTS; do
       fi
       ;;
   esac
+  i=$((i + 1))
 done
 
 echo "ISSUE_TYPE=${ISSUE_TYPE}"
@@ -120,6 +132,59 @@ echo "TARGET_REPO=${TARGET_REPO}"
 </argument_parsing>
 
 <execution_protocol>
+
+## Phase 0: Error Context Detection
+
+Before gathering input, check if this command was invoked with pre-filled error context from `/plan` or `/implement`.
+
+### Step 0.1: Check for Error Context
+
+```
+IF error_context is present in invocation payload:
+  → Set ERROR_CONTEXT_MODE = true
+  → Display: "Pre-filled from error context. Review and confirm."
+
+  → Pre-fill ISSUE_TYPE = "bug"
+  → Pre-fill ISSUE_DESCRIPTION from error_context.error_message
+
+  → Parse error_context.traceback to extract:
+    - File paths and line numbers
+    - Error type and message
+    - Call stack (if available)
+
+  → Store error_context.files_being_processed as AFFECTED_FILES
+  → Store error_context.recent_actions as RECENT_ACTIONS
+  → Store error_context.triggering_command as TRIGGERING_COMMAND
+
+  → Skip to Step 1.2 (Issue Title) - type is already set to "bug"
+  → Pre-populate investigation findings from parsed traceback
+
+ELSE:
+  → Set ERROR_CONTEXT_MODE = false
+  → Proceed with normal Phase 1 flow
+```
+
+### Step 0.2: Display Pre-filled Context (if applicable)
+
+When ERROR_CONTEXT_MODE is true, display the pre-filled values before proceeding:
+
+```
+Pre-filled from Error Context
++----------------------------------------------------------------+
+| Triggering Command: ${TRIGGERING_COMMAND}                       |
+| Issue Type: bug (auto-set)                                      |
++----------------------------------------------------------------+
+| Error: ${error_context.error_message}                           |
++----------------------------------------------------------------+
+| Files Being Processed:                                          |
+${AFFECTED_FILES_LIST}
++----------------------------------------------------------------+
+| Recent Actions:                                                 |
+${RECENT_ACTIONS_LIST}
++----------------------------------------------------------------+
+
+You can modify any of these values in the following steps.
+```
 
 ## Phase 1: Input Gathering
 
@@ -143,21 +208,31 @@ Use AskUserQuestion with:
       description: "Maintenance, refactoring, cleanup"
     - label: "perf"
       description: "Performance or efficiency issue"
+    - label: "Cancel"
+      description: "Abort issue creation"
 ```
+
+**If "Cancel"**: HALT. Display: "Issue creation cancelled. No changes made."
 
 Store the selected type as `ISSUE_TYPE`.
 
 ### Step 1.2: Issue Title
 
+**Note**: The AskUserQuestion tool automatically provides an "Other" option for free text input. Users select "Other" to type a custom title.
+
 ```
 Use AskUserQuestion with:
   header: "Title"
-  question: "What's a concise title for this issue? (use 'Other' to type)"
+  question: "Enter a concise title for this issue:"
   multiSelect: false
   options:
-    - label: "[Will type custom title]"
-      description: "Select 'Other' to enter a custom title"
+    - label: "Type custom title"
+      description: "Select 'Other' below to enter your title"
+    - label: "Cancel"
+      description: "Abort issue creation"
 ```
+
+**If "Cancel"**: HALT. Display: "Issue creation cancelled. No changes made."
 
 User will select "Other" and provide a custom title. Store as `ISSUE_TITLE`.
 
@@ -166,12 +241,16 @@ User will select "Other" and provide a custom title. Store as `ISSUE_TITLE`.
 ```
 Use AskUserQuestion with:
   header: "Details"
-  question: "Describe the issue in detail (use 'Other' to type)"
+  question: "Describe the issue in detail:"
   multiSelect: false
   options:
-    - label: "[Will type description]"
-      description: "Select 'Other' to enter details"
+    - label: "Type description"
+      description: "Select 'Other' below to enter details"
+    - label: "Cancel"
+      description: "Abort issue creation"
 ```
+
+**If "Cancel"**: HALT. Display: "Issue creation cancelled. No changes made."
 
 User will select "Other" and provide description. Store as `ISSUE_DESCRIPTION`.
 
@@ -182,37 +261,95 @@ User will select "Other" and provide description. Store as `ISSUE_DESCRIPTION`.
 Use AskUserQuestion with:
   header: "Expected"
   question: "What did you expect to happen?"
+  multiSelect: false
   options:
-    - label: "[Will describe expected behavior]"
+    - label: "Describe expected behavior"
       description: "Select 'Other' to type"
+    - label: "Cancel"
+      description: "Abort issue creation"
 
 Use AskUserQuestion with:
   header: "Actual"
   question: "What actually happened?"
+  multiSelect: false
   options:
-    - label: "[Will describe actual behavior]"
+    - label: "Describe actual behavior"
       description: "Select 'Other' to type"
+    - label: "Cancel"
+      description: "Abort issue creation"
 ```
+
+**If "Cancel"**: HALT. Display: "Issue creation cancelled. No changes made."
 
 **For `feat` type:**
 ```
 Use AskUserQuestion with:
   header: "Use Case"
   question: "What problem would this solve?"
+  multiSelect: false
   options:
-    - label: "[Will describe use case]"
+    - label: "Describe use case"
       description: "Select 'Other' to type"
+    - label: "Cancel"
+      description: "Abort issue creation"
 ```
+
+**If "Cancel"**: HALT. Display: "Issue creation cancelled. No changes made."
 
 **For `docs` type:**
 ```
 Use AskUserQuestion with:
   header: "Location"
   question: "Which doc or section needs updating?"
+  multiSelect: false
   options:
-    - label: "[Will specify location]"
+    - label: "Specify location"
       description: "Select 'Other' to type"
+    - label: "Cancel"
+      description: "Abort issue creation"
 ```
+
+**If "Cancel"**: HALT. Display: "Issue creation cancelled. No changes made."
+
+**For `chore` type:**
+```
+Use AskUserQuestion with:
+  header: "Scope"
+  question: "What area or components need maintenance?"
+  multiSelect: false
+  options:
+    - label: "Describe scope"
+      description: "Select 'Other' to type"
+    - label: "Cancel"
+      description: "Abort issue creation"
+```
+
+**If "Cancel"**: HALT. Display: "Issue creation cancelled. No changes made."
+
+**For `perf` type:**
+```
+Use AskUserQuestion with:
+  header: "Bottleneck"
+  question: "What performance issue have you observed?"
+  multiSelect: false
+  options:
+    - label: "Describe performance issue"
+      description: "Select 'Other' to type"
+    - label: "Cancel"
+      description: "Abort issue creation"
+
+Use AskUserQuestion with:
+  header: "Impact"
+  question: "How does this affect users or the system?"
+  multiSelect: false
+  options:
+    - label: "Describe impact"
+      description: "Select 'Other' to type"
+    - label: "Cancel"
+      description: "Abort issue creation"
+```
+
+**If "Cancel"**: HALT. Display: "Issue creation cancelled. No changes made."
 
 ## Phase 2: Investigation
 
@@ -401,14 +538,80 @@ Use AskUserQuestion with:
 ### Step 4.1: Detect Repository
 
 ```bash
-# Check if we can detect from context
-# Priority: error traces > current project > ask
+# Repository detection with priority: error traces > plugin paths > current project
 
-# Get current repo
+# Get current repo (fallback)
 CURRENT_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo "")
 
-# Check if error traces point to a plugin
-# (Parse paths like ~/.claude/plugins/cache/claude-code-plugins/claude-spec/)
+# Function: Detect repo from error traces
+# Looks for GitHub URLs or file paths that indicate a repository
+detect_repo_from_traces() {
+  local trace_content="$1"
+  local repo=""
+
+  if [[ -n "$trace_content" ]]; then
+    # Look for GitHub-style URLs (github.com/owner/repo or github.com:owner/repo)
+    repo=$(echo "$trace_content" | grep -Eo 'github\.com[:/][^[:space:]/]+/[^[:space:]/]+' | head -n1)
+    if [[ -n "$repo" ]]; then
+      # Normalize to owner/repo format
+      repo=$(echo "$repo" | sed -E 's#.*github\.com[:/]([^[:space:]/]+/[^[:space:]/]+).*#\1#' | sed 's/\.git$//')
+    fi
+  fi
+
+  echo "$repo"
+}
+
+# Function: Detect repo from plugin paths
+# Parses paths like ~/.claude/plugins/cache/claude-code-plugins/owner/repo/
+detect_repo_from_plugin_path() {
+  local path="$1"
+  local repo=""
+
+  # Match claude-code-plugins/owner/repo pattern
+  if [[ "$path" =~ claude-code-plugins/([^/]+)/([^/]+) ]]; then
+    repo="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+  # Match plugins/cache pattern with owner/repo
+  elif [[ "$path" =~ plugins/cache/[^/]+/([^/]+)/([^/]+) ]]; then
+    repo="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+  fi
+
+  echo "$repo"
+}
+
+# Try to detect from error context (if available)
+ERROR_REPO=""
+if [[ -n "${ERROR_TRACEBACK:-}" ]]; then
+  ERROR_REPO=$(detect_repo_from_traces "$ERROR_TRACEBACK")
+fi
+
+# Try to detect from affected files (plugin paths)
+PLUGIN_REPO=""
+for file in ${AFFECTED_FILES:-}; do
+  detected=$(detect_repo_from_plugin_path "$file")
+  if [[ -n "$detected" ]]; then
+    PLUGIN_REPO="$detected"
+    break
+  fi
+done
+
+# Select detected repo based on priority
+if [[ -n "$ERROR_REPO" ]]; then
+  DETECTED_REPO="$ERROR_REPO"
+  DETECTION_SOURCE="error trace"
+elif [[ -n "$PLUGIN_REPO" ]]; then
+  DETECTED_REPO="$PLUGIN_REPO"
+  DETECTION_SOURCE="plugin path"
+elif [[ -n "$CURRENT_REPO" ]]; then
+  DETECTED_REPO="$CURRENT_REPO"
+  DETECTION_SOURCE="current directory"
+else
+  DETECTED_REPO=""
+  DETECTION_SOURCE="none"
+fi
+
+echo "DETECTED_REPO=${DETECTED_REPO}"
+echo "DETECTION_SOURCE=${DETECTION_SOURCE}"
+echo "CURRENT_REPO=${CURRENT_REPO}"
 ```
 
 ### Step 4.2: Confirm Repository

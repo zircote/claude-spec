@@ -2779,7 +2779,22 @@ When an error is detected:
    - Files being processed at the time
    - Recent actions leading to the error
 
-2. **Check Suppression State**:
+2. **Initialize Suppression Flags** (at command start):
+   ```
+   # Session-scoped flag (resets each session)
+   # Initialize at command start if not already set
+   SESSION_SUPPRESS_REPORTS=${SESSION_SUPPRESS_REPORTS:-false}
+
+   # Permanent flag (persisted in user settings)
+   # Read from ~/.claude/settings.json or project .claude/settings.local.json
+   PERMANENT_SUPPRESS_REPORTS=$(read_setting "suppress_error_reports" || echo "false")
+   ```
+
+   **Storage locations**:
+   - Session flag: In-memory variable, lost when session ends
+   - Permanent flag: `~/.claude/settings.json` under key `claude-spec.suppress_error_reports`
+
+3. **Check Suppression State**:
    ```
    IF SESSION_SUPPRESS_REPORTS == true:
      → Skip error reporting prompt
@@ -2790,7 +2805,7 @@ When an error is detected:
      → Continue with error handling as normal
    ```
 
-3. **Offer Reporting Option** (if not suppressed):
+4. **Offer Reporting Option** (if not suppressed):
 
 ```
 Use AskUserQuestion with:
@@ -2808,7 +2823,7 @@ Use AskUserQuestion with:
       description: "Permanently disable error reporting prompts"
 ```
 
-4. **Handle Response**:
+5. **Handle Response**:
 
 ```
 IF "Yes, report it":
