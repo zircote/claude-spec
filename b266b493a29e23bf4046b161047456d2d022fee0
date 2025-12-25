@@ -42,3 +42,23 @@ tags:
 ---
 
 ...The current `/plan` → `/implement` flow lacks a formal approval checkpoint. This is a common pattern in enterprise software development where plans need explicit sign-off before implementation...
+
+---
+type: patterns
+timestamp: '2025-12-25T17:28:11.461496+00:00'
+summary: '..."LICENSE"'
+tags:
+- auto-captured
+- post-tool-use
+- file:check-approved-spec.sh
+---
+
+..."LICENSE"
+    "Makefile"
+    ".claude/"
+    "hooks/"
+)
+
+# Check if file matches any exempt pattern
+for pattern in "${EXEMPT_PATTERNS[@]}"; do
+    if [[ "$FILE_PATH" =~ $pattern ]]; then...
