@@ -164,3 +164,18 @@ tags:
 ...PERMANENT_SUPPRESS_REPORTS flag (storage TBD) |
 | 2.7 | Implement context handoff to `/report-issue` | completed | 2025-12-25T20:20:00Z | 2025-12-25T20:25:00Z | error_context object structure defined |
 |...
+
+---
+type: progress
+timestamp: '2025-12-25T20:14:31.863784+00:00'
+summary: '...Name | Progress | Status |'
+tags:
+- auto-captured
+- post-tool-use
+- file:PROGRESS.md
+---
+
+...Name | Progress | Status |
+|-------|------|----------|--------|
+| 1 | Core Command | 100% | completed |
+| 2 | Command Integration | 100% | completed |
