@@ -308,3 +308,21 @@ tags:
 
 ### Task 2.2: Update /plan Frontmatter
 - **Description**:...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:40:48.138168+00:00'
+summary: '...implement.md`'
+tags:
+- auto-captured
+- post-tool-use
+- file:IMPLEMENTATION_PLAN.md
+---
+
+...implement.md`
+- **Acceptance Criteria**:
+  - [ ] Schema documents project-ref positional arg
+  - [ ] Pattern for SPEC-ID format included
+  - [ ] Examples of valid project references
+
+### Task 2.4: Define...
