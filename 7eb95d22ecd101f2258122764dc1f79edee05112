@@ -80,3 +80,20 @@ tags:
   └─ Captures: ("1.1", "done")
 
 | 2.3 | Update /implement...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.264854+00:00'
+summary: '...Extra whitespace in table cells'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...Extra whitespace in table cells
+- Notes column containing pipe characters (escaped)
+
+##### Pattern 2: Task Heading in IMPLEMENTATION_PLAN.md
+
+Find task sections to locate their acceptance criteria:...
