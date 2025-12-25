@@ -242,3 +242,15 @@ All 17 tasks across 5 phases have been completed for SPEC-2025-12-25-001.
 
 | Artifact | Description |
 |----------|-----...
+
+---
+type: progress
+timestamp: '2025-12-25T17:54:15.568602+00:00'
+summary: '...`/claude-spec:complete approve-command` to generate the retrospective
+  and move to `docs/spec/c...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...`/claude-spec:complete approve-command` to generate the retrospective and move to `docs/spec/completed/`.
