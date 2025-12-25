@@ -1061,3 +1061,19 @@ tags:
   - Outcome: success
   - Duration: 15 minutes (planned: 4-6 hours)
   - GitHub...
+
+---
+type: progress
+timestamp: '2025-12-25T17:49:20.038615+00:00'
+summary: '...(13 P0, 4 P1, 3 P2), ARCHITECTURE.md (5 components), RETROSPECTIVE.md
+  (5 ADRs)'
+tags:
+- auto-captured
+- post-tool-use
+- file:CLAUDE.md
+---
+
+...(13 P0, 4 P1, 3 P2), ARCHITECTURE.md (5 components), RETROSPECTIVE.md (5 ADRs)
+
+- `docs/spec/completed/2025-12-19-remove-memory-hooks/` - Remove Memory and Hook Components
+  - Completed: 2025-12-19...
