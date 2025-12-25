@@ -1,0 +1,14 @@
+---
+type: patterns
+timestamp: '2025-12-25T17:14:01.295874+00:00'
+summary: '...-------|-----------|'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...-------|-----------|
+| Approval storage | README.md frontmatter | Consistent with existing metadata pattern |
+| Approver identity | Git config | Reliable, no user input required |
+| Enforcement level...
