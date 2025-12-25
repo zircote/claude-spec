@@ -270,3 +270,30 @@ The plan command now correctly creates a `plan/${SLUG}` branch when `--no-worktr
 
 ## Related Files
 - commands/plan.md:192-201
+
+---
+type: progress
+timestamp: '2025-12-25T20:25:55.059554+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Created spec for /bugfix command (SPEC-2025-12-2...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Created spec for /bugfix command (SPEC-2025-12-25-002)
+## Summary
+Complete specification for self-healing PR submission command based on GitHub issue #27.
+
+## Changes Made
+- README.md - Project overview with frontmatter
+- REQUIREMENTS.md - 13 P0, 3 P1, 2 P2 requirements
+- ARCHITECTURE.md - 8 components with data flow
+- IMPLEMENTATION_PLAN.md - 3 phases, 15 tasks
+- DECISIONS.md - 5 ADRs documenting key choices
+- Fixed plan.md bug: `--no-worktree` now creates branch unless `--no-branch` also set
+
+## Related Files
+- docs/spec/active/2025-12-25-bugfix-command/
+- commands/plan.md:192-201
