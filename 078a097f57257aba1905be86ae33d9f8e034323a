@@ -1,0 +1,16 @@
+---
+type: learnings
+timestamp: '2025-12-25T16:02:17.848895+00:00'
+summary: '...complex parallel work'
+tags:
+- auto-captured
+- post-tool-use
+- file:context-pr-body.md
+---
+
+...complex parallel work
+- [ ] Manual test: Verify checkpointing occurs at specified triggers
+
+## Key Insight
+
+The core fix establishes **context budget awareness**: parallel execution is beneficial but...
