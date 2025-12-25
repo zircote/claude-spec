@@ -1,0 +1,13 @@
+---
+type: progress
+timestamp: '2025-12-25T20:14:21.782912+00:00'
+summary: '| 2.2 | Add `<error_recovery>` section to `commands/implement.md` | completed
+  | 2025-12-25T20:20:00Z'
+tags:
+- auto-captured
+- post-tool-use
+- file:PROGRESS.md
+---
+
+| 2.2 | Add `<error_recovery>` section to `commands/implement.md` | completed | 2025-12-25T20:20:00Z | 2025-12-25T20:25:00Z | Added after step_handoff section |
+| 2.3.1...
