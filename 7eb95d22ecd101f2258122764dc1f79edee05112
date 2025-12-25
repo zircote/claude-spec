@@ -25,3 +25,20 @@ tags:
 1. **Find the task** in IMPLEMENTATION_PLAN.md by matching task ID pattern
 2. **Update acceptance criteria checkboxes**:
    - Change `- [ ]` to `- [x]` for completed...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.206931+00:00'
+summary: '...- Change `- [ ]` to `- [x]` for completed criteria'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...- Change `- [ ]` to `- [x]` for completed criteria
+
+<checkbox_sync_patterns>
+#### Detailed Pattern Matching for Checkbox Sync
+
+**CRITICAL**: These patterns enable reliable checkbox synchronization...
