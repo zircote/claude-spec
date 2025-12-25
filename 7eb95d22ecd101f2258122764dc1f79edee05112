@@ -16,3 +16,23 @@ tags:
 #### Detailed Pattern Matching for Checkbox Sync
 
 **CRITICAL**:...
+
+---
+type: progress
+timestamp: '2025-12-25T18:57:56.444740+00:00'
+summary: '...Sync Output Format'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...Sync Output Format
+
+After checkbox sync completes, output in this format:
+
+```
+Checkbox sync completed:
+   [OK] IMPLEMENTATION_PLAN.md
+        - Task 1.1: 3 checkboxes → [x]
+        - Task 1.2:...
