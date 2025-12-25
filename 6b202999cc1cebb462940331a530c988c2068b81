@@ -60,3 +60,34 @@ User preferences shape the technical approach:
 
 ## Related Files
 - docs/spec/active/2025-12-25-implement-ux-improvements/README.md
+
+---
+type: decisions
+timestamp: '2025-12-25T20:25:55.143992+00:00'
+summary: '▶ decision ─────────────────────────────────────
+
+  Approved SPEC-2025-12-25-002 for implementation
+
+  ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Approved SPEC-2025-12-25-002 for implementation
+## Context
+Spec for `/claude-spec:report-issue` command completed planning phase with all required documents, ADRs, and the bonus --no-worktree bug fix.
+
+## Decision
+Approved for implementation based on:
+- Complete documentation (README, REQUIREMENTS, ARCHITECTURE, IMPLEMENTATION_PLAN, DECISIONS)
+- Well-defined scope with investigation-first approach
+- Low-friction design with opt-out mechanisms
+- Integration plan with /plan and /implement
+- Bonus bug fix for --no-worktree flag
+
+## Rationale
+Spec demonstrates 95%+ confidence with clear requirements, thoughtful architecture decisions, and practical implementation plan. Investigation-first approach provides unique value for AI-actionable issue creation.
+
+## Related Files
+- docs/spec/active/2025-12-25-bugfix-command/README.md:5-8
