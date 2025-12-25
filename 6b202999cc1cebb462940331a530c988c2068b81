@@ -51,3 +51,21 @@ tags:
 That's 4 lines vs. 200+.
 
 ## Why...
+
+---
+type: patterns
+timestamp: '2025-12-25T20:31:30.393154+00:00'
+summary: '...repo_from_plugin_path() {'
+tags:
+- auto-captured
+- post-tool-use
+- file:report-issue.md
+---
+
+...repo_from_plugin_path() {
+  local path="$1"
+  local repo=""
+
+  # Match claude-code-plugins/owner/repo pattern
+  if [[ "$path" =~ claude-code-plugins/([^/]+)/([^/]+) ]]; then
+    repo="${BASH_REMATCH[1]}/${BASH_REMATCH...
