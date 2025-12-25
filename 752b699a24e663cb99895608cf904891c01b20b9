@@ -358,3 +358,26 @@ tags:
 - [ ] Unit tests for acceptance criteria checkbox pattern
 - [ ] Unit tests for Levenshtein distance calculation
 - [ ] Integration test for full sync...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:41:24.419154+00:00'
+summary: '...(read/write per task)'
+tags:
+- auto-captured
+- post-tool-use
+- file:DECISIONS.md
+---
+
+...(read/write per task)
+- Slightly more complex implementation
+
+**Neutral:**
+- Atomic write pattern handles safety
+
+---
+
+## ADR-002: Extended YAML Object for Argument Hints
+
+**Date**: 2025-12-25
+**Status...
