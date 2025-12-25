@@ -1,0 +1,16 @@
+---
+type: blockers
+timestamp: '2025-12-25T20:10:44.050700+00:00'
+summary: '...target repo from context, confirm with user'
+tags:
+- auto-captured
+- post-tool-use
+- file:README.md
+---
+
+...target repo from context, confirm with user
+5. **Issue Creation** - Preview and create GitHub issue with AI-actionable findings
+
+#### Key Differentiator
+
+Issues created by this command include investigatory...
