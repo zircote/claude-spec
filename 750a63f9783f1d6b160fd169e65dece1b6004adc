@@ -104,3 +104,25 @@ Added workflow flexibility flags and critical implementation prevention to /plan
 - commands/plan.md:188-210 (branch decision gate)
 - commands/plan.md:265-323 (never_implement section)
 - commands/plan.md:22-38 (help text)
+
+---
+type: progress
+timestamp: '2025-12-25T17:54:15.229262+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Phase 3 (/implement Gate) complete - both tasks ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Phase 3 (/implement Gate) complete - both tasks done
+## Summary
+Added approval status check and warning display to /implement command's gate enforcement.
+
+## Changes Made
+- Task 3.1: Added status extraction from README.md frontmatter in implementation_gate section
+- Task 3.2: Added advisory warning for unapproved specs (draft/in-review), non-blocking per ADR-001
+
+## Related Files
+- commands/implement.md:128-177 (implementation_gate section)
