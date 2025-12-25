@@ -137,3 +137,20 @@ tags:
   flags:
     - name: --inline
       aliases:...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:39:31.797765+00:00'
+summary: '...value")'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...value")
+        ELSE:
+            # Positional argument
+            IF schema has positional with pattern:
+                IF NOT regex_match(arg, pattern):
+                    errors.append(f"Invalid...
