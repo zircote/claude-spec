@@ -918,3 +918,27 @@ Added workflow flexibility flags and critical implementation prevention to /plan
 - commands/plan.md:188-210 (branch decision gate)
 - commands/plan.md:265-323 (never_implement section)
 - commands/plan.md:22-38 (help text)
+
+---
+type: progress
+timestamp: '2025-12-25T17:48:00.896956+00:00'
+summary: '...Project'
+tags:
+- auto-captured
+- post-tool-use
+- file:README.md
+---
+
+...Project
+
+```
+/claude-spec:complete project-slug
+```
+
+Generates RETROSPECTIVE.md, archives to `docs/spec/completed/`.
+
+### Worktree Management
+
+```
+# Natural language triggers
+"spin up worktrees for feature/auth,...
