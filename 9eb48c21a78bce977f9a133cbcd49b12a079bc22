@@ -16,3 +16,23 @@ tags:
 ```
 # PREFERRED: Sequential with selective parallelism
 1. Implement core logic...
+
+---
+type: patterns
+timestamp: '2025-12-25T16:01:13.167658+00:00'
+summary: '...frequently enough'
+tags:
+- auto-captured
+- post-tool-use
+- file:context-issue-body.md
+---
+
+...frequently enough
+5. **Context exhaustion handling** - No recovery protocol
+
+### Cascade Failure Pattern
+
+```
+1. Launch 4+ parallel subagents (high context cost)
+2. Subagent A exhausts context mid-task
+3....
