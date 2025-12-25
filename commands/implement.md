@@ -138,9 +138,9 @@ Before ANY implementation work, you MUST:
    - Check `docs/spec/active/{project}/` exists
    - OR check `docs/spec/approved/{project}/` exists
 
-2. **Verify spec status**:
-   - README.md status should be `approved` or `in-review` or `in-progress`
-   - Reject if status is `draft` (spec not ready)
+2. **Check approval status**:
+   - Extract `status` from README.md frontmatter
+   - Check for `approved`, `approved_by`, and approval timestamp
 
 **Note**: Running `/claude-spec:implement` IS the explicit intent to implement. Do not ask for additional confirmation.
 
@@ -151,9 +151,26 @@ IF spec does not exist:
   -> REFUSE to implement
   -> Say: "No spec found. Run /claude-spec:plan first to create a specification."
 
-IF spec status is draft:
-  -> REFUSE to implement
-  -> Say: "Spec is still in draft. Please complete and approve via /claude-spec:plan first."
+IF spec status is "approved":
+  -> PROCEED - no warning needed
+  -> Display: "✓ Spec approved by ${APPROVED_BY} on ${APPROVED_DATE}"
+
+IF spec status is "draft" OR "in-review":
+  -> WARN but allow (advisory, not blocking)
+  -> Display warning:
+    "⚠️ APPROVAL WARNING
+
+    This spec has not been formally approved:
+      Status: ${STATUS}
+
+    For governance and audit compliance, consider running:
+      /claude-spec:approve ${SLUG}
+
+    This records who approved the plan, when, and provides
+    rejection/change-request workflows if needed.
+
+    Proceeding with implementation..."
+  -> PROCEED after warning (do not block)
 ```
 
 Once gates pass, proceed directly to implementation. The user's invocation of `/claude-spec:implement` is their confirmation.

@@ -20,16 +20,21 @@ NAME
     plan - Strategic project planning with Socratic requirements e...
 
 SYNOPSIS
-    /claude-spec:plan <project-idea|feature|problem-statement>
+    /claude-spec:plan [OPTIONS] <project-idea|feature|problem-statement>
 
 DESCRIPTION
     Strategic project planning with Socratic requirements elicitation. Produces PRD, technical architecture, and implementation plan with full artifact lifecycle management. Part of the /claude-spec suite
 
 OPTIONS
     --help, -h                Show this help message
+    --no-worktree             Skip worktree creation, work in current directory
+    --no-branch               Skip branch creation, stay on current branch
+    --inline                  Equivalent to --no-worktree --no-branch
 
 EXAMPLES
-    /claude-spec:plan                       
+    /claude-spec:plan "Add user authentication"
+    /claude-spec:plan --inline "Quick feature spec"
+    /claude-spec:plan --no-worktree "Plan in current repo"
     /claude-spec:plan --help                
 
 SEE ALSO
@@ -83,13 +88,50 @@ If a genuine conflict exists between protocol and user context:
 This prevents conversation state corruption when sessions are interrupted mid-tool-call.
 </session_state_management>
 
-### Step 0: Parse Argument Type
+### Step 0: Parse Flags and Arguments
+
+Parse workflow control flags before processing the project seed:
+
+```bash
+# Initialize flags
+NO_WORKTREE=false
+NO_BRANCH=false
+
+# Parse flags from $ARGUMENTS
+REMAINING_ARGS=""
+for arg in $ARGUMENTS; do
+  case "$arg" in
+    --no-worktree)
+      NO_WORKTREE=true
+      echo "FLAG: --no-worktree set"
+      ;;
+    --no-branch)
+      NO_BRANCH=true
+      echo "FLAG: --no-branch set"
+      ;;
+    --inline)
+      NO_WORKTREE=true
+      NO_BRANCH=true
+      echo "FLAG: --inline set (no worktree, no branch)"
+      ;;
+    *)
+      REMAINING_ARGS="$REMAINING_ARGS $arg"
+      ;;
+  esac
+done
+
+# Trim leading space from remaining args
+ARG=$(echo "$REMAINING_ARGS" | sed 's/^ *//')
+echo "NO_WORKTREE=${NO_WORKTREE}"
+echo "NO_BRANCH=${NO_BRANCH}"
+echo "PROJECT_SEED=${ARG}"
+```
+
+### Step 0.1: Classify Argument Type
 
 Before checking the branch, classify the argument to determine the appropriate workflow:
 
 ```bash
-ARG="$ARGUMENTS"
-
 # Check for no arguments FIRST (triggers GitHub Issues workflow)
 if [ -z "$ARG" ]; then
   ARG_TYPE="no_args"
@@ -145,7 +187,15 @@ echo "BRANCH=${BRANCH}"
 
 ### Step 2: Branch Decision Gate
 
+**Honor workflow control flags** - if `--no-worktree` or `--inline` was set, skip worktree creation entirely.
+
 ```
+IF NO_WORKTREE == true:
+    → Display: "Skipping worktree creation (--no-worktree or --inline flag set)"
+    → IF NO_BRANCH == true:
+        → Display: "Staying on current branch: ${BRANCH}"
+    → PROCEED to <role> section below (planning in current directory)
+
 IF BRANCH in [main, master, develop]:
     → Create worktree (Step 3)
     → Launch agent with --prompt (Step 4)
@@ -211,6 +261,66 @@ You are a Principal Product Architect and Senior Business Analyst operating with
 
 You embody the Socratic method: you guide discovery through strategic questions rather than assumptions. You never guess what the user wants - you ask until absolute clarity is achieved.
 </role>
+
+<never_implement>
+## ⛔ CRITICAL: PLANNING ONLY - NEVER IMPLEMENT ⛔
+
+**This command produces SPECIFICATION DOCUMENTS ONLY. Implementation is STRICTLY FORBIDDEN.**
+
+### PROHIBITED Actions During /plan
+
+You MUST NOT under any circumstances:
+
+1. **Create or modify implementation code** - No source files, no scripts (except spec artifacts)
+2. **Edit existing application code** - Do not "fix" or "improve" code you discover
+3. **Write tests** - Testing is an implementation activity, not planning
+4. **Install dependencies** - Do not run npm install, pip install, etc.
+5. **Configure infrastructure** - No Docker, Terraform, CI/CD changes
+6. **Create database migrations** - Schema changes are implementation
+7. **Offer to "just quickly implement"** - Even small implementations are forbidden
+
+### PERMITTED Outputs
+
+You MAY ONLY produce:
+
+1. **Specification documents** in `docs/spec/active/{project}/`:
+   - README.md (project metadata)
+   - REQUIREMENTS.md (PRD)
+   - ARCHITECTURE.md (technical design)
+   - IMPLEMENTATION_PLAN.md (task breakdown)
+   - DECISIONS.md (ADRs)
+   - RESEARCH_NOTES.md (findings)
+   - CHANGELOG.md (spec history)
+
+2. **Research and analysis** - Reading code, web searches, exploring patterns
+
+3. **Questions to the user** - Via AskUserQuestion tool
+
+### Required Workflow
+
+```
+/claude-spec:plan    →  Creates specification documents
+                         ↓
+/claude-spec:approve →  User reviews and approves plan
+                         ↓
+/claude-spec:implement → Implementation begins (SEPARATE command)
+```
+
+**If the user says "looks good" or "approved" after planning:**
+- Update status to `in-review`
+- Display: "Next step: Run `/claude-spec:approve {slug}` to formally approve"
+- **HALT** - Do NOT start implementing
+
+### Why This Matters
+
+Jumping directly to implementation without approved specs:
+- Wastes effort on wrong solutions
+- Lacks audit trail for decisions
+- Skips stakeholder buy-in
+- Produces code that doesn't match requirements
+
+**The /plan command's ONLY job is to produce excellent specification documents.**
+</never_implement>
 
 <interaction_directive>
 ## User Interaction Requirements
