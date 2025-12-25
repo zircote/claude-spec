@@ -2710,6 +2710,110 @@ After displaying the above message:
 
 </execution_instruction>
 
+<error_recovery>
+## Proactive Error Reporting
+
+**MANDATORY**: When you encounter unexpected errors, exceptions, or failures during planning, you SHOULD offer the user the opportunity to report the issue.
+
+### Error Detection Triggers
+
+Monitor for these conditions during execution:
+
+1. **Exceptions/Tracebacks** - Python errors, command failures with stack traces
+2. **Command Failures** - Non-zero exit codes from bash commands
+3. **Unexpected Patterns** - Empty results when data was expected, malformed responses
+4. **Tool Failures** - Read/Write/Grep failures, API timeouts
+
+### Error Response Protocol
+
+When an error is detected:
+
+1. **Capture Context**:
+   - Error message and traceback (if available)
+   - Command or operation that failed
+   - Files being processed at the time
+   - Recent actions leading to the error
+
+2. **Check Suppression State**:
+   ```
+   IF SESSION_SUPPRESS_REPORTS == true:
+     → Skip error reporting prompt
+     → Continue with error handling as normal
+
+   IF PERMANENT_SUPPRESS_REPORTS == true (from settings):
+     → Skip error reporting prompt
+     → Continue with error handling as normal
+   ```
+
+3. **Offer Reporting Option** (if not suppressed):
+
+```
+Use AskUserQuestion with:
+  header: "Error"
+  question: "An error occurred. Would you like to report this issue?"
+  multiSelect: false
+  options:
+    - label: "Yes, report it"
+      description: "Open /claude-spec:report-issue with error context pre-filled"
+    - label: "No, continue"
+      description: "Dismiss and continue with current task"
+    - label: "Don't ask again (this session)"
+      description: "Skip error reporting prompts for rest of session"
+    - label: "Never ask"
+      description: "Permanently disable error reporting prompts"
+```
+
+4. **Handle Response**:
+
+```
+IF "Yes, report it":
+  → Build error context object:
+    error_context:
+      triggering_command: "/plan"
+      error_message: "${ERROR_MESSAGE}"
+      traceback: "${TRACEBACK}"
+      files_being_processed: [list of files]
+      recent_actions: [list of recent operations]
+  → Display: "Launching issue reporter with error context..."
+  → Invoke: /claude-spec:report-issue with error context
+  → After report-issue completes, offer to resume planning
+
+IF "No, continue":
+  → Continue with normal error handling
+  → Attempt recovery or inform user of failure
+
+IF "Don't ask again (this session)":
+  → Set SESSION_SUPPRESS_REPORTS = true
+  → Continue with normal error handling
+
+IF "Never ask":
+  → Record preference (note: actual storage mechanism TBD)
+  → Set PERMANENT_SUPPRESS_REPORTS = true
+  → Continue with normal error handling
+```
+
+### Integration with /report-issue
+
+When invoking `/report-issue` from an error context:
+
+1. The error context is passed as structured data
+2. `/report-issue` pre-fills:
+   - Issue type as `bug`
+   - Description from error message
+   - Investigation findings from traceback parsing
+3. User still confirms before issue creation
+4. After issue is filed, control returns here
+
+### Low-Friction Design Principles
+
+- **Single prompt**: All options in one question, not a dialog
+- **No guilt-tripping**: "No, continue" is a valid choice
+- **Session memory**: "Don't ask again" respects user's time
+- **Permanent opt-out**: "Never ask" for users who don't want this feature
+- **Non-blocking**: Error reporting is offered, not required
+
+</error_recovery>
+
 <!-- ═══════════════════════════════════════════════════════════════════════════
      PROJECT SEED - INTENTIONALLY PLACED AT END OF FILE
 
