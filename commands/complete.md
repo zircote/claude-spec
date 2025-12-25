@@ -136,44 +136,7 @@ Question 4 - Satisfaction:
 
 Use the answers to populate the RETROSPECTIVE.md completion summary and metrics.
 
-## Step 3: Analyze Prompt Logs (If Available)
-
-Before generating the retrospective, check for and analyze prompt capture logs.
-
-**Note**: Marker and log are at PROJECT ROOT (not in docs/spec/active/) to capture
-the first prompt before spec directories exist.
-
-```bash
-# Marker and log are at project root
-PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-MARKER_FILE="${PROJECT_ROOT}/.prompt-log-enabled"
-LOG_FILE="${PROJECT_ROOT}/.prompt-log.json"
-
-# Check if prompt logging was enabled
-if [ -f "$MARKER_FILE" ] || [ -f "$LOG_FILE" ]; then
-    echo "Prompt logging was enabled - analyzing interaction patterns..."
-
-    # Run analyzer on the log file at project root.
-    # The analyzer reads from project root, not from PROJECT_PATH.
-    ANALYZER_PATH="${CLAUDE_PLUGIN_ROOT}/analyzers/analyze_cli.py"
-    INTERACTION_ANALYSIS=$(python3 "${ANALYZER_PATH}" "${PROJECT_ROOT}" 2>/dev/null)
-
-    # Copy log file to the completed project for archival
-    if [ -f "$LOG_FILE" ]; then
-        cp "$LOG_FILE" "${PROJECT_PATH}/.prompt-log.json"
-        echo "[OK] Prompt log archived to ${PROJECT_PATH}/.prompt-log.json"
-    fi
-
-    # Disable logging (remove marker and optionally the root log)
-    rm -f "$MARKER_FILE"
-    echo "[OK] Prompt logging disabled"
-
-    # Optionally remove root log after archiving (user can decide)
-    # rm -f "$LOG_FILE"
-fi
-```
-
-## Step 4: Generate RETROSPECTIVE.md
+## Step 3: Generate RETROSPECTIVE.md
 
 Create `${PROJECT_PATH}/RETROSPECTIVE.md`:
 
@@ -325,17 +288,6 @@ Key Learnings Captured:
 
 The planning artifacts are preserved for future reference.
 ```
-
-If prompt logging was enabled, also include:
-```
-Interaction Analysis:
-   - Prompts captured: [N]
-   - Sessions: [N]
-   - Analysis included in RETROSPECTIVE.md
-   - .prompt-log.json archived to completed project
-```
-
-**Note**: The `.prompt-log.json` file is COPIED from project root to `completed/` for archival. The `.prompt-log-enabled` marker at project root is removed to disable logging. The root log file can optionally be removed after archival.
 
 </close_out_protocol>
 

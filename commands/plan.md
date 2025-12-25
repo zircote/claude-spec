@@ -172,22 +172,6 @@ mkdir -p "${WORKTREE_BASE}/${REPO_NAME}"
 git worktree add -b "${BRANCH_NAME}" "${WORKTREE_PATH}" HEAD
 ```
 
-### Step 3b: Enable Prompt Logging in Worktree (CRITICAL)
-
-**This step MUST run BEFORE launching the agent to capture the first prompt.**
-
-The marker is placed at **worktree root** (not in docs/spec/active/) because:
-- The spec directory is created DURING `/claude-spec:plan` elicitation
-- The directory name depends on the slug derived from the first prompt
-- Placing at root ensures the first prompt can be captured
-
-```bash
-# Create prompt log marker at WORKTREE ROOT
-touch "${WORKTREE_PATH}/.prompt-log-enabled"
-
-echo "Prompt logging enabled at: ${WORKTREE_PATH}/.prompt-log-enabled"
-```
-
 ### Step 4: Launch Agent WITH Prompt
 ```bash
 # CRITICAL: Pass the original arguments as --prompt
@@ -1417,18 +1401,11 @@ before proceeding. Only continue after user acknowledges.
    - Requirements elicitation begun
    ```
 
-5. **Enable Prompt Logging**:
-   ```bash
-   touch .prompt-log-enabled
-   ```
-   This enables automatic capture of all user prompts for retrospective analysis.
-   The marker is at project root to capture the first prompt before spec directories exist.
-
-6. **Check for Collisions**:
+5. **Check for Collisions**:
    - Scan `docs/spec/` and `docs/architecture/` (legacy) for similar project names
    - If potential collision found, ask user to confirm or differentiate
 
-7. **Update CLAUDE.md** (if exists):
+6. **Update CLAUDE.md** (if exists):
    - Add entry to "Active Spec Projects" section
    - Create section if it doesn't exist
 
@@ -2447,9 +2424,6 @@ mkdir -p "docs/spec/active/${DATE}-${SLUG}"
 
 # Initialize README.md with metadata
 # Initialize CHANGELOG.md with creation entry
-
-# Enable prompt logging for retrospective analysis (marker at project root)
-touch ".prompt-log-enabled"
 ```
 
 ### Step 2: Begin Structured Elicitation with AskUserQuestion

@@ -1,5 +1,5 @@
 """
-Marker cleaner step - removes .prompt-log-enabled and temp files.
+Marker cleaner step - removes temp files.
 
 This step is a post-step for /c that cleans up temporary files
 created during the spec lifecycle.
@@ -21,8 +21,6 @@ class MarkerCleanerStep(BaseStep):
 
     # Files to clean up
     CLEANUP_FILES = [
-        ".prompt-log-enabled",  # Prompt logging marker
-        ".prompt-log.json",  # Prompt log (after archival)
         ".cs-session-state.json",  # Session state from command_detector
     ]
 

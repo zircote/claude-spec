@@ -32,6 +32,8 @@ All notable changes to the claude-spec plugin will be documented in this file.
   - Removed `hooks.json` registration
   - Hooks being replaced by external system
 - **Prompt Capture**: Removed `/log` command and prompt capture functionality
+  - Removed `.prompt-log-enabled` marker file handling from plan.md, complete.md
+  - Removed `.prompt-log.json` and `.prompt-log-enabled` from marker_cleaner.py cleanup list
 - **Code Review Commands**: Removed `/code-review` and `/code-fix` commands
 - **Memory Spec Projects**: Removed related completed spec documentation
 
@@ -55,7 +57,7 @@ All notable changes to the claude-spec plugin will be documented in this file.
   - `steps/context_loader.py` - Loads CLAUDE.md (global + local), git state, project structure
   - `steps/security_reviewer.py` - Bandit-based security scanning
   - `steps/log_archiver.py` - Archives .prompt-log.json to completed project directories
-  - `steps/marker_cleaner.py` - Removes temp files (.prompt-log-enabled, .cs-session-state.json)
+  - `steps/marker_cleaner.py` - Removes temp files (.cs-session-state.json)
   - `steps/retrospective_gen.py` - Generates RETROSPECTIVE.md from log analysis
 - **Lifecycle Configuration**: Step configuration in `~/.claude/worktree-manager.config.json`
   - `lifecycle.pre_steps` - Steps to run before commands (context_loader by default)

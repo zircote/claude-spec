@@ -255,19 +255,15 @@ class TestMarkerCleanerStep:
     def test_cleans_marker_files(self, tmp_path):
         """Test cleaning up marker files."""
         # Create marker files
-        (tmp_path / ".prompt-log-enabled").touch()
-        (tmp_path / ".prompt-log.json").write_text("[]")
         (tmp_path / ".cs-session-state.json").write_text("{}")
 
         step = MarkerCleanerStep(str(tmp_path))
         result = step.run()
 
         assert result.success is True
-        assert len(result.data.get("cleaned", [])) == 3
+        assert len(result.data.get("cleaned", [])) == 1
 
         # Verify files are removed
-        assert not (tmp_path / ".prompt-log-enabled").exists()
-        assert not (tmp_path / ".prompt-log.json").exists()
         assert not (tmp_path / ".cs-session-state.json").exists()
 
     def test_handles_no_files(self, tmp_path):
