@@ -291,3 +291,20 @@ tags:
   - [ ] Algorithm steps documented in pseudocode
   - [ ] Pattern for checkbox lines: `^(\s+-\s+)\[([ x])\]\s+(.*)$`
   - [ ] Termination conditions documented...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:40:48.117109+00:00'
+summary: '...flags, types, descriptions, examples'
+tags:
+- auto-captured
+- post-tool-use
+- file:IMPLEMENTATION_PLAN.md
+---
+
+...flags, types, descriptions, examples
+  - [ ] Required vs optional args distinguished
+  - [ ] Pattern validation supported for string args
+
+### Task 2.2: Update /plan Frontmatter
+- **Description**:...
