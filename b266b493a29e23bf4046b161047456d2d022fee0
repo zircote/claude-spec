@@ -61,3 +61,24 @@ Investigated, patched, and submitted hotfix for subagent context exhaustion that
 - commands/implement.md:190-348 (new context management and parallel execution sections)
 - commands/implement.md:866-886 (mandatory checkpointing)
 - commands/implement.md:1107-1141 (context exhaustion recovery)
+
+---
+type: progress
+timestamp: '2025-12-25T16:51:37.889347+00:00'
+summary: '...Acceptance"'
+tags:
+- auto-captured
+- post-tool-use
+- file:README.md
+---
+
+...Acceptance"
+slug: approve-command
+status: draft
+created: 2025-12-25T16:47:00Z
+approved: null
+started: null
+completed: null
+expires: 2026-03-25T16:47:00Z
+superseded_by: null
+tags: [workflow, governance, approval-gate,...
