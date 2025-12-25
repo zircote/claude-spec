@@ -171,3 +171,22 @@ Resuming ${PROJECT_NAME} - ${COMPLETED}/${TOTAL} tasks done.
 PR: ${PR_URL}  # Only if PR was found in step 3
 
 Continuing with Task...
+
+---
+type: progress
+timestamp: '2025-12-25T15:20:20.613103+00:00'
+summary: '...tool_result blocks'
+tags:
+- auto-captured
+- post-tool-use
+- file:issue-body.md
+---
+
+...tool_result blocks
+- Issue #11736: Invalid tool_result block without corresponding tool_use
+
+## Solution
+
+The hotfix PR adds:
+
+1. **Session initialization section** - Treats each invocation as fresh...
