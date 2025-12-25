@@ -97,3 +97,19 @@ tags:
 for pattern in "${EXEMPT_PATTERNS[@]}"; do
     if [[ "$FILE_PATH" =~ $pattern ]]; then
         echo '{"decision": "allow", "message": "File is exempt from spec requirement"}'...
+
+---
+type: patterns
+timestamp: '2025-12-25T17:35:24.127213+00:00'
+summary: '...implementation without planning'
+tags:
+- auto-captured
+- post-tool-use
+- file:RETROSPECTIVE.md
+---
+
+...implementation without planning
+- Adds workflow flexibility with /plan flags
+- Establishes pattern for future approval workflows
+
+The implementation fully addresses GitHub Issue #26 and sets...
