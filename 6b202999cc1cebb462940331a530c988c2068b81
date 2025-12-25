@@ -1,0 +1,14 @@
+---
+type: patterns
+timestamp: '2025-12-25T20:25:55.227328+00:00'
+summary: '...Extended YAML object for argument hints                          |
+
+  | - Error + suggestion patt...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...Extended YAML object for argument hints                          |
+| - Error + suggestion pattern for validation                        |
+| - PROGRESS.md as source of truth...
