@@ -116,3 +116,27 @@ User chose to create a single specification covering Issue #25 (checkbox sync) A
 ## Related Files
 - commands/plan.md:1-6 (current argument-hint)
 - commands/implement.md:1-6 (current argument-hint)
+
+---
+type: decisions
+timestamp: '2025-12-25T20:27:12.299395+00:00'
+summary: Design decisions captured from user
+---
+
+Design decisions captured from user
+## Summary
+Key design choices for the combined spec established.
+
+## Rationale
+User preferences shape the technical approach:
+- Immediate sync ensures documents never drift out of sync
+- YAML objects are native to command frontmatter, no external files
+- Error+suggestion matches CLI best practices (git, npm)
+
+## Decisions Made
+1. **Checkbox Sync**: Immediate on task update (no batching)
+2. **Hint Format**: Extended YAML object in frontmatter
+3. **Validation UX**: Error + suggestion pattern
+
+## Related Files
+- docs/spec/active/2025-12-25-implement-ux-improvements/README.md
