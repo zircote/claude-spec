@@ -465,3 +465,13 @@ tags:
 - ADR-003: Error + suggestion pattern for validation
 - ADR-004: PROGRESS.md as source of truth
 - ADR-005: Atomic file writes with...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:53:58.543896+00:00'
+summary: '...Extended YAML object for argument hints                          |'
+---
+
+...Extended YAML object for argument hints                          |
+| - Error + suggestion pattern for validation                        |
+| - PROGRESS.md as source of truth...
