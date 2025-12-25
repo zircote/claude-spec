@@ -190,3 +190,21 @@ tags:
 The hotfix PR adds:
 
 1. **Session initialization section** - Treats each invocation as fresh...
+
+---
+type: progress
+timestamp: '2025-12-25T15:20:20.633561+00:00'
+summary: '...Resuming triggers the 400 error due to orphaned tool_use references'
+tags:
+- auto-captured
+- post-tool-use
+- file:issue-body.md
+---
+
+...Resuming triggers the 400 error due to orphaned tool_use references
+
+## Workarounds
+
+Until the fix is merged:
+- Start a fresh Claude Code session instead of resuming
+- Don't press Ctrl+C during...
