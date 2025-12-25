@@ -355,3 +355,20 @@ Expected status: draft or in-review
 
 [If completed]: This spec has already been implemented and closed.
 [If rejected]: This spec was previously...
+
+---
+type: progress
+timestamp: '2025-12-25T17:21:22.433662+00:00'
+summary: '...${STATUS}'
+tags:
+- auto-captured
+- post-tool-use
+- file:approve.md
+---
+
+...${STATUS}
+Expected status: draft or in-review
+
+[If completed]: This spec has already been implemented and closed.
+[If rejected]: This spec was previously rejected. Create a new spec if needed.
+[If...
