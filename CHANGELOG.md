@@ -4,7 +4,14 @@ All notable changes to the claude-spec plugin will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-12-25
+
 ### Added
+- **approve**: New `/claude-spec:approve` command for explicit plan acceptance
+  - Review and approve/reject specs before implementation
+  - Records approver identity and timestamp in README.md frontmatter
+  - Request Changes workflow keeps spec in review status
+  - Rejection workflow moves spec to `docs/spec/rejected/`
 - **deep-clean**: Added `--focus=MAX` mode for maximum coverage (12+ specialist agents)
   - Deploys all 6 base agents with all focus enhancements combined
   - Adds 6 additional specialists: Database Expert, Penetration Tester, Compliance Auditor, Chaos Engineer, Accessibility Tester, Prompt Engineer
@@ -14,6 +21,18 @@ All notable changes to the claude-spec plugin will be documented in this file.
   - Equivalent to `--focus=MAX --all`
   - Maximum agents + auto-remediate all findings + no user prompts
   - One command for fully autonomous comprehensive review and fix
+- **plan.md**: Approval workflow integration with draft status
+- **implement.md**: Warning banner when spec not approved
+
+### Changed
+- **Renamed**: `/claude-spec:code-cleanup` → `/claude-spec:deep-clean`
+- **README.md**: Reorganized features with Deep Analysis Commands at top
+- **Config File Rename**: `worktree-manager.config.json` → `claude-spec.config.json`
+  - User config now at `~/.claude/claude-spec.config.json`
+  - Default config moved from `skills/worktree-manager/config.template.json` to plugin root `./claude-spec.config.json`
+  - Auto-migration: old config path is automatically renamed to new path on first load
+  - Command keys updated: `cs:*` → `claude-spec:*` (e.g., `cs:c` → `claude-spec:complete`)
+- **Simplified Architecture**: Plugin now focuses on Commands, Filters, and Worktree Manager only
 
 ### Fixed
 - **plan.md**: Normalize relative file paths to absolute before worktree context switch
@@ -36,14 +55,6 @@ All notable changes to the claude-spec plugin will be documented in this file.
   - Removed `.prompt-log.json` and `.prompt-log-enabled` from marker_cleaner.py cleanup list
 - **Code Review Commands**: Removed `/code-review` and `/code-fix` commands
 - **Memory Spec Projects**: Removed related completed spec documentation
-
-### Changed
-- **Config File Rename**: `worktree-manager.config.json` → `claude-spec.config.json`
-  - User config now at `~/.claude/claude-spec.config.json`
-  - Default config moved from `skills/worktree-manager/config.template.json` to plugin root `./claude-spec.config.json`
-  - Auto-migration: old config path is automatically renamed to new path on first load
-  - Command keys updated: `cs:*` → `claude-spec:*` (e.g., `cs:c` → `claude-spec:complete`)
-- **Simplified Architecture**: Plugin now focuses on Commands, Filters, and Worktree Manager only
 
 ## [1.1.0] - 2025-12-13
 

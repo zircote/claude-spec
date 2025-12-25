@@ -1,4 +1,4 @@
-.PHONY: install format format-check lint lint-fix typecheck security test shellcheck ci clean help version bump-patch bump-minor bump-major release release-patch release-minor release-major
+.PHONY: install format format-check lint lint-fix typecheck security test shellcheck ci clean help version bump-patch bump-minor bump-major changelog release release-patch release-minor release-major
 
 # Default target
 help:
@@ -20,10 +20,11 @@ help:
 	@echo "  bump-patch    - Bump patch version (0.0.X)"
 	@echo "  bump-minor    - Bump minor version (0.X.0)"
 	@echo "  bump-major    - Bump major version (X.0.0)"
+	@echo "  changelog     - Move [Unreleased] to versioned section in CHANGELOG.md"
 	@echo "  release       - Create and push release tag"
-	@echo "  release-patch - Bump patch, run CI, and release"
-	@echo "  release-minor - Bump minor, run CI, and release"
-	@echo "  release-major - Bump major, run CI, and release"
+	@echo "  release-patch - Bump patch, update changelog, run CI, and release"
+	@echo "  release-minor - Bump minor, update changelog, run CI, and release"
+	@echo "  release-major - Bump major, update changelog, run CI, and release"
 
 # Install dependencies (including dev tools: ruff, mypy, pytest, etc.)
 install:
@@ -93,6 +94,21 @@ bump-minor:
 bump-major:
 	uv run bump-my-version bump major
 
+# Update CHANGELOG.md: move [Unreleased] to versioned section
+changelog:
+	@VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
+	DATE=$$(date +%Y-%m-%d) && \
+	if grep -q "^## \[$$VERSION\]" CHANGELOG.md; then \
+		echo "CHANGELOG.md already has version $$VERSION"; \
+	else \
+		echo "Updating CHANGELOG.md for v$$VERSION..." && \
+		sed -i.bak "s/^## \[Unreleased\]$$/## [Unreleased]\n\n## [$$VERSION] - $$DATE/" CHANGELOG.md && \
+		rm -f CHANGELOG.md.bak && \
+		git add CHANGELOG.md && \
+		git commit -m "chore: update CHANGELOG.md for v$$VERSION" && \
+		echo "CHANGELOG.md updated for v$$VERSION"; \
+	fi
+
 # Create release: run CI checks, then create and push tag
 release: ci
 	@VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
@@ -108,12 +124,12 @@ release: ci
 	echo "Release $$TAG pushed successfully!" && \
 	echo "GitHub Actions will create the release automatically."
 
-# Combined bump + release targets
-release-patch: bump-patch release
+# Combined bump + changelog + release targets
+release-patch: bump-patch changelog release
 	@echo "Patch release complete!"
 
-release-minor: bump-minor release
+release-minor: bump-minor changelog release
 	@echo "Minor release complete!"
 
-release-major: bump-major release
+release-major: bump-major changelog release
 	@echo "Major release complete!"
