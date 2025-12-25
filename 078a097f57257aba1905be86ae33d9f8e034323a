@@ -1,0 +1,18 @@
+---
+type: progress
+timestamp: '2025-12-25T16:02:17.830835+00:00'
+summary: '...insufficient remaining context'
+tags:
+- auto-captured
+- post-tool-use
+- file:context-pr-body.md
+---
+
+...insufficient remaining context
+4. **Session abandonment with all unsaved progress lost**
+
+## Solution
+
+### 1. Context Management Section (new)
+- Documents context exhaustion risks and warning signs
+-...
