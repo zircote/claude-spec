@@ -9,3 +9,19 @@ tags:
 ---
 
 | 1.1 | Document Task ID Regex Pattern | in-progress | 2025-12-25 | | |
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.170051+00:00'
+summary: '...task is marked `done`:'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...task is marked `done`:
+
+1. **Find the task** in IMPLEMENTATION_PLAN.md by matching task ID pattern
+2. **Update acceptance criteria checkboxes**:
+   - Change `- [ ]` to `- [x]` for completed...
