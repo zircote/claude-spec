@@ -234,3 +234,18 @@ tags:
          - Store modified line
 
     5. WRITE...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:58:09.136833+00:00'
+summary: '...Extended YAML object for argument hints                          |
+
+  | - Error + suggestion patt...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+...Extended YAML object for argument hints                          |
+| - Error + suggestion pattern for validation                        |
+| - PROGRESS.md as source of truth...
