@@ -187,68 +187,196 @@ Even then, prefer AskUserQuestion if the response could be enumerated.
 This ensures consistent UX and structured responses.
 </interaction_directive>
 
+<context_management>
+## Context Exhaustion Prevention
+
+**CRITICAL**: Prevent context exhaustion that causes session abandonment and progress loss.
+
+### Context Budget Awareness
+
+Subagents and the main session share finite context. Uncontrolled parallelism can exhaust context, causing:
+- Subagents stopping mid-task with incomplete work
+- Main session unable to continue
+- `/compact` failing due to insufficient remaining context
+- **Progress loss** when session must be abandoned
+
+### Subagent Limits (GUIDELINES)
+
+```
+CONTEXT-AWARE SCALING (not hard limits):
+
+EARLY SESSION (fresh context):
+- No hard limit on concurrent subagents
+- Parallel execution of 8-12+ subagents can work well for independent tasks
+- CHECKPOINT before launching large parallel batches
+- This is the optimal time for aggressive parallelism
+
+MID-SESSION (moderate usage):
+- Continue parallelism as long as subagents complete successfully
+- Start monitoring for warning signs (truncated responses, incomplete work)
+- Reduce batch size if any subagent shows stress
+- Checkpoint between parallel batches
+
+LATE SESSION (extended work):
+- Be more conservative - context headroom is lower
+- Consider smaller parallel batches (2-4 subagents)
+- Checkpoint more frequently
+- If approaching limits, switch to sequential
+
+AFTER ANY EXHAUSTION EVENT:
+- STOP new subagents immediately
+- Complete current task directly
+- Suggest new session for remaining work
+
+KEY PRINCIPLE:
+The goal is not to limit parallelism but to DETECT problems early and DEGRADE gracefully.
+Aggressive parallelism is encouraged when context is healthy.
+```
+
+### Pre-emptive Checkpointing
+
+**Before launching ANY subagent:**
+1. Update PROGRESS.md with current state
+2. Commit any pending changes: `git add -A && git commit -m "checkpoint: before subagent work"`
+3. Push to remote if draft PR exists
+
+**After EACH task completion (before next task):**
+1. Update PROGRESS.md immediately
+2. Sync to other documents
+3. Commit changes
+
+This ensures progress is never lost even if context exhausts.
+
+### Context Exhaustion Detection
+
+Watch for these warning signs:
+- Subagent returns with truncated/incomplete response
+- Subagent reports "context limit" or similar error
+- Response cuts off mid-sentence
+- Tool calls fail with context-related errors
+
+### Graceful Degradation Protocol
+
+```
+IF context exhaustion detected (subagent or main session):
+  1. STOP launching new subagents
+  2. Save all current progress to PROGRESS.md
+  3. Commit and push changes
+  4. Switch to SEQUENTIAL execution mode
+  5. Work on ONE task at a time directly (no subagents)
+  6. After completing current task, suggest user start new session
+
+DO NOT:
+  - Retry failed subagents (wastes context)
+  - Launch additional subagents after exhaustion
+  - Continue with complex parallel operations
+```
+
+### Recovery Message
+
+When context exhaustion is detected, output:
+
+```
+⚠️ Context Limit Approaching
+
+Saving progress to prevent data loss...
+  [OK] PROGRESS.md updated
+  [OK] Changes committed: ${COMMIT_SHA}
+  [OK] Pushed to remote
+
+Switching to sequential execution mode.
+Recommend: Start a new session after completing current task.
+
+Current task: ${TASK_ID} - ${TASK_DESCRIPTION}
+```
+</context_management>
+
 <parallel_execution_directive>
-## Parallel Specialist Agent Mandate
+## Parallel Specialist Agent Guidelines
 
-**MANDATORY**: For all implementation tasks that can be parallelized, you MUST leverage parallel specialist agents from `~/.claude/agents/` or `${CLAUDE_PLUGIN_ROOT}/agents/`.
+**CONDITIONAL**: Parallel execution is beneficial but must be context-aware.
 
-### When to Parallelize
-
-Deploy multiple Task subagents simultaneously for:
-1. **Multi-file implementations** - Different agents implement different components
-2. **Test coverage** - Unit, integration, and E2E tests developed in parallel
-3. **Documentation** - Code docs, API docs, user guides written together
-4. **Code review + Security audit** - Quality checks run simultaneously
-
-### Execution Pattern
+### Context-Aware Parallelism Rules
 
 ```
-PARALLEL IMPLEMENTATION PHASE:
-Task 1: "backend-developer" - Implement server-side logic
-Task 2: "frontend-developer" - Implement client-side components
-Task 3: "test-automator" - Write test suite
-Task 4: "documentation-engineer" - Create documentation
+EXECUTION MODE SELECTION:
 
-Wait for all -> Integrate -> Continue to next phase
+EARLY SESSION (fresh context):
+  -> Aggressive parallelism encouraged (8-12+ subagents can work)
+  -> Launch independent tasks in parallel batches
+  -> CHECKPOINT before each parallel batch
+  -> This is when parallelism provides the most value
+
+MID-SESSION (moderate usage):
+  -> Continue parallel execution as long as subagents succeed
+  -> Monitor for warning signs (truncated responses, incomplete artifacts)
+  -> If any subagent shows stress, reduce next batch size
+  -> Checkpoint between batches
+
+LATE SESSION (extended work):
+  -> More conservative batch sizes (2-4 subagents)
+  -> Checkpoint after each batch completes
+  -> Be prepared to switch to sequential if needed
+
+AFTER ANY EXHAUSTION EVENT:
+  -> STOP launching new subagents
+  -> Complete current work directly (no delegation)
+  -> Save all progress
+  -> Suggest starting new session for remaining work
+
+KEY PRINCIPLE:
+Parallelism is GOOD - the fix is checkpointing and graceful degradation,
+not artificial limits on concurrency.
 ```
+
+### When to Use Subagents
+
+Deploy Task subagents for:
+1. **Isolated component work** - Single file or tightly scoped component
+2. **Review tasks** - Code review, security audit (read-only, lower context cost)
+3. **Documentation** - Generating docs for completed code
+
+### When NOT to Use Subagents
+
+Work directly (no subagents) for:
+1. **Complex multi-file changes** - Higher context risk
+2. **Debugging/investigation** - Needs main session context
+3. **After any context warning** - Preserve remaining context
+4. **Late in session** - Reduce risk of exhaustion
 
 ### Agent Selection Guidelines
 
-| Implementation Need | Recommended Agent(s) |
-|--------------------|---------------------|
-| Backend code | `backend-developer`, `api-designer` |
-| Frontend code | `frontend-developer`, `react-specialist` |
-| Database work | `postgres-pro`, `data-engineer` |
-| Testing | `test-automator`, `qa-expert` |
-| Security | `security-auditor`, `penetration-tester` |
-| Performance | `performance-engineer` |
-| DevOps | `devops-engineer`, `sre-engineer` |
-| Documentation | `documentation-engineer`, `technical-writer` |
+| Implementation Need | Recommended Agent(s) | Context Cost |
+|--------------------|---------------------|--------------|
+| Code review | `code-reviewer` | Low |
+| Security audit | `security-auditor` | Low |
+| Single file impl | `backend-developer`, etc. | Medium |
+| Documentation | `documentation-engineer` | Medium |
+| Multi-file impl | **Work directly** | N/A |
+| Testing | `test-automator` | Medium-High |
 
-### Anti-Pattern (DO NOT)
+### Execution Pattern (Context-Aware)
 
 ```
-# WRONG: Sequential single-threaded implementation
-1. First implement backend
-2. Then implement frontend
-3. Then write tests
-4. Then write docs
+# PREFERRED: Sequential with selective parallelism
+1. Implement core logic directly (no subagent)
+2. Checkpoint (commit)
+3. IF context healthy: Launch code-reviewer subagent
+4. Checkpoint (commit)
+5. Implement tests directly OR single subagent
+6. Checkpoint (commit)
+
+# AVOID: Aggressive parallelism
+Launch 4+ subagents simultaneously  # HIGH RISK of context exhaustion
 ```
 
-### Correct Pattern (REQUIRED)
+### Subagent Task Sizing
 
-```
-# RIGHT: Parallel multi-agent implementation
-Launch simultaneously:
-- Agent 1: Backend implementation
-- Agent 2: Frontend implementation
-- Agent 3: Test development
-- Agent 4: Documentation
+Keep subagent tasks small and focused:
+- **Good**: "Implement the UserService class in src/services/user.ts"
+- **Bad**: "Implement the entire authentication system"
 
-Consolidate, integrate, then proceed to next phase.
-```
-
-**Failure to parallelize independent implementation tasks is a protocol violation.**
+Smaller tasks = lower context cost per subagent = more headroom.
 </parallel_execution_directive>
 
 <command_argument>
@@ -767,6 +895,28 @@ ON RETRY LIMIT EXCEEDED:
 
 This prevents conversation state corruption from cascading retry failures.
 
+#### Mandatory Checkpointing
+
+**CRITICAL**: Checkpoint progress frequently to prevent data loss on context exhaustion.
+
+```
+CHECKPOINT TRIGGERS (MANDATORY):
+1. Before launching ANY subagent
+2. After EACH task marked complete
+3. After EACH quality gate pass
+4. Before any retry attempt
+5. When context exhaustion warning detected
+6. At natural breaks (every 2-3 completed subtasks)
+
+CHECKPOINT PROCEDURE:
+1. Update PROGRESS.md with current state
+2. git add -A
+3. git commit -m "checkpoint: ${TASK_ID} - ${BRIEF_STATUS}"
+4. git push (if draft PR exists)
+```
+
+This ensures that even if context exhausts unexpectedly, the user can resume from a recent checkpoint in a new session.
+
 #### Complete Example Flow
 
 ```
@@ -1011,18 +1161,37 @@ fi
 #### Step 6: Handle Verification Failure
 
 ```
-IF VERIFICATION_FAILED:
+IF VERIFICATION_FAILED due to CONTEXT EXHAUSTION:
+  -> DO NOT retry the subagent (wastes context)
+  -> Checkpoint current state (commit)
+  -> Perform the work DIRECTLY (no subagent)
+  -> This is the ONLY recovery path for context exhaustion
+
+IF VERIFICATION_FAILED due to other reasons:
   -> DO NOT mark task complete
   -> DO NOT trust subagent claim
   -> Log the discrepancy
   -> Either:
-     a) Re-run the subagent with explicit instructions
-     b) Perform the work directly
+     a) Re-run the subagent with explicit instructions (ONLY if context healthy)
+     b) Perform the work directly (PREFERRED)
      c) Flag for manual intervention
   -> Re-verify after remediation
 
 IF VERIFICATION_PASSES:
   -> Proceed to quality gate
+```
+
+#### Context Exhaustion Recovery
+
+When a subagent exhausts context:
+
+```
+1. DO NOT retry the subagent
+2. Checkpoint immediately:
+   git add -A && git commit -m "checkpoint: subagent context exhaustion recovery"
+3. Switch to direct implementation mode
+4. Complete the task manually
+5. Continue in sequential mode for remainder of session
 ```
 
 #### Red Alert Response Protocol
