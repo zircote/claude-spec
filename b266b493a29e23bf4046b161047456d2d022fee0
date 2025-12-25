@@ -1010,3 +1010,20 @@ tags:
 The `/approve` command provides governance controls:
 
 | Decision...
+
+---
+type: progress
+timestamp: '2025-12-25T17:49:19.979308+00:00'
+summary: '...spec:plan` without arguments'
+tags:
+- auto-captured
+- post-tool-use
+- file:CLAUDE.md
+---
+
+...spec:plan` without arguments
+  - Scripts: `scripts/github-issues/` (6 scripts, 47 tests)
+
+## Recent Completed Spec Projects
+
+- `docs/spec/completed/2025-12-25-approve-command/` - Add /approve Command...
