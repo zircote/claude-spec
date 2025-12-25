@@ -42,3 +42,22 @@ tags:
 #### Detailed Pattern Matching for Checkbox Sync
 
 **CRITICAL**: These patterns enable reliable checkbox synchronization...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.226454+00:00'
+summary: '...enable reliable checkbox synchronization between PROGRESS.md and IMPLEMENTATION_PLAN.md.'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...enable reliable checkbox synchronization between PROGRESS.md and IMPLEMENTATION_PLAN.md.
+
+##### Pattern 1: Task ID in PROGRESS.md
+
+Extract task status and ID from PROGRESS.md task table rows:
+
+```regex
+^\...
