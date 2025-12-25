@@ -275,3 +275,19 @@ tags:
 - **Acceptance Criteria**:
   - [ ] Pattern documented: `^####\s+Task\s+(\d+\.\d+):\s+(.*)$`
   - [ ] Explain how to correlate with PROGRESS.md...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:40:48.097516+00:00'
+summary: '...commands/implement.md`'
+tags:
+- auto-captured
+- post-tool-use
+- file:IMPLEMENTATION_PLAN.md
+---
+
+...commands/implement.md`
+- **Acceptance Criteria**:
+  - [ ] Algorithm steps documented in pseudocode
+  - [ ] Pattern for checkbox lines: `^(\s+-\s+)\[([ x])\]\s+(.*)$`
+  - [ ] Termination conditions documented...
