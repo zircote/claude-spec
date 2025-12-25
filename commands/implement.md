@@ -1354,6 +1354,196 @@ When a task is marked `done`:
 2. **Update acceptance criteria checkboxes**:
    - Change `- [ ]` to `- [x]` for completed criteria
 
+<checkbox_sync_patterns>
+#### Detailed Pattern Matching for Checkbox Sync
+
+**CRITICAL**: These patterns enable reliable checkbox synchronization between PROGRESS.md and IMPLEMENTATION_PLAN.md.
+
+##### Pattern 1: Task ID in PROGRESS.md
+
+Extract task status and ID from PROGRESS.md task table rows:
+
+```regex
+^\|\s*(\d+\.\d+)\s*\|.*\|\s*(pending|in-progress|done|skipped)\s*\|
+```
+
+**Capture Groups:**
+- Group 1: Task ID (e.g., "1.1", "2.3", "10.15")
+- Group 2: Status (pending, in-progress, done, skipped)
+
+**Examples:**
+```
+| 1.1 | Document Task ID Regex Pattern | done | 2025-12-25 | 2025-12-25 | |
+  └─ Captures: ("1.1", "done")
+
+| 2.3 | Update /implement Frontmatter | in-progress | 2025-12-25 | | WIP |
+  └─ Captures: ("2.3", "in-progress")
+
+| 10.15 | Final validation step | pending | | | |
+  └─ Captures: ("10.15", "pending")
+```
+
+**Edge Cases:**
+- Multi-digit phase numbers (e.g., "10.15")
+- Extra whitespace in table cells
+- Notes column containing pipe characters (escaped)
+
+##### Pattern 2: Task Heading in IMPLEMENTATION_PLAN.md
+
+Find task sections to locate their acceptance criteria:
+
+```regex
+^###\s+Task\s+(\d+\.\d+):\s+(.*)$
+```
+
+**Capture Groups:**
+- Group 1: Task ID (e.g., "1.1")
+- Group 2: Task title (e.g., "Document Task ID Regex Pattern")
+
+**Examples:**
+```
+### Task 1.1: Document Task ID Regex Pattern
+    └─ Captures: ("1.1", "Document Task ID Regex Pattern")
+
+### Task 2.3: Update /implement Frontmatter
+    └─ Captures: ("2.3", "Update /implement Frontmatter")
+```
+
+**Note**: This pattern uses `###` (three hashes) as that's the standard heading level for tasks in IMPLEMENTATION_PLAN.md. Adjust if your format uses `####`.
+
+##### Pattern 3: Acceptance Criteria Checkboxes
+
+Find checkbox items under a task's acceptance criteria section:
+
+```regex
+^(\s*-\s+)\[([ x])\]\s+(.*)$
+```
+
+**Capture Groups:**
+- Group 1: Indentation and bullet (preserved for replacement)
+- Group 2: Checkbox state (space = unchecked, "x" = checked)
+- Group 3: Criteria text
+
+**Examples:**
+```
+  - [ ] Pattern documented: `^\[([x ])\]\s+(\d+\.\d+)\s+(.*)$`
+      └─ Captures: ("  - ", " ", "Pattern documented: `^\\[([x ])\\]...")
+
+  - [x] Examples provided for each capture group
+      └─ Captures: ("  - ", "x", "Examples provided for each capture group")
+```
+
+##### Algorithm: Acceptance Criteria Section Discovery
+
+```
+FUNCTION find_acceptance_criteria(file_content, task_id):
+    INPUT: file_content (string), task_id (string, e.g., "1.1")
+    OUTPUT: list of (line_number, checkbox_state, criteria_text)
+
+    1. Find line matching "### Task {task_id}:" or "#### Task {task_id}:"
+       - Pattern: ^#{3,4}\s+Task\s+{task_id}:\s+
+       - If not found: return empty list with warning
+
+    2. From that line, scan forward looking for:
+       a. "**Acceptance Criteria**:" or "- **Acceptance Criteria**:"
+       b. Store this as criteria_section_start
+
+    3. If criteria section not found before next task heading or section:
+       - Return empty list with info message
+
+    4. From criteria_section_start, collect checkbox lines:
+       - Match pattern: ^(\s*-\s+)\[([ x])\]\s+(.*)$
+       - Store: (line_number, group2, group3)
+       - STOP when encountering:
+         * Next heading (^#{2,4}\s+)
+         * Empty line followed by non-indented content
+         * End of file
+
+    5. Return collected checkboxes
+
+EDGE CASES:
+    - Task exists in PROGRESS.md but not in IMPLEMENTATION_PLAN.md
+      → Log warning, continue with other syncs
+    - No acceptance criteria section found
+      → Log info, continue (some tasks may not have criteria)
+    - Criteria text contains special characters
+      → Preserve verbatim, only modify checkbox state
+```
+
+##### Atomic Write Protocol for Sync
+
+**CRITICAL**: File modifications must be atomic to prevent corruption.
+
+```
+FUNCTION update_checkboxes_atomically(file_path, updates):
+    INPUT: file_path (string), updates (list of (line_number, new_state))
+    OUTPUT: success (bool), files_modified (list)
+
+    1. VALIDATE file exists
+       - If not: return (false, []) with error
+
+    2. READ entire file into memory
+       - Store as lines array
+
+    3. CREATE backup
+       - Write to {file_path}.bak
+       - Verify backup written successfully
+
+    4. APPLY updates in memory
+       FOR each (line_number, new_state) in updates:
+         - Parse line with checkbox pattern
+         - Replace [ ] with [x] or vice versa
+         - Store modified line
+
+    5. WRITE to temporary file
+       - Write to {file_path}.tmp
+       - Verify all lines written
+
+    6. VERIFY temporary file
+       - Re-read and confirm changes applied
+       - Check file is valid markdown (no truncation)
+
+    7. ATOMIC rename
+       - mv {file_path}.tmp {file_path}
+       - This is atomic on POSIX systems
+
+    8. CLEANUP on success
+       - Delete {file_path}.bak
+
+    9. ROLLBACK on any failure
+       - If backup exists: mv {file_path}.bak {file_path}
+       - Delete {file_path}.tmp if exists
+       - Return (false, []) with error details
+
+    RETURN (true, [file_path])
+```
+
+##### Sync Output Format
+
+After checkbox sync completes, output in this format:
+
+```
+Checkbox sync completed:
+   [OK] IMPLEMENTATION_PLAN.md
+        - Task 1.1: 3 checkboxes → [x]
+        - Task 1.2: 2 checkboxes → [x]
+        Total: 5 checkboxes updated
+
+   [WARN] Task 2.4 not found in IMPLEMENTATION_PLAN.md
+          (exists in PROGRESS.md but no matching task heading)
+
+   [INFO] Task 3.1 has no acceptance criteria section
+          (will not affect sync, task completion still tracked)
+```
+
+**Output States:**
+- `[OK]` - Sync completed successfully
+- `[WARN]` - Non-blocking issue (task missing, format mismatch)
+- `[INFO]` - Informational (no criteria section, skipped task)
+- `[ERR]` - Blocking error (file write failed, rollback triggered)
+
+</checkbox_sync_patterns>
+
 ### Sync to README.md
 
 When project status changes:
