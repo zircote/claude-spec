@@ -116,3 +116,19 @@ tags:
     └─ Captures: ("1.1", "Document Task ID Regex Pattern")
 
 ### Task 2.3: Update /implement...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.302989+00:00'
+summary: '...Frontmatter'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...Frontmatter
+    └─ Captures: ("2.3", "Update /implement Frontmatter")
+```
+
+**Note**: This pattern uses `###` (three hashes) as that's the standard heading level for tasks in IMPLEMENTATION_PLAN.md....
