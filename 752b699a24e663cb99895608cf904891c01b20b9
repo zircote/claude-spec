@@ -122,3 +122,21 @@ tags:
 ## User Analysis
 
 ###...
+
+---
+type: progress
+timestamp: '2025-12-25T18:39:31.699148+00:00'
+summary: '...task sections in IMPLEMENTATION_PLAN.md'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...task sections in IMPLEMENTATION_PLAN.md
+- Update acceptance criteria checkboxes
+- Verify sync completed correctly
+
+**Interfaces**:
+```
+Input: Task ID (e.g., "2.3"), new status ("done"|"skipped"|"pending"...
