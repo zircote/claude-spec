@@ -248,3 +248,25 @@ Removed ~500 lines of unnecessary pseudocode that documented implementation deta
 ## Related Files
 - commands/implement.md:60-129 (simplified sections)
 - commands/plan.md:63-93 (simplified section)
+
+---
+type: progress
+timestamp: '2025-12-25T20:25:55.019619+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Fixed `--no-worktree` flag to still create branc...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Fixed `--no-worktree` flag to still create branch when `--no-branch` not set
+## Summary
+The plan command now correctly creates a `plan/${SLUG}` branch when `--no-worktree` is used alone, only staying on the current branch when `--no-branch` is also specified.
+
+## Changes Made
+- Added ELSE clause to branch decision gate in plan.md
+- When `NO_WORKTREE=true` and `NO_BRANCH=false`, runs `git checkout -b plan/${SLUG}`
+
+## Related Files
+- commands/plan.md:192-201
