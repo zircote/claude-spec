@@ -16,3 +16,26 @@ Tool result blocks must reference tool_use blocks from the immediately preceding
 
 ## Related Files
 - commands/implement.md:1-1502 (command being invoked)
+
+---
+type: learnings
+timestamp: '2025-12-25T17:16:10.033818+00:00'
+summary: '...README.md.'
+tags:
+- auto-captured
+- post-tool-use
+- file:DECISIONS.md
+---
+
+...README.md.
+
+### Consequences
+
+**Positive:**
+- Clean separation from active work
+- Preserves work for future reference
+- Clear audit trail
+
+**Negative:**
+- Creates additional directory to maintain
+- Rejected specs...
