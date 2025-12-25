@@ -51,3 +51,21 @@ Both agents have completed their analysis. Here's the synthesized findings:
 
 ▶ decision ─────────────────────────────────────
 Investigated...
+
+---
+type: progress
+timestamp: '2025-12-25T15:59:24.166102+00:00'
+summary: '...security audit (read-only, lower context cost)'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...security audit (read-only, lower context cost)
+3. **Documentation** - Generating docs for completed code
+
+### When NOT to Use Subagents
+
+Work directly (no subagents) for:
+1. **Complex multi-file...
