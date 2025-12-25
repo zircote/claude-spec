@@ -335,3 +335,31 @@ Pivoted from original `/bugfix` (PR creation) to `/report-issue` (investigation 
 - docs/spec/active/2025-12-25-bugfix-command/IMPLEMENTATION_PLAN.md
 - docs/spec/active/2025-12-25-bugfix-command/DECISIONS.md
 - commands/plan.md (bug fix: --no-worktree now creates branch)
+
+---
+type: progress
+timestamp: '2025-12-25T20:25:55.185239+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Implementation of SPEC-2025-12-25-002 (Issue Rep...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Implementation of SPEC-2025-12-25-002 (Issue Reporter Command) complete
+## Summary
+All 28 tasks across 2 phases completed. PR #36 ready for review.
+
+## Changes Made
+- Created `commands/report-issue.md` with full 5-phase execution protocol
+- Added `<error_recovery>` section to `commands/plan.md`
+- Added `<error_recovery>` section to `commands/implement.md`
+- Updated plugin README.md with command documentation
+- Updated spec documents (PROGRESS.md, CHANGELOG.md, README.md)
+
+## Related Files
+- commands/report-issue.md (new - 686 lines)
+- commands/plan.md:2713-2815 (error_recovery section)
+- commands/implement.md:1771-1903 (error_recovery section)
+- README.md (report-issue documentation)
