@@ -199,3 +199,20 @@ tags:
     1. Find line matching "### Task {task_id}:" or "#### Task {task_id}:"
        - Pattern: ^#{3,4}\s+Task\s+{task_id}:\s+
        - If not found: return empty list with warning...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.400889+00:00'
+summary: '...with info message'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...with info message
+
+    4. From criteria_section_start, collect checkbox lines:
+       - Match pattern: ^(\s*-\s+)\[([ x])\]\s+(.*)$
+       - Store: (line_number, group2, group3)
+       - STOP when...
