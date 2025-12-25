@@ -112,3 +112,31 @@ All 4 tasks in Phase 2 implemented. Added argument schema sections to both plan.
 - commands/plan.md:50-136 (new `<argument_schema>` section)
 - docs/spec/active/2025-12-25-implement-ux-improvements/PROGRESS.md:35-38
 - docs/spec/active/2025-12-25-implement-ux-improvements/IMPLEMENTATION_PLAN.md:81-116
+
+---
+type: progress
+timestamp: '2025-12-25T20:25:54.814058+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Phase 3 completed: Dynamic Help Generator
+
+  ## Su...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Phase 3 completed: Dynamic Help Generator
+## Summary
+All 3 tasks in Phase 3 implemented. Added help generation algorithm and updated help blocks.
+
+## Changes Made
+- Task 3.1: Added `<help_generation>` section with pseudocode algorithm for man-page output
+- Task 3.2: Updated plan.md help block with ARGUMENTS section, schema reference note
+- Task 3.3: Updated implement.md help block with ARGUMENTS section, pattern, and examples
+
+## Related Files
+- commands/implement.md:210-354 (new `<help_generation>` section)
+- commands/implement.md:8-58 (updated `<help_check>` section)
+- commands/plan.md:8-61 (updated `<help_check>` section)
+- docs/spec/active/2025-12-25-implement-ux-improvements/IMPLEMENTATION_PLAN.md:123-151
