@@ -82,3 +82,18 @@ tags:
 for pattern in "${EXEMPT_PATTERNS[@]}"; do
     if [[ "$FILE_PATH" =~ $pattern ]]; then
         echo '{"decision"...
+
+---
+type: patterns
+timestamp: '2025-12-25T17:28:11.500821+00:00'
+summary: '...matches any exempt pattern'
+tags:
+- auto-captured
+- post-tool-use
+- file:check-approved-spec.sh
+---
+
+...matches any exempt pattern
+for pattern in "${EXEMPT_PATTERNS[@]}"; do
+    if [[ "$FILE_PATH" =~ $pattern ]]; then
+        echo '{"decision": "allow", "message": "File is exempt from spec requirement"}'...
