@@ -61,3 +61,22 @@ Extract task status and ID from PROGRESS.md task table rows:
 
 ```regex
 ^\...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:57:56.245535+00:00'
+summary: '...Status (pending, in-progress, done, skipped)'
+tags:
+- auto-captured
+- post-tool-use
+- file:implement.md
+---
+
+...Status (pending, in-progress, done, skipped)
+
+**Examples:**
+```
+| 1.1 | Document Task ID Regex Pattern | done | 2025-12-25 | 2025-12-25 | |
+  └─ Captures: ("1.1", "done")
+
+| 2.3 | Update /implement...
