@@ -18,10 +18,10 @@ If `$ARGUMENTS` contains `--help` or `-h`:
 CODE_CLEANUP(1)                                      User Commands                                      CODE_CLEANUP(1)
 
 NAME
-    code-cleanup - Comprehensive code review and remediation using paralle...
+    deep-clean - Comprehensive code review and remediation using paralle...
 
 SYNOPSIS
-    /claude-spec:code-cleanup [path|--focus=security|--focus=performance|--focus=maintainability|--quick|--all]
+    /claude-spec:deep-clean [path|--focus=security|--focus=performance|--focus=maintainability|--quick|--all]
 
 DESCRIPTION
     Comprehensive code review and remediation using parallel specialist agents. Uses LSP semantic analysis when available for precise code navigation. Executes in two sequential steps - review then fix. Produces actionable findings prioritized by severity with clear remediation paths.
@@ -30,8 +30,8 @@ OPTIONS
     --help, -h                Show this help message
 
 EXAMPLES
-    /claude-spec:code-cleanup               
-    /claude-spec:code-cleanup --help        
+    /claude-spec:deep-clean
+    /claude-spec:deep-clean --help        
 
 SEE ALSO
     /claude-spec:* for related commands
@@ -947,7 +947,7 @@ This mode combines ALL focus enhancements and deploys additional specialist agen
 
 For **maximum review + automatic remediation**, use both flags:
 ```
-/claude-spec:code-cleanup --focus=MAX --all
+/claude-spec:deep-clean --focus=MAX --all
 ```
 
 | Flag Combination | Review Agents | Remediation |
