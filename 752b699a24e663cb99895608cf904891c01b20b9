@@ -381,3 +381,27 @@ tags:
 
 **Date**: 2025-12-25
 **Status...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:41:24.439490+00:00'
+summary: '...--help only**: Loses programmatic access to arg metadata'
+tags:
+- auto-captured
+- post-tool-use
+- file:DECISIONS.md
+---
+
+...--help only**: Loses programmatic access to arg metadata
+
+---
+
+## ADR-003: Error + Suggestion Pattern for Validation
+
+**Date**: 2025-12-25
+**Status**: Accepted
+**Deciders**: User
+
+### Context
+
+How...
