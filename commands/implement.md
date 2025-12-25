@@ -12,6 +12,12 @@ If `$ARGUMENTS` contains `--help` or `-h`:
 
 **Output this help and HALT (do not proceed further):**
 
+<!--
+  NOTE: This help output is generated from the argument schema defined in <argument_schema>.
+  See <help_generation> for the generation algorithm.
+  When updating arguments, update the schema and regenerate this block.
+-->
+
 <help_output>
 ```
 IMPLEMENT(1)                                         User Commands                                         IMPLEMENT(1)
@@ -20,20 +26,29 @@ NAME
     implement - Implementation progress tracker for spec projects. Crea...
 
 SYNOPSIS
-    /claude-spec:implement [project-id|project-slug]
+    /claude-spec:implement [OPTIONS] [project-ref]
 
 DESCRIPTION
-    Implementation progress tracker for spec projects. Creates and maintains PROGRESS.md checkpoint file, tracks task completion, syncs state to planning documents. Part of the /claude-spec suite - use /claude-spec:plan to plan, /claude-spec:status for status, /claude-spec:complete to complete.
+    Implementation progress tracker for spec projects. Creates and maintains PROGRESS.md
+    checkpoint file, tracks task completion, syncs state to planning documents. Part of
+    the /claude-spec suite - use /claude-spec:plan to plan, /claude-spec:status for
+    status, /claude-spec:complete to complete.
+
+ARGUMENTS
+    <project-ref>             Project identifier - accepts SPEC-ID, slug, or directory path
+                              Pattern: ^(SPEC-\d{4}-\d{2}-\d{2}-\d{3}|[a-z][a-z0-9-]*|docs/spec/.+)$
 
 OPTIONS
-    --help, -h                Show this help message
+    -h, --help                Show this help message
 
 EXAMPLES
-    /claude-spec:implement                  
-    /claude-spec:implement --help           
+    /claude-spec:implement SPEC-2025-12-25-001
+    /claude-spec:implement implement-ux-improvements
+    /claude-spec:implement docs/spec/active/2025-12-25-my-project/
+    /claude-spec:implement --help
 
 SEE ALSO
-    /claude-spec:* for related commands
+    /claude-spec:plan, /claude-spec:status, /claude-spec:complete
 
                                                                       IMPLEMENT(1)
 ```
@@ -41,6 +56,550 @@ SEE ALSO
 
 **After outputting help, HALT immediately. Do not proceed with command execution.**
 </help_check>
+
+<argument_schema>
+## Argument Schema Definition
+
+This section defines the extended argument schema for `/claude-spec:implement`.
+The schema enables dynamic help generation, validation, and typo suggestions.
+
+### Schema Format
+
+The frontmatter `argument-hint` field supports two formats:
+
+1. **Simple String** (legacy, backward compatible):
+   ```yaml
+   argument-hint: [project-id|project-slug]
+   ```
+
+2. **Extended Object** (new, recommended):
+   ```yaml
+   argument-hint:
+     positional:
+       - name: project-ref
+         type: string
+         required: false
+         description: Project identifier (SPEC-ID, slug, or path)
+         pattern: "^(SPEC-\\d{4}-\\d{2}-\\d{2}-\\d{3}|[a-z0-9-]+|.+)$"
+         examples:
+           - "SPEC-2025-12-25-001"
+           - "implement-ux-improvements"
+           - "docs/spec/active/2025-12-25-project/"
+     flags:
+       - name: help
+         short: h
+         type: boolean
+         description: Show this help message
+   ```
+
+### Schema Fields
+
+#### Positional Arguments
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | yes | Argument name for display |
+| `type` | string | yes | One of: `string`, `boolean`, `integer`, `path` |
+| `required` | boolean | no | Whether argument is required (default: false) |
+| `description` | string | yes | Human-readable description |
+| `pattern` | string | no | Regex pattern for validation |
+| `examples` | array | no | List of example values |
+| `default` | any | no | Default value if not provided |
+
+#### Flags (Options)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | yes | Long flag name (e.g., "help" → --help) |
+| `short` | string | no | Single-character short form (e.g., "h" → -h) |
+| `type` | string | yes | One of: `boolean`, `string`, `integer` |
+| `description` | string | yes | Human-readable description |
+| `pattern` | string | no | Regex pattern for value validation |
+| `examples` | array | no | List of example usages |
+| `default` | any | no | Default value if not provided |
+| `deprecated` | boolean | no | Mark as deprecated for P2 support |
+| `deprecated_message` | string | no | Message to show when deprecated flag used |
+
+### Current Argument Schema for /implement
+
+```yaml
+argument-hint:
+  positional:
+    - name: project-ref
+      type: string
+      required: false
+      description: "Project identifier - accepts SPEC-ID, slug, or directory path"
+      pattern: "^(SPEC-\\d{4}-\\d{2}-\\d{2}-\\d{3}|[a-z][a-z0-9-]*|docs/spec/.+)$"
+      examples:
+        - "SPEC-2025-12-25-001"
+        - "implement-ux-improvements"
+        - "docs/spec/active/2025-12-25-my-project/"
+  flags:
+    - name: help
+      short: h
+      type: boolean
+      description: "Show this help message"
+```
+
+### Type Definitions
+
+| Type | Validation | Description |
+|------|------------|-------------|
+| `string` | Any text, optionally constrained by pattern | Generic string input |
+| `boolean` | Flag presence (--flag) or --flag=true/false | Boolean toggle |
+| `integer` | Numeric value, optionally with min/max | Whole numbers |
+| `path` | Validates path exists (file or directory) | Filesystem paths |
+
+### Backward Compatibility
+
+Per ADR-006, both formats are supported with no breaking changes.
+
+#### Compatibility Rules
+
+1. **String Format (Legacy)**
+   - Continues to work unchanged
+   - Parsed and displayed in help output
+   - No validation beyond presence check
+   - Example: `argument-hint: [project-id|project-slug]`
+
+2. **Object Format (Extended)**
+   - Full schema with validation and generation
+   - Enables typo suggestions and pattern matching
+   - Example: `argument-hint: { positional: [...], flags: [...] }`
+
+3. **No Migration Required**
+   - Existing commands work without changes
+   - Upgrade path is optional and gradual
+   - Both formats can coexist in same plugin
+
+4. **Third-Party Commands**
+   - Simple string format remains fully supported
+   - No forced schema adoption
+   - Extended features opt-in only
+
+#### Detection Algorithm
+
+```pseudocode
+function parse_argument_hint(value):
+    if value is undefined or null:
+        return NoHint()
+    else if type(value) == string:
+        return LegacyHint(value)
+    else if type(value) == object:
+        validate_schema(value)  # Throws if invalid
+        return ExtendedSchema(value)
+    else:
+        error("Invalid argument-hint format: expected string or object")
+```
+
+#### Upgrade Path
+
+To upgrade from simple string to extended schema:
+
+**Before (simple):**
+```yaml
+argument-hint: [project-id|project-slug]
+```
+
+**After (extended):**
+```yaml
+argument-hint:
+  positional:
+    - name: project-ref
+      type: string
+      required: false
+      description: "Project identifier"
+      examples:
+        - "SPEC-2025-12-25-001"
+        - "my-project-slug"
+  flags:
+    - name: help
+      short: h
+      type: boolean
+      description: "Show help"
+```
+
+Both formats produce equivalent help output. Extended format enables validation.
+</argument_schema>
+
+<help_generation>
+## Dynamic Help Generation
+
+This section documents the algorithm for generating man-page style help output from the argument schema.
+
+### Generation Algorithm
+
+```pseudocode
+function generate_help(command_name, description, schema):
+    output = []
+
+    # 1. NAME Section
+    output.append(format_header(command_name))
+    output.append("NAME")
+    output.append(f"    {command_name} - {truncate(description, 60)}...")
+    output.append("")
+
+    # 2. SYNOPSIS Section
+    output.append("SYNOPSIS")
+    synopsis = f"    /{command_name}"
+    if has_flags(schema):
+        synopsis += " [OPTIONS]"
+    for arg in schema.positional:
+        if arg.required:
+            synopsis += f" <{arg.name}>"
+        else:
+            synopsis += f" [{arg.name}]"
+    output.append(synopsis)
+    output.append("")
+
+    # 3. DESCRIPTION Section
+    output.append("DESCRIPTION")
+    output.append(f"    {word_wrap(description, 76)}")
+    output.append("")
+
+    # 4. ARGUMENTS Section (if positional args exist)
+    if schema.positional:
+        output.append("ARGUMENTS")
+        for arg in schema.positional:
+            format_arg_entry(output, arg)
+        output.append("")
+
+    # 5. OPTIONS Section (if flags exist)
+    if schema.flags:
+        output.append("OPTIONS")
+        for flag in schema.flags:
+            format_flag_entry(output, flag)
+        output.append("")
+
+    # 6. EXAMPLES Section (from schema examples)
+    output.append("EXAMPLES")
+    for arg in schema.positional:
+        for example in arg.examples[:2]:  # Limit to 2 examples
+            output.append(f"    /{command_name} {example}")
+    output.append(f"    /{command_name} --help")
+    output.append("")
+
+    # 7. SEE ALSO Section
+    output.append("SEE ALSO")
+    output.append(f"    /{prefix}:* for related commands")
+    output.append("")
+
+    # 8. Footer
+    output.append(format_footer(command_name))
+
+    return "\n".join(output)
+
+function format_flag_entry(output, flag):
+    # Build flag signature
+    sig = "    "
+    if flag.short:
+        sig += f"-{flag.short}, "
+    sig += f"--{flag.name}"
+
+    # Add padding to align descriptions
+    sig = sig.ljust(26)
+    sig += flag.description
+
+    output.append(sig)
+
+    # Add deprecated warning if applicable
+    if flag.deprecated:
+        output.append(f"        (DEPRECATED: {flag.deprecated_message})")
+
+function format_arg_entry(output, arg):
+    sig = f"    <{arg.name}>"
+    sig = sig.ljust(26)
+    sig += arg.description
+    output.append(sig)
+
+    # Show pattern if defined
+    if arg.pattern:
+        output.append(f"        Pattern: {arg.pattern}")
+```
+
+### Output Format
+
+The generated help follows man-page conventions:
+
+```
+COMMAND(1)                      User Commands                      COMMAND(1)
+
+NAME
+    command - Brief description...
+
+SYNOPSIS
+    /plugin:command [OPTIONS] [positional-arg]
+
+DESCRIPTION
+    Full description of the command spanning multiple lines if needed.
+    Wrapped to 76 characters.
+
+ARGUMENTS
+    <arg-name>            Argument description
+                          Pattern: ^regex$
+
+OPTIONS
+    -h, --help            Show this help message
+    --flag-name           Flag description
+        (DEPRECATED: Use --new-flag instead)
+
+EXAMPLES
+    /plugin:command example-value
+    /plugin:command --help
+
+SEE ALSO
+    /plugin:* for related commands
+
+                                                                   COMMAND(1)
+```
+
+### Generation Integration Points
+
+1. **In `<help_check>` section**: When `--help` detected, generate and output help
+2. **On invalid argument**: Show partial help with error context
+3. **On missing required arg**: Show SYNOPSIS and relevant ARGUMENT section
+
+### Legacy Mode
+
+When `argument-hint` is a simple string:
+1. Skip ARGUMENTS section generation
+2. Use string directly in SYNOPSIS
+3. Generate minimal OPTIONS (--help only)
+4. Skip EXAMPLES section or use generic examples
+</help_generation>
+
+<argument_validation>
+## Argument Validation and Error Messages
+
+This section documents the validation algorithm and typo suggestion system per ADR-003.
+
+### Validation Algorithm
+
+```pseudocode
+function validate_arguments(raw_args, schema):
+    errors = []
+    parsed = {}
+
+    # 1. Parse raw arguments into tokens
+    tokens = tokenize(raw_args)
+
+    # 2. Validate flags
+    for token in tokens:
+        if is_flag(token):  # Starts with - or --
+            flag_name = extract_flag_name(token)
+            flag_def = find_flag(schema.flags, flag_name)
+
+            if not flag_def:
+                # Unknown flag - try suggestion
+                suggestion = find_closest_flag(schema.flags, flag_name)
+                if suggestion:
+                    errors.append(UnknownFlagError(
+                        flag=flag_name,
+                        suggestion=suggestion.name,
+                        message=f"Unknown flag '--{flag_name}'. Did you mean '--{suggestion.name}'?"
+                    ))
+                else:
+                    errors.append(UnknownFlagError(
+                        flag=flag_name,
+                        message=f"Unknown flag '--{flag_name}'. Use --help for available options."
+                    ))
+            else:
+                # Known flag - validate type/value if applicable
+                if flag_def.type == "boolean":
+                    parsed[flag_name] = True
+                else:
+                    value = extract_flag_value(token, tokens)
+                    if not validate_type(value, flag_def):
+                        errors.append(TypeValidationError(flag_name, flag_def.type, value))
+                    parsed[flag_name] = value
+        else:
+            # Positional argument
+            positional_args.append(token)
+
+    # 3. Validate positional arguments
+    for i, arg_def in enumerate(schema.positional):
+        if i < len(positional_args):
+            value = positional_args[i]
+            # Pattern validation
+            if arg_def.pattern:
+                if not regex_match(arg_def.pattern, value):
+                    errors.append(PatternValidationError(
+                        arg=arg_def.name,
+                        value=value,
+                        pattern=arg_def.pattern,
+                        message=f"Invalid format for '{arg_def.name}': '{value}' does not match expected pattern."
+                    ))
+            # Type validation
+            if not validate_type(value, arg_def):
+                errors.append(TypeValidationError(arg_def.name, arg_def.type, value))
+            parsed[arg_def.name] = value
+        elif arg_def.required:
+            errors.append(MissingRequiredArgError(
+                arg=arg_def.name,
+                message=f"Missing required argument: <{arg_def.name}>"
+            ))
+
+    return ValidationResult(parsed=parsed, errors=errors)
+```
+
+### Suggestion Algorithm (Levenshtein Distance)
+
+Per ADR-003, we use Levenshtein distance for typo suggestions with threshold ≤3.
+
+```pseudocode
+function levenshtein_distance(s1, s2):
+    """Calculate edit distance between two strings."""
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+
+    if len(s2) == 0:
+        return len(s1)
+
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+
+    return previous_row[-1]
+
+function find_closest_flag(flags, unknown_flag):
+    """Find the closest matching flag within threshold."""
+    THRESHOLD = 3  # Maximum edit distance for suggestions
+
+    best_match = None
+    best_distance = THRESHOLD + 1
+
+    for flag in flags:
+        # Check both long and short names
+        distance = levenshtein_distance(unknown_flag, flag.name)
+        if distance < best_distance:
+            best_distance = distance
+            best_match = flag
+
+        if flag.short:
+            distance = levenshtein_distance(unknown_flag, flag.short)
+            if distance < best_distance:
+                best_distance = distance
+                best_match = flag
+
+    if best_distance <= THRESHOLD:
+        return best_match
+    return None
+```
+
+### Error Output Format
+
+Errors follow a consistent format with actionable guidance:
+
+```
+Error: Unknown flag '--inlnie'
+       Did you mean '--inline'?
+
+Hint: Use --help to see all available options.
+```
+
+For pattern validation failures:
+```
+Error: Invalid format for 'project-ref'
+       Value 'my project' does not match expected pattern.
+       Expected: SPEC-ID (e.g., SPEC-2025-12-25-001), slug, or path
+
+Hint: Examples of valid values:
+       - SPEC-2025-12-25-001
+       - implement-ux-improvements
+       - docs/spec/active/2025-12-25-my-project/
+```
+
+For missing required arguments:
+```
+Error: Missing required argument: <project-seed>
+
+Usage: /claude-spec:plan [OPTIONS] <project-seed>
+
+Hint: Provide a project idea, feature description, or problem statement.
+```
+
+### Validation Integration Points
+
+1. **Early validation in command**: Check arguments before any processing
+2. **Fail fast**: Stop on first critical error, collect warnings
+3. **Context-aware messages**: Use schema examples in error messages
+4. **Help hint always**: Every error includes pointer to --help
+
+### Validation for /implement
+
+For `/implement`, validation includes:
+- **Flag validation**: Only `--help` is valid; others trigger suggestion
+- **Project-ref validation**: Pattern validates SPEC-ID, slug, or path format
+- **Existence check**: After pattern validation, verify project directory exists
+
+Example error for invalid project reference:
+```
+Error: Invalid format for 'project-ref'
+       Value 'my project with spaces' does not match expected pattern.
+       Expected: SPEC-ID (e.g., SPEC-2025-12-25-001), slug (lowercase-with-dashes), or path
+
+Hint: Examples of valid values:
+       - SPEC-2025-12-25-001
+       - implement-ux-improvements
+       - docs/spec/active/2025-12-25-my-project/
+```
+
+Example error for non-existent project:
+```
+Error: Project not found: 'nonexistent-project'
+
+Available projects in docs/spec/active/:
+       - implement-ux-improvements (SPEC-2025-12-25-001)
+       - github-issues-worktree-wf (SPEC-2025-12-24-001)
+
+Hint: Use /claude-spec:status --list to see all projects.
+```
+</argument_validation>
+
+<test_cases>
+## Test Cases
+
+This section documents test scenarios for validation and acceptance testing.
+
+### Checkbox Sync Test Cases
+
+| ID | Scenario | Input | Expected | Verification |
+|----|----------|-------|----------|--------------|
+| CS-01 | Task found in both files | Task 1.1 done in PROGRESS.md | Checkbox marked [x] in IMPLEMENTATION_PLAN.md | Verify checkbox state changed |
+| CS-02 | Task in PROGRESS.md only | Task exists in PROGRESS but not IMPLEMENTATION_PLAN | Warning: "Task X.X not found in IMPLEMENTATION_PLAN.md" | No crash, warning logged |
+| CS-03 | Missing acceptance criteria | Task has no acceptance criteria section | Info: "No acceptance criteria for Task X.X" | Skip gracefully |
+| CS-04 | Partial completion | 2 of 3 criteria done | Only those 2 checkboxes marked | Other stays unchecked |
+| CS-05 | Atomic write failure | Disk full during write | Rollback to backup, report error | Original file intact |
+| CS-06 | Multiple task updates | Tasks 1.1, 1.2, 1.3 done | All 3 synced atomically | Single atomic operation |
+
+### Argument Validation Test Cases
+
+| ID | Scenario | Input | Expected | Verification |
+|----|----------|-------|----------|--------------|
+| AV-01 | Valid flag | `--help` | Help output displayed | Normal behavior |
+| AV-02 | Unknown flag | `--hlep` | Error + suggestion "Did you mean '--help'?" | Suggestion shown |
+| AV-03 | Typo > 3 chars | `--abcdefgh` | Error, no suggestion | "Use --help for options" |
+| AV-04 | Valid SPEC-ID | `SPEC-2025-12-25-001` | Parsed successfully | Project loaded |
+| AV-05 | Valid slug | `my-project-slug` | Parsed successfully | Project loaded |
+| AV-06 | Invalid format | `my project` (spaces) | Pattern validation error | Show expected pattern |
+| AV-07 | Non-existent project | `nonexistent-slug` | "Project not found" + list available | Show alternatives |
+| AV-08 | Empty args | (none) | Context detection from cwd | Fallback behavior |
+
+### Integration Test Scenarios
+
+| ID | Scenario | Steps | Expected |
+|----|----------|-------|----------|
+| INT-01 | Full sync cycle | Mark task done → verify sync → check file | Checkbox updated, atomic |
+| INT-02 | Help generation | Request --help → verify sections | All schema fields in output |
+| INT-03 | Error + recovery | Invalid arg → fix → retry | Second attempt succeeds |
+| INT-04 | Legacy mode | Simple string hint → --help | Basic help generated |
+</test_cases>
 
 ---
 

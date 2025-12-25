@@ -12,6 +12,12 @@ If `$ARGUMENTS` contains `--help` or `-h`:
 
 **Output this help and HALT (do not proceed further):**
 
+<!--
+  NOTE: This help output is generated from the argument schema defined in <argument_schema>.
+  See implement.md <help_generation> for the generation algorithm.
+  When updating arguments, update the schema and regenerate this block.
+-->
+
 <help_output>
 ```
 PLAN(1)                                              User Commands                                              PLAN(1)
@@ -20,25 +26,32 @@ NAME
     plan - Strategic project planning with Socratic requirements e...
 
 SYNOPSIS
-    /claude-spec:plan [OPTIONS] <project-idea|feature|problem-statement>
+    /claude-spec:plan [OPTIONS] [project-seed]
 
 DESCRIPTION
-    Strategic project planning with Socratic requirements elicitation. Produces PRD, technical architecture, and implementation plan with full artifact lifecycle management. Part of the /claude-spec suite
+    Strategic project planning with Socratic requirements elicitation. Produces PRD,
+    technical architecture, and implementation plan with full artifact lifecycle
+    management. Part of the /claude-spec suite.
+
+ARGUMENTS
+    <project-seed>            Project idea, feature description, or problem statement to plan
 
 OPTIONS
-    --help, -h                Show this help message
+    -h, --help                Show this help message
+    --inline                  Equivalent to --no-worktree --no-branch (work in current
+                              directory and branch)
     --no-worktree             Skip worktree creation, work in current directory
     --no-branch               Skip branch creation, stay on current branch
-    --inline                  Equivalent to --no-worktree --no-branch
 
 EXAMPLES
     /claude-spec:plan "Add user authentication"
+    /claude-spec:plan "Implement dark mode toggle"
     /claude-spec:plan --inline "Quick feature spec"
     /claude-spec:plan --no-worktree "Plan in current repo"
-    /claude-spec:plan --help                
+    /claude-spec:plan --help
 
 SEE ALSO
-    /claude-spec:* for related commands
+    /claude-spec:implement, /claude-spec:status, /claude-spec:complete
 
                                                                       PLAN(1)
 ```
@@ -46,6 +59,111 @@ SEE ALSO
 
 **After outputting help, HALT immediately. Do not proceed with command execution.**
 </help_check>
+
+<argument_schema>
+## Argument Schema Definition
+
+This section defines the extended argument schema for `/claude-spec:plan`.
+The schema enables dynamic help generation, validation, and typo suggestions.
+
+### Schema Format
+
+The frontmatter `argument-hint` field supports two formats:
+
+1. **Simple String** (legacy, backward compatible):
+   ```yaml
+   argument-hint: <project-idea|feature|problem-statement>
+   ```
+
+2. **Extended Object** (new, recommended):
+   ```yaml
+   argument-hint:
+     positional:
+       - name: project-seed
+         type: string
+         required: false
+         description: Project idea, feature, or problem statement
+         examples:
+           - "Add user authentication"
+           - "Implement dark mode toggle"
+           - "Fix checkout performance issues"
+     flags:
+       - name: help
+         short: h
+         type: boolean
+         description: Show this help message
+       - name: inline
+         type: boolean
+         description: "Equivalent to --no-worktree --no-branch"
+       - name: no-worktree
+         type: boolean
+         description: "Skip worktree creation, work in current directory"
+       - name: no-branch
+         type: boolean
+         description: "Skip branch creation, stay on current branch"
+   ```
+
+### Current Argument Schema for /plan
+
+```yaml
+argument-hint:
+  positional:
+    - name: project-seed
+      type: string
+      required: false
+      description: "Project idea, feature description, or problem statement to plan"
+      examples:
+        - "Add user authentication"
+        - "Implement dark mode toggle"
+        - "Fix checkout performance issues"
+        - "Refactor database layer for better testability"
+  flags:
+    - name: help
+      short: h
+      type: boolean
+      description: "Show this help message"
+    - name: inline
+      type: boolean
+      description: "Equivalent to --no-worktree --no-branch (work in current directory and branch)"
+    - name: no-worktree
+      type: boolean
+      description: "Skip worktree creation, work in current directory"
+    - name: no-branch
+      type: boolean
+      description: "Skip branch creation, stay on current branch"
+```
+
+### Schema Fields Reference
+
+For full schema field documentation, see the argument_schema section in implement.md.
+
+Key fields:
+- **positional**: Array of positional argument definitions
+- **flags**: Array of flag/option definitions
+- Each argument has: `name`, `type`, `required`, `description`, `examples`, `pattern`
+
+### Backward Compatibility
+
+Per ADR-006, both string and object formats are supported.
+The parser detects format automatically and handles appropriately.
+
+### Argument Validation
+
+Validation is performed per the algorithm in implement.md `<argument_validation>` section.
+
+For `/plan`, validation includes:
+- **Flag validation**: Unknown flags trigger suggestion (e.g., `--inlnie` → "Did you mean '--inline'?")
+- **Mutual exclusivity**: `--inline` implies `--no-worktree` and `--no-branch`
+- **Project seed**: Optional positional argument, no pattern validation
+
+Example error output:
+```
+Error: Unknown flag '--inlnie'
+       Did you mean '--inline'?
+
+Hint: Use --help to see all available options.
+```
+</argument_schema>
 
 ---
 

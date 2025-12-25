@@ -82,38 +82,38 @@ This plan covers two related features:
 - **Description**: Create YAML schema specification for argument-hint
 - **Files**: New section in commands/plan.md, commands/implement.md
 - **Acceptance Criteria**:
-  - [ ] Schema supports: positional args, flags, types, descriptions, examples
-  - [ ] Required vs optional args distinguished
-  - [ ] Pattern validation supported for string args
+  - [x] Schema supports: positional args, flags, types, descriptions, examples
+  - [x] Required vs optional args distinguished
+  - [x] Pattern validation supported for string args
 
 ### Task 2.2: Update /plan Frontmatter
 - **Description**: Convert plan.md to use extended argument-hint schema
 - **Files**: `commands/plan.md`
 - **Acceptance Criteria**:
-  - [ ] New schema replaces single-line argument-hint
-  - [ ] All existing flags documented (--inline, --no-worktree, --no-branch)
-  - [ ] Positional project-seed documented with examples
+  - [x] New schema replaces single-line argument-hint
+  - [x] All existing flags documented (--inline, --no-worktree, --no-branch)
+  - [x] Positional project-seed documented with examples
 
 ### Task 2.3: Update /implement Frontmatter
 - **Description**: Convert implement.md to use extended argument-hint schema
 - **Files**: `commands/implement.md`
 - **Acceptance Criteria**:
-  - [ ] Schema documents project-ref positional arg
-  - [ ] Pattern for SPEC-ID format included
-  - [ ] Examples of valid project references
+  - [x] Schema documents project-ref positional arg
+  - [x] Pattern for SPEC-ID format included
+  - [x] Examples of valid project references
 
 ### Task 2.4: Define Backward Compatibility Rules
 - **Description**: Ensure old single-line format continues working
 - **Files**: Commands documentation
 - **Acceptance Criteria**:
-  - [ ] Both formats documented as valid
-  - [ ] Upgrade path from old to new format explained
-  - [ ] No breaking changes for existing commands
+  - [x] Both formats documented as valid
+  - [x] Upgrade path from old to new format explained
+  - [x] No breaking changes for existing commands
 
 ### Phase 2 Deliverables
-- [ ] Schema specification document
-- [ ] Updated frontmatter in plan.md and implement.md
-- [ ] Backward compatibility documentation
+- [x] Schema specification document
+- [x] Updated frontmatter in plan.md and implement.md
+- [x] Backward compatibility documentation
 
 ---
 
@@ -124,31 +124,31 @@ This plan covers two related features:
 - **Description**: Specify how to construct man-page output from schema
 - **Files**: Commands documentation section
 - **Acceptance Criteria**:
-  - [ ] Algorithm produces NAME, SYNOPSIS, DESCRIPTION sections
-  - [ ] ARGUMENTS section generated from positional args
-  - [ ] OPTIONS section generated from flags
-  - [ ] EXAMPLES section includes schema examples
+  - [x] Algorithm produces NAME, SYNOPSIS, DESCRIPTION sections
+  - [x] ARGUMENTS section generated from positional args
+  - [x] OPTIONS section generated from flags
+  - [x] EXAMPLES section includes schema examples
 
 ### Task 3.2: Update /plan Help Block
 - **Description**: Replace hardcoded help with schema-driven generation instructions
 - **Files**: `commands/plan.md`
 - **Acceptance Criteria**:
-  - [ ] `<help_output>` block references schema generation
-  - [ ] Output format matches current man-page style
-  - [ ] All arguments documented in output
+  - [x] `<help_output>` block references schema generation
+  - [x] Output format matches current man-page style
+  - [x] All arguments documented in output
 
 ### Task 3.3: Update /implement Help Block
 - **Description**: Replace hardcoded help in implement.md
 - **Files**: `commands/implement.md`
 - **Acceptance Criteria**:
-  - [ ] Help output generated from schema
-  - [ ] Project reference format explained in help
-  - [ ] Examples section includes realistic examples
+  - [x] Help output generated from schema
+  - [x] Project reference format explained in help
+  - [x] Examples section includes realistic examples
 
 ### Phase 3 Deliverables
-- [ ] Help generation algorithm documented
-- [ ] Updated help blocks in plan.md and implement.md
-- [ ] Generated help matches expected format
+- [x] Help generation algorithm documented
+- [x] Updated help blocks in plan.md and implement.md
+- [x] Generated help matches expected format
 
 ---
 
@@ -159,38 +159,38 @@ This plan covers two related features:
 - **Description**: Specify how arguments are validated against schema
 - **Files**: Commands documentation
 - **Acceptance Criteria**:
-  - [ ] Type checking documented (boolean flags, string positionals)
-  - [ ] Pattern validation for string args
-  - [ ] Required arg checking
+  - [x] Type checking documented (boolean flags, string positionals)
+  - [x] Pattern validation for string args
+  - [x] Required arg checking
 
 ### Task 4.2: Document Suggestion Algorithm
 - **Description**: Specify Levenshtein-based typo suggestions
 - **Files**: Commands documentation
 - **Acceptance Criteria**:
-  - [ ] Levenshtein distance threshold documented (≤3)
-  - [ ] Suggestion format: "Did you mean '--inline'?"
-  - [ ] Multiple suggestions handling (show closest)
+  - [x] Levenshtein distance threshold documented (≤3)
+  - [x] Suggestion format: "Did you mean '--inline'?"
+  - [x] Multiple suggestions handling (show closest)
 
 ### Task 4.3: Add Validation to /plan
 - **Description**: Add validation check in plan.md before execution
 - **Files**: `commands/plan.md`
 - **Acceptance Criteria**:
-  - [ ] Unknown flags produce error + suggestion
-  - [ ] Invalid project-seed format produces error
-  - [ ] Error output includes help hint
+  - [x] Unknown flags produce error + suggestion
+  - [x] Invalid project-seed format produces error
+  - [x] Error output includes help hint
 
 ### Task 4.4: Add Validation to /implement
 - **Description**: Add validation check in implement.md before execution
 - **Files**: `commands/implement.md`
 - **Acceptance Criteria**:
-  - [ ] Unknown flags produce error + suggestion
-  - [ ] Invalid project-ref format produces error
-  - [ ] Missing project produces helpful message
+  - [x] Unknown flags produce error + suggestion
+  - [x] Invalid project-ref format produces error
+  - [x] Missing project produces helpful message
 
 ### Phase 4 Deliverables
-- [ ] Validation algorithm documentation
-- [ ] Suggestion algorithm documentation
-- [ ] Validation logic in plan.md and implement.md
+- [x] Validation algorithm documentation
+- [x] Suggestion algorithm documentation
+- [x] Validation logic in plan.md and implement.md
 
 ---
 
@@ -201,40 +201,40 @@ This plan covers two related features:
 - **Description**: Document test scenarios for sync engine
 - **Files**: Test documentation or inline in implement.md
 - **Acceptance Criteria**:
-  - [ ] Test: Task in PROGRESS.md, found in IMPLEMENTATION_PLAN.md → sync
-  - [ ] Test: Task in PROGRESS.md, NOT in IMPLEMENTATION_PLAN.md → warning
-  - [ ] Test: Missing acceptance criteria section → info message
-  - [ ] Test: Partial completion scenarios
+  - [x] Test: Task in PROGRESS.md, found in IMPLEMENTATION_PLAN.md → sync
+  - [x] Test: Task in PROGRESS.md, NOT in IMPLEMENTATION_PLAN.md → warning
+  - [x] Test: Missing acceptance criteria section → info message
+  - [x] Test: Partial completion scenarios
 
 ### Task 5.2: Add Test Cases for Argument Validation
 - **Description**: Document test scenarios for argument handling
 - **Files**: Test documentation
 - **Acceptance Criteria**:
-  - [ ] Test: Valid args → proceed
-  - [ ] Test: Unknown flag → error + suggestion
-  - [ ] Test: Typo within 3 chars → suggest correct flag
-  - [ ] Test: Typo beyond 3 chars → no suggestion
+  - [x] Test: Valid args → proceed
+  - [x] Test: Unknown flag → error + suggestion
+  - [x] Test: Typo within 3 chars → suggest correct flag
+  - [x] Test: Typo beyond 3 chars → no suggestion
 
 ### Task 5.3: Update CLAUDE.md
 - **Description**: Add new features to project documentation
 - **Files**: `CLAUDE.md`
 - **Acceptance Criteria**:
-  - [ ] Checkbox sync behavior documented
-  - [ ] New argument-hint schema referenced
-  - [ ] Help output format noted
+  - [x] Checkbox sync behavior documented
+  - [x] New argument-hint schema referenced
+  - [x] Help output format noted
 
 ### Task 5.4: Update Plugin README
 - **Description**: Document user-facing changes
 - **Files**: `.claude-plugin/README.md` or root README
 - **Acceptance Criteria**:
-  - [ ] Checkbox sync feature listed
-  - [ ] Improved argument hints mentioned
-  - [ ] Better error messages noted
+  - [x] Checkbox sync feature listed
+  - [x] Improved argument hints mentioned
+  - [x] Better error messages noted
 
 ### Phase 5 Deliverables
-- [ ] Test case documentation
-- [ ] Updated CLAUDE.md
-- [ ] Updated README
+- [x] Test case documentation
+- [x] Updated CLAUDE.md
+- [x] Updated README
 
 ---
 
