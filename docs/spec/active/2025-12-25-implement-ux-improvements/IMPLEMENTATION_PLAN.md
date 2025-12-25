@@ -33,45 +33,45 @@ This plan covers two related features:
 - **Description**: Add explicit regex pattern for matching task IDs in PROGRESS.md
 - **Files**: `commands/implement.md`
 - **Acceptance Criteria**:
-  - [ ] Pattern documented: `^\[([x ])\]\s+(\d+\.\d+)\s+(.*)$`
-  - [ ] Examples provided for each capture group
-  - [ ] Edge cases documented (multi-digit phases, special characters)
+  - [x] Pattern documented: `^\[([x ])\]\s+(\d+\.\d+)\s+(.*)$`
+  - [x] Examples provided for each capture group
+  - [x] Edge cases documented (multi-digit phases, special characters)
 
 ### Task 1.2: Document IMPLEMENTATION_PLAN.md Task Heading Pattern
 - **Description**: Add regex for finding task sections in IMPLEMENTATION_PLAN.md
 - **Files**: `commands/implement.md`
 - **Acceptance Criteria**:
-  - [ ] Pattern documented: `^####\s+Task\s+(\d+\.\d+):\s+(.*)$`
-  - [ ] Explain how to correlate with PROGRESS.md task IDs
+  - [x] Pattern documented: `^####\s+Task\s+(\d+\.\d+):\s+(.*)$`
+  - [x] Explain how to correlate with PROGRESS.md task IDs
 
 ### Task 1.3: Document Acceptance Criteria Section Discovery
 - **Description**: Add algorithm for locating acceptance criteria under task headings
 - **Files**: `commands/implement.md`
 - **Acceptance Criteria**:
-  - [ ] Algorithm steps documented in pseudocode
-  - [ ] Pattern for checkbox lines: `^(\s+-\s+)\[([ x])\]\s+(.*)$`
-  - [ ] Termination conditions documented (next heading or blank line)
+  - [x] Algorithm steps documented in pseudocode
+  - [x] Pattern for checkbox lines: `^(\s+-\s+)\[([ x])\]\s+(.*)$`
+  - [x] Termination conditions documented (next heading or blank line)
 
 ### Task 1.4: Document Atomic Write Protocol
 - **Description**: Specify safe file modification process with backup
 - **Files**: `commands/implement.md`
 - **Acceptance Criteria**:
-  - [ ] Backup creation step documented
-  - [ ] Atomic rename strategy explained
-  - [ ] Rollback procedure on failure documented
+  - [x] Backup creation step documented
+  - [x] Atomic rename strategy explained
+  - [x] Rollback procedure on failure documented
 
 ### Task 1.5: Add Sync Output Format
 - **Description**: Define output message format after sync completes
 - **Files**: `commands/implement.md`
 - **Acceptance Criteria**:
-  - [ ] Format: "Updated N checkboxes in IMPLEMENTATION_PLAN.md"
-  - [ ] Warning format for missing tasks defined
-  - [ ] Example output block added
+  - [x] Format: "Updated N checkboxes in IMPLEMENTATION_PLAN.md"
+  - [x] Warning format for missing tasks defined
+  - [x] Example output block added
 
 ### Phase 1 Deliverables
-- [ ] Updated Phase 5 section in commands/implement.md with all patterns
-- [ ] Algorithm documentation with pseudocode
-- [ ] Sync output examples
+- [x] Updated Phase 5 section in commands/implement.md with all patterns
+- [x] Algorithm documentation with pseudocode
+- [x] Sync output examples
 
 ---
 
