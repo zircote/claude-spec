@@ -297,3 +297,41 @@ Complete specification for self-healing PR submission command based on GitHub is
 ## Related Files
 - docs/spec/active/2025-12-25-bugfix-command/
 - commands/plan.md:192-201
+
+---
+type: progress
+timestamp: '2025-12-25T20:25:55.103503+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Completed spec for `/report-issue` command (SPEC...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Completed spec for `/report-issue` command (SPEC-2025-12-25-002)
+## Summary
+Pivoted from original `/bugfix` (PR creation) to `/report-issue` (investigation + issue creation). Command investigates issues first to produce AI-actionable GitHub issues.
+
+## Key Features
+- Investigation-first: 30-60 sec exploration before filing
+- Multi-type support: bug, feat, docs, chore, perf
+- Integration with /plan and /implement for proactive error detection
+- Low-friction opt-out: session and permanent suppression options
+- AI-actionable output: file:line refs, code snippets, root cause analysis
+
+## ADRs
+- ADR-001: Investigation-first approach
+- ADR-002: Moderate investigation depth (30-60s)
+- ADR-003: Detect any unexpected behavior
+- ADR-004: Low-friction opt-out
+- ADR-005: Repository detection from error context
+- ADR-006: No code modification
+
+## Related Files
+- docs/spec/active/2025-12-25-bugfix-command/README.md
+- docs/spec/active/2025-12-25-bugfix-command/REQUIREMENTS.md
+- docs/spec/active/2025-12-25-bugfix-command/ARCHITECTURE.md
+- docs/spec/active/2025-12-25-bugfix-command/IMPLEMENTATION_PLAN.md
+- docs/spec/active/2025-12-25-bugfix-command/DECISIONS.md
+- commands/plan.md (bug fix: --no-worktree now creates branch)
