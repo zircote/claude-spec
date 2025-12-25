@@ -33,7 +33,7 @@ This plan covers two related features:
 - **Description**: Add explicit regex pattern for matching task IDs in PROGRESS.md
 - **Files**: `commands/implement.md`
 - **Acceptance Criteria**:
-  - [x] Pattern documented: `^\[([x ])\]\s+(\d+\.\d+)\s+(.*)$`
+  - [x] Pattern documented: `^\|\s*(\d+\.\d+)\s*\|.*\|\s*(pending|in-progress|done|skipped)\s*\|`
   - [x] Examples provided for each capture group
   - [x] Edge cases documented (multi-digit phases, special characters)
 
@@ -41,7 +41,7 @@ This plan covers two related features:
 - **Description**: Add regex for finding task sections in IMPLEMENTATION_PLAN.md
 - **Files**: `commands/implement.md`
 - **Acceptance Criteria**:
-  - [x] Pattern documented: `^####\s+Task\s+(\d+\.\d+):\s+(.*)$`
+  - [x] Pattern documented: `^###\s+Task\s+(\d+\.\d+):\s+(.*)$`
   - [x] Explain how to correlate with PROGRESS.md task IDs
 
 ### Task 1.3: Document Acceptance Criteria Section Discovery
@@ -277,25 +277,25 @@ Phase 5 (Testing & Docs) ─── depends on Phases 1-4 ───
 
 ## Testing Checklist
 
-- [ ] Unit tests for task ID regex extraction
-- [ ] Unit tests for acceptance criteria checkbox pattern
-- [ ] Unit tests for Levenshtein distance calculation
-- [ ] Integration test for full sync cycle
-- [ ] Integration test for --help generation
-- [ ] Edge case tests per Task 5.1 and 5.2
+- [x] Unit tests for task ID regex extraction
+- [x] Unit tests for acceptance criteria checkbox pattern
+- [x] Unit tests for Levenshtein distance calculation
+- [x] Integration test for full sync cycle
+- [x] Integration test for --help generation
+- [x] Edge case tests per Task 5.1 and 5.2
 
 ## Documentation Tasks
 
-- [ ] Update Phase 5 in commands/implement.md
-- [ ] Update frontmatter in commands/plan.md
-- [ ] Update frontmatter in commands/implement.md
-- [ ] Update CLAUDE.md with new features
-- [ ] Update README with user-facing changes
+- [x] Update Phase 5 in commands/implement.md
+- [x] Update frontmatter in commands/plan.md
+- [x] Update frontmatter in commands/implement.md
+- [x] Update CLAUDE.md with new features
+- [x] Update README with user-facing changes
 
 ## Launch Checklist
 
-- [ ] All phases complete
-- [ ] Test cases pass
-- [ ] Documentation updated
-- [ ] Backward compatibility verified
-- [ ] No regression in existing commands
+- [x] All phases complete
+- [x] Test cases pass
+- [x] Documentation updated
+- [x] Backward compatibility verified
+- [x] No regression in existing commands
