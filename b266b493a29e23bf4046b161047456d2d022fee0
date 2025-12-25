@@ -174,3 +174,18 @@ tags:
 ├── completed/       # Existing - finished projects
 ├── superseded/      # Existing - replaced projects
 └──...
+
+---
+type: progress
+timestamp: '2025-12-25T17:14:01.352709+00:00'
+summary: '...approved/        # Existing - approved awaiting implementation'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...approved/        # Existing - approved awaiting implementation
+├── completed/       # Existing - finished projects
+├── superseded/      # Existing - replaced projects
+└── rejected/        # NEW -...
