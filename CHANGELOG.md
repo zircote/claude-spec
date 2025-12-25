@@ -2,6 +2,9 @@
 
 All notable changes to the claude-spec plugin will be documented in this file.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [Unreleased]
 
 ## [0.10.0] - 2025-12-25
@@ -23,15 +26,16 @@ All notable changes to the claude-spec plugin will be documented in this file.
   - One command for fully autonomous comprehensive review and fix
 - **plan.md**: Approval workflow integration with draft status
 - **implement.md**: Warning banner when spec not approved
+- **ci**: Add changelog automation to release workflow
 
 ### Changed
-- **Renamed**: `/claude-spec:code-cleanup` → `/claude-spec:deep-clean`
+- **Renamed**: `/claude-spec:code-cleanup` to `/claude-spec:deep-clean`
 - **README.md**: Reorganized features with Deep Analysis Commands at top
-- **Config File Rename**: `worktree-manager.config.json` → `claude-spec.config.json`
+- **Config File Rename**: `worktree-manager.config.json` to `claude-spec.config.json`
   - User config now at `~/.claude/claude-spec.config.json`
   - Default config moved from `skills/worktree-manager/config.template.json` to plugin root `./claude-spec.config.json`
   - Auto-migration: old config path is automatically renamed to new path on first load
-  - Command keys updated: `cs:*` → `claude-spec:*` (e.g., `cs:c` → `claude-spec:complete`)
+  - Command keys updated: `cs:*` to `claude-spec:*` (e.g., `cs:c` to `claude-spec:complete`)
 - **Simplified Architecture**: Plugin now focuses on Commands, Filters, and Worktree Manager only
 
 ### Fixed
@@ -56,52 +60,114 @@ All notable changes to the claude-spec plugin will be documented in this file.
 - **Code Review Commands**: Removed `/code-review` and `/code-fix` commands
 - **Memory Spec Projects**: Removed related completed spec documentation
 
-## [1.1.0] - 2025-12-13
+## [0.9.0] - 2025-12-25
 
-### Added
-- **Lifecycle Hook System**: Pre/post step execution for `/*` commands
-  - `hooks/session_start.py` - SessionStart hook that loads context (CLAUDE.md, git state, project structure)
-  - `hooks/command_detector.py` - UserPromptSubmit hook that detects `/*` commands and triggers pre-steps
-  - `hooks/post_command.py` - Stop hook that runs post-steps and cleans up session state
-- **Step Modules**: Configurable step system with fail-open design
-  - `steps/base.py` - BaseStep ABC with StepResult dataclass
-  - `steps/context_loader.py` - Loads CLAUDE.md (global + local), git state, project structure
-  - `steps/security_reviewer.py` - Bandit-based security scanning
-  - `steps/log_archiver.py` - Archives .prompt-log.json to completed project directories
-  - `steps/marker_cleaner.py` - Removes temp files (.cs-session-state.json)
-  - `steps/retrospective_gen.py` - Generates RETROSPECTIVE.md from log analysis
-- **Lifecycle Configuration**: Step configuration in `~/.claude/worktree-manager.config.json`
-  - `lifecycle.pre_steps` - Steps to run before commands (context_loader by default)
-  - `lifecycle.post_steps` - Steps to run after commands (log_archiver, marker_cleaner, retrospective_gen by default)
-  - `lifecycle.<command>_pre_steps` - Command-specific pre-steps
-  - `lifecycle.<command>_post_steps` - Command-specific post-steps
-- **Expanded Test Suite**: 105 new tests (230 total, 96% coverage)
-  - `tests/test_session_start.py` - 27 tests for session start hook
-  - `tests/test_command_detector.py` - 27 tests for command detector hook
-  - `tests/test_post_command.py` - 23 tests for post command hook
-  - `tests/test_steps.py` - 28 tests for all step modules
-  - `tests/test_hooks_lib.py` - Tests for hooks/lib module exports
-- `analyzers/` directory with log analysis tools
-  - `analyze_cli.py` - CLI for generating interaction analysis
-  - `log_analyzer.py` - Core analysis logic for prompt logs
+### Removed
+- Remove `.prompt-log-enabled` dead code references
+
+## [0.8.x] - 2025-12-24
 
 ### Fixed
-- **hooks.json**: Fixed malformed nested structure that prevented hook registration
-- **c.md**: Fixed analyzer path from `~/.claude/hooks/analyzers/` to `${CLAUDE_PLUGIN_ROOT}/analyzers/`
-- **c.md**: Fixed log filename reference from `PROMPT_LOG.json` to `.prompt-log.json`
-- **log.md**: Fixed log filename references to use `.prompt-log.json` consistently
-- **log_analyzer.py**: Removed `profanity_count` references (FilterInfo only has `secret_count`)
-- **iTerm2-tab script**: Fixed window vs tab differentiation for proper tab creation
+- **v0.8.3**: Prevent context exhaustion cascading failure in implement command (#33)
+- **v0.8.1**: Prevent conversation state corruption in implement and plan commands
+
+## [0.7.0] - 2025-12-24
+
+### Added
+- **plan**: Implement GitHub Issues worktree workflow
+  - Issue-to-worktree automation
+  - `/claude-spec:plan` without arguments now shows issue selection
+
+### Fixed
+- Address code review feedback
+- Complete MAXALL code cleanup remediation (101 findings)
+
+## [0.6.x] - 2025-12-24
+
+### Added
+- **v0.6.4**: Real-time progress tracking for remediation in code-cleanup command
+- **v0.6.2**: `--focus=MAX` and `--focus=MAXALL` modes for code-cleanup
+- **v0.6.1**: `make release-{patch,minor,major}` combined targets
+- **v0.6.0**: Help sections and date-based report paths for commands
+- **CLAUDE.md**: LSP code intelligence guidelines
+- LSP hooks for Python development (format-on-edit, lint-check, typecheck)
+
+### Fixed
+- **v0.6.0**: Address 5 code review findings from PR#24
+- **v0.6.0**: Add argument type detection and migration protocol to plan command
+- Expand truncated help text in command DESCRIPTION sections
+
+## [0.5.0] - 2025-12-21
+
+### Added
+- **commands**: Add deep-explore and deep-research Opus 4.5 commands
+- **plugin**: Add missing commands and sync version
+
+### Fixed
+- **make**: Require CI checks to pass before release
+- **make**: Simplify release target to avoid Python 3.13 compatibility issues
 
 ### Changed
-- **hooks.json**: Now registers SessionStart, UserPromptSubmit (2 hooks), and Stop hooks
-- **plugin.json**: Added `hooks` field pointing to `../hooks/hooks.json` for hook discovery
-- **p.md**: Added `post_approval_halt` enforcement for strict phase separation
-- **i.md**: Added `implementation_gate` for explicit `/i` requirement
-- Interaction analysis now generated from plugin's own analyzer scripts
-- All prompt log references standardized to `.prompt-log.json`
+- **ci**: Bump actions/github-script from 7 to 8
+- **ci**: Bump actions/setup-python from 5 to 6
+- **ci**: Bump actions/checkout from 4 to 6
 
-## [1.0.0] - 2025-12-12
+## [0.4.x] - 2025-12-19
+
+### Added
+- **v0.4.4**: `/code-cleanup` slash command for code quality analysis
+- **v0.4.4**: `make version` and `make release` targets
+- **v0.4.1**: bump-my-version for semantic versioning
+- **v0.4.0**: Git-native memory system removed in later version
+
+### Changed
+- **v0.4.4**: Complete prompt engineering refactoring for implement command
+- **v0.4.4**: Add execution_mode and shared_configuration to implement
+- **v0.4.0**: Move plugin structure from `plugins/cs/` to repository root
+- **v0.4.0**: Update config paths and documentation
+
+### Fixed
+- **v0.4.0**: Update workflows for memory/hooks removal
+- **v0.4.0**: Remove Memory and Hook systems from claude-spec plugin
+- **v0.4.0**: CI workflow fixes for root-level plugin structure
+
+## [0.3.0] - 2025-12-17
+
+### Added
+- **commands**: Add artifact verification gate to `/cs:i`
+- **commands**: Add documentation gate to `/cs:i`
+- **commands**: Integrate `/cs:review` and `/cs:fix` into `/cs:i`
+- **cs**: Report placement directive to review/fix commands
+- **cs**: Hook-based memory architecture (removed in v0.4.0)
+- **memory**: Auto-capture for cs:* commands (removed in v0.4.0)
+- **memory**: Git notes auto-sync configuration (removed in v0.4.0)
+- **recall**: API reference with common pitfalls
+- **worktree**: iTerm2 tab mode for agent launching
+- **worktree**: User config persistence and prompt log timing fix
+- **cs**: Pre and post steps for /cs:* commands
+- GitHub Actions CI/CD and improved test coverage
+- Expanded test suite (230 tests, 96% coverage)
+
+### Changed
+- Convert marketplace to plugin with nested path references
+- Update plugin installation for public GitHub repo
+- Rename ARTIFACT_CLEANUP_RETROSPECTIVE to RETROSPECTIVE
+
+### Fixed
+- Address Copilot code review findings
+- Correct hook paths for nested plugin structure
+- Enforce AskUserQuestion and add quality gate
+- Add TodoWrite to multi-step commands
+- Add AskUserQuestion to allowed-tools
+- Update hooks.json to match Claude Code plugin schema
+- Unique IDs for multiple memories per commit
+- Address PR review comments and critical findings
+- Address code review findings with shared modules and enhanced tests
+- Fix wt:setup bash reliability and eliminate mapping errors
+- Use jq for proper JSON escaping in setup.md
+- Repair shellcheck and test failures
+
+## [0.1.x] - 2025-12-12
 
 ### Added
 - Initial release of claude-spec plugin
@@ -109,7 +175,7 @@ All notable changes to the claude-spec plugin will be documented in this file.
 - `/i` - Implementation tracking with document synchronization
 - `/s` - Status and portfolio monitoring
 - `/c` - Project close-out and archival
-- `/log` - Prompt capture toggle
+- `/log` - Prompt capture toggle (removed in v0.10.0)
 - `/migrate` - Migration from legacy `/arch:*` commands
 - `/wt:create` - Worktree creation with agent launching
 - `/wt:status` - Worktree status display
@@ -117,6 +183,11 @@ All notable changes to the claude-spec plugin will be documented in this file.
 - Prompt capture hook with filtering pipeline
 - Project artifact templates with Agent fields
 - Worktree management scripts
+
+### Fixed
+- **v0.1.3**: Correct hooks path in plugin.json to relative location
+- **v0.1.2**: Pre and post steps lifecycle feature with 95% coverage
+- **v0.1.2**: Address PR review findings for error handling and silent failures
 
 ### Attribution
 - Worktree management based on original `worktree-manager` skill
