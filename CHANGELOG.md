@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2025-12-25
+
+### Added
+- **report-issue**: New `/claude-spec:report-issue` command for AI-actionable GitHub issues
+  - Investigates codebase before filing (30-60 seconds exploration)
+  - Gathers file paths, code snippets, error traces, related code
+  - Produces issues with enough detail for AI-assisted resolution
+  - Supports issue types: bug, feat, docs, chore, perf
+  - Repository detection from error traces, plugin paths, or current project
+  - Cancel option at every step for safe exit
+- **plan.md**: Error recovery integration with `/report-issue`
+  - Captures error context (traceback, files, recent actions)
+  - Offers to launch issue reporter with pre-filled context
+  - Session and permanent suppression options for error prompts
+- **implement.md**: Error recovery integration with `/report-issue`
+  - Same error context capture and reporting flow
+  - Checkpoints progress before launching issue reporter
+- **report-issue**: Phase 0 error context detection
+  - Auto-detects when invoked from `/plan` or `/implement` after error
+  - Pre-fills issue type, description, and investigation findings
+  - Displays pre-filled context for user review
+
+### Fixed
+- **report-issue**: Argument parsing logic (array indexing instead of shift in for loop)
+- **report-issue**: Added cancel option to all Phase 1 AskUserQuestion prompts
+- **report-issue**: Improved Step 1.2/1.3 title and description UX
+- **report-issue**: Added chore and perf type-specific follow-up prompts
+- **report-issue**: Implemented full repository detection logic in Step 4.1
+- **plan.md/implement.md**: Added initialization guidance for suppression flags
+
 ## [0.10.0] - 2025-12-25
 
 ### Added
