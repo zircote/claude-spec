@@ -58,3 +58,25 @@ tags:
 ...Argument hint | Metadata in command frontmatter describing expected arguments |
 | Task ID | Pattern like `1.1`, `2.3` identifying tasks within phases |
 | Acceptance criteria | Checkboxes under...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:39:31.719608+00:00'
+summary: '...patterns'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...patterns
+
+**Technology**: Bash patterns embedded in command markdown
+
+#### Task Finder Sub-component
+
+**Pattern Matching for Task IDs**:
+
+```regex
+# In PROGRESS.md - extract task ID and status
+^\[([x ])\]\s+(\d+\...
