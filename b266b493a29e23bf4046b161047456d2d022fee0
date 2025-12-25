@@ -320,3 +320,20 @@ tags:
 | ID | Description | Status | Started | Completed | Notes |
 |----|-------------|--------|---------|-----------|-------|
 | 1.1 | Create /approve...
+
+---
+type: progress
+timestamp: '2025-12-25T17:21:22.393578+00:00'
+summary: '...re-approve with updated timestamp?"'
+tags:
+- auto-captured
+- post-tool-use
+- file:approve.md
+---
+
+...re-approve with updated timestamp?"
+  -> Use AskUserQuestion for confirmation
+
+IF STATUS == "completed" OR STATUS == "rejected":
+  -> Display error:
+    "❌ Cannot approve a spec with status '${STATUS}'....
