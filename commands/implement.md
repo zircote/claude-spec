@@ -46,8 +46,63 @@ SEE ALSO
 
 # /claude-spec:implement - Implementation Progress Manager
 
+<session_initialization>
+## Session State Management
+
+**CRITICAL**: Each `/claude-spec:implement` invocation is a fresh session boundary.
+
+### On Command Start (MANDATORY)
+
+1. **Clear any cached tool expectations** - Do not assume prior tool results exist
+2. **Validate all state by reading files** - Never rely on memory of prior reads
+3. **Never reference tool results across session boundaries** - If a prior session was interrupted, those results are gone
+4. **Treat each invocation as fresh** - Even if resuming, re-read all state from disk
+
+### Tool Chain Integrity
+
+```
+RULES:
+1. One tool chain at a time (no overlapping tool_use/tool_result pairs)
+2. Wait for tool_result before issuing next tool_use
+3. Parallel Task subagents are an exception - but parent must wait for ALL to complete
+4. Never reference tool results from prior sessions or interrupted operations
+```
+
+### Resumption Safety
+
+When resuming an implementation (PROGRESS.md exists):
+- **DO NOT** assume any prior PR exists - verify with `gh pr list`
+- **DO NOT** reference cached task states - re-read PROGRESS.md
+- **DO NOT** assume prior file reads are current - read files fresh
+
+This prevents conversation state corruption when sessions are interrupted mid-tool-call.
+</session_initialization>
+
+<directive_precedence>
+## Directive Priority Order
+
+When multiple directives could apply simultaneously, follow this precedence:
+
+1. **NEVER interrupt an in-flight tool call to start another** - Complete current operation first
+2. **User interaction (AskUserQuestion) takes precedence** over parallel subagent spawning
+3. **Complete current tool chain before spawning parallel operations**
+4. **Sequential dependencies override parallel mandates** - If output A informs input B, run sequentially
+
+### Conflict Resolution
+
+If you detect conflicting directives:
+1. Complete the current operation
+2. Pause before the next operation
+3. Apply precedence rules above
+4. Proceed with highest-priority directive
+</directive_precedence>
+
 <execution_mode>
-sequential - Execute implementation phases completely before proceeding to the next.
+## Execution Model
+
+**EXECUTION MODEL**: phase-gated with parallel optimization within phases
+
+Each phase MUST complete before proceeding to next. Within phases, independent operations MAY run in parallel. Dependent operations MUST be sequential.
 
 EXECUTION CONTRACT:
 
@@ -685,10 +740,32 @@ IF validation FAILS:
   -> DO NOT mark task complete
   -> Fix all issues (lint errors, type errors, test failures)
   -> Re-run validation
-  -> Repeat until all checks pass
+  -> Repeat until all checks pass (max 3 attempts)
 ```
 
 **A task is NOT complete until review passes AND CI passes. No exceptions.**
+
+#### Retry Limits (MANDATORY)
+
+To prevent unbounded retry loops that can cause state corruption:
+
+```
+RETRY LIMITS:
+- Maximum 3 retry attempts per validation step
+- After 3 failures, STOP and ask user for guidance
+- Between retries, wait for all pending tool results to complete
+- Clear any cached state before each retry
+- Start with fresh file reads on each retry attempt
+
+ON RETRY LIMIT EXCEEDED:
+1. Log the failure details
+2. Use AskUserQuestion to present options:
+   - "Fix manually" - User will address the issue
+   - "Skip this check" - Proceed without passing (document skip)
+   - "Abort task" - Mark task blocked, move to next
+```
+
+This prevents conversation state corruption from cascading retry failures.
 
 #### Complete Example Flow
 
@@ -1393,13 +1470,13 @@ ${PHASE_ROWS}
 
 ### Scenario A: New Implementation (No PROGRESS.md)
 
-1. **Locate the project**
-2. **Read IMPLEMENTATION_PLAN.md**
-3. **Parse all tasks**
-4. **Generate PROGRESS.md**
-5. **Create draft PR** (see draft_pr_management)
+1. **Locate the project** - Read and validate project directory exists
+2. **Read IMPLEMENTATION_PLAN.md** - Wait for read to complete before parsing
+3. **Parse all tasks** - Extract task structure from the read content
+4. **Generate PROGRESS.md** - Write file and verify it was created
+5. **Create draft PR** (see draft_pr_management) - Wait for PR creation to complete
 6. **Display brief initialization summary** (2-3 lines max)
-7. **Immediately start implementing Task 1.1**
+7. **After initialization is verified complete**, proceed to Task 1.1
 
 ```
 [OK] Initialized ${PROJECT_NAME} - ${TASK_COUNT} tasks across ${PHASE_COUNT} phases.
@@ -1410,22 +1487,28 @@ Starting Task 1.1: ${FIRST_TASK_DESCRIPTION}
 
 Then BEGIN IMPLEMENTATION. Do not ask what to work on.
 
+**Note**: Each step must complete and be verified before proceeding to the next.
+
 ### Scenario B: Resuming Implementation (PROGRESS.md exists)
 
-1. **Load PROGRESS.md**
-2. **Find next pending task** (first non-completed task in order)
-3. **Update draft PR** (if exists)
-4. **Display brief status** (1-2 lines)
-5. **Immediately start implementing the next task**
+**CRITICAL: On resumption, assume NO prior tool state exists. Re-read everything fresh.**
+
+1. **Read PROGRESS.md fresh** (do not assume prior read results exist)
+2. **Validate file contents** before proceeding (check for corruption/format issues)
+3. **Check for existing PR** using `gh pr list --state open --head $(git branch --show-current)` (do not assume cached PR numbers)
+4. **Display current state** from the fresh reads only
+5. **After state is verified**, proceed to the next pending task
 
 ```
 Resuming ${PROJECT_NAME} - ${COMPLETED}/${TOTAL} tasks done.
-PR: ${PR_URL}
+PR: ${PR_URL}  # Only if PR was found in step 3
 
 Continuing with Task ${NEXT_TASK_ID}: ${NEXT_TASK_DESCRIPTION}
 ```
 
 Then BEGIN IMPLEMENTATION. Do not ask what to work on.
+
+**Note**: The phrase "immediately start" is intentionally avoided. Always verify state before proceeding.
 
 ### Scenario C: All Tasks Complete
 

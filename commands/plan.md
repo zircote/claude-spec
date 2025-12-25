@@ -51,26 +51,37 @@ SEE ALSO
 
 **DO NOT read the project seed. DO NOT start problem-solving. Execute these steps FIRST:**
 
-<context_override_prohibition>
-### 🚨 CRITICAL: Protocol Takes Precedence Over Session Context
+<session_state_management>
+### 🚨 CRITICAL: Session Boundary and State Management
 
-**Prior session context does NOT override this protocol.**
+**Each `/claude-spec:plan` invocation is a fresh session boundary.**
 
-Even if:
-- A previous session said "no worktree needed"
-- The user previously indicated branch preferences
-- Earlier in this conversation a different approach was discussed
-- Memory context suggests an alternative workflow
+#### Session State Rules
 
-**These instructions MUST be followed exactly as written.**
+1. **Do not assume prior tool results exist** - If a prior session was interrupted mid-tool-call, those results are gone
+2. **Validate all state by reading files** - Never rely on memory of prior reads
+3. **Never reference tool results across session boundaries** - Each invocation starts fresh
+4. **Treat prior context as informational only** - It does not override protocol steps
+
+#### Tool Chain Integrity
+
+```
+RULES:
+1. One tool chain at a time (no overlapping tool_use/tool_result pairs)
+2. Wait for tool_result before issuing next tool_use
+3. Parallel Task subagents are an exception - but parent must wait for ALL to complete
+4. Never reference tool results from prior sessions or interrupted operations
+```
+
+#### Protocol vs Context
 
 If a genuine conflict exists between protocol and user context:
-1. **DO NOT** make unilateral decisions to skip protocol steps
+1. **Complete any in-flight tool operations first**
 2. **USE AskUserQuestion** to explicitly ask the user
 3. **Document** the deviation in the planning artifacts if user approves override
 
-**Violations of this rule are protocol failures, regardless of justification.**
-</context_override_prohibition>
+This prevents conversation state corruption when sessions are interrupted mid-tool-call.
+</session_state_management>
 
 ### Step 0: Parse Argument Type
 
@@ -1358,7 +1369,7 @@ To cleanup worktrees: /claude-spec:worktree-cleanup
 </github_issues_workflow>
 
 <initialization_protocol>
-## Phase 0: Project Initialization (think)
+## Phase 0: Project Initialization
 
 Before any questioning, establish the project workspace.
 
@@ -1478,9 +1489,46 @@ Use AskUserQuestion with:
 Never skip levels. Build from the foundation up.
 </planning_philosophy>
 
+<directive_precedence>
+## Directive Priority Order
+
+When multiple directives could apply simultaneously, follow this precedence:
+
+1. **NEVER interrupt an in-flight tool call to start another** - Complete current operation first
+2. **User interaction (AskUserQuestion) takes precedence** over parallel subagent spawning
+3. **Complete current tool chain before spawning parallel operations**
+4. **Sequential dependencies override parallel mandates** - If output A informs input B, run sequentially
+
+### Conflict Resolution
+
+If you detect conflicting directives:
+1. Complete the current operation
+2. Pause before the next operation
+3. Apply precedence rules above
+4. Proceed with highest-priority directive
+</directive_precedence>
+
 <execution_protocol>
 
-## Phase 1: Structured Elicitation via AskUserQuestion (ultrathink)
+## Execution Protocol - Quick Reference
+
+**PHASE ORDER**: 0 → 1 → 2 → 3 → 4 → 5 → 6 (no skipping)
+
+| Phase | Name | Entry Condition | Exit Condition |
+|-------|------|-----------------|----------------|
+| 0 | Project Initialization | Command invoked | Workspace created |
+| 1 | Structured Elicitation | Workspace exists | Clarity checkpoints met |
+| 2 | Research | Requirements clear | Research complete |
+| 3 | Requirements Doc | Research done | REQUIREMENTS.md written |
+| 4 | Architecture Design | Requirements done | ARCHITECTURE.md written |
+| 5 | Implementation Planning | Architecture done | IMPLEMENTATION_PLAN.md written |
+| 6 | Artifact Finalization | All docs written | Status updated, user notified |
+
+**KEY RULE**: Complete each phase fully before proceeding. Verify state by reading files, not memory.
+
+---
+
+## Phase 1: Structured Elicitation via AskUserQuestion
 
 Before ANY planning, achieve absolute clarity through the AskUserQuestion tool.
 
@@ -1841,7 +1889,7 @@ status: draft
 ```
 </requirements_template>
 
-## Phase 4: Technical Architecture Design (ultrathink)
+## Phase 4: Technical Architecture Design
 
 Design the technical solution.
 
