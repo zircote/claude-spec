@@ -1,0 +1,22 @@
+---
+type: progress
+timestamp: '2025-12-25T15:22:06.180443+00:00'
+summary: Hotfix for command state corruption completed and PR submitted
+---
+
+Hotfix for command state corruption completed and PR submitted
+## Summary
+Investigated, patched, and submitted hotfix for API error 400 "unexpected tool_use_id" in implement and plan commands.
+
+## Changes Made
+- Added session_initialization and directive_precedence to implement.md
+- Replaced "immediately" language with explicit sequencing
+- Added retry limits to quality gate logic
+- Added session_state_management to plan.md
+- Added execution protocol quick reference table
+- Removed non-standard (think)/(ultrathink) annotations
+
+## Related Files
+- commands/implement.md:49-106 (new session init and directive sections)
+- commands/plan.md:54-84 (session state management)
+- commands/plan.md:1492-1528 (directive precedence and quick reference)
