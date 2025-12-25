@@ -259,3 +259,19 @@ tags:
 ### Task 1.2: Document IMPLEMENTATION_PLAN.md Task Heading Pattern
 - **Description**: Add regex for finding task sections in IMPLEMENTATION_PLAN.md
 - **Files**:...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:40:48.077968+00:00'
+summary: '...IMPLEMENTATION_PLAN.md'
+tags:
+- auto-captured
+- post-tool-use
+- file:IMPLEMENTATION_PLAN.md
+---
+
+...IMPLEMENTATION_PLAN.md
+- **Files**: `commands/implement.md`
+- **Acceptance Criteria**:
+  - [ ] Pattern documented: `^####\s+Task\s+(\d+\.\d+):\s+(.*)$`
+  - [ ] Explain how to correlate with PROGRESS.md...
