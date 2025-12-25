@@ -154,3 +154,23 @@ tags:
             IF schema has positional with pattern:
                 IF NOT regex_match(arg, pattern):
                     errors.append(f"Invalid...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:39:31.816599+00:00'
+summary: '...Considerations'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...Considerations
+
+- Regex patterns are pre-compiled and tested
+- No user input directly executed (all pattern matching)
+- Path arguments validated to exist before use
+
+## Performance Considerations
+
+###...
