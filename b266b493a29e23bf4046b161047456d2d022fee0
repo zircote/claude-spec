@@ -959,3 +959,18 @@ tags:
 |       +-- CHANGELOG.md
 +-- completed/        # Archived projects (with RETROSPECTIVE.md)
 +-- rejected/         # Rejected specs...
+
+---
+type: progress
+timestamp: '2025-12-25T17:49:19.920644+00:00'
+summary: '...security_reviewer.py # Run bandit security scan'
+tags:
+- auto-captured
+- post-tool-use
+- file:CLAUDE.md
+---
+
+...security_reviewer.py # Run bandit security scan
+├── log_archiver.py     # Archive prompt logs to completed/
+├── marker_cleaner.py   # Clean up temp files
+└── retrospective_gen.py # Generate RETROSPECTIVE.md...
