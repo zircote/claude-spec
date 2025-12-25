@@ -83,3 +83,32 @@ All 5 tasks in Phase 1 implemented successfully. Added ~190 lines of checkbox sy
 - commands/implement.md:1357-1545 (new `<checkbox_sync_patterns>` section)
 - docs/spec/active/2025-12-25-implement-ux-improvements/PROGRESS.md:30-34
 - docs/spec/active/2025-12-25-implement-ux-improvements/IMPLEMENTATION_PLAN.md:36-74
+
+---
+type: progress
+timestamp: '2025-12-25T20:25:54.772456+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Phase 2 completed: Argument Schema Definition
+
+  #...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Phase 2 completed: Argument Schema Definition
+## Summary
+All 4 tasks in Phase 2 implemented. Added argument schema sections to both plan.md and implement.md with full documentation.
+
+## Changes Made
+- Task 2.1: Defined schema structure with positional args, flags, types (string/boolean/integer/path)
+- Task 2.2: Added argument_schema section to plan.md with --inline, --no-worktree, --no-branch flags
+- Task 2.3: Added argument_schema section to implement.md with project-ref positional arg
+- Task 2.4: Documented backward compatibility rules, detection algorithm, upgrade path per ADR-006
+
+## Related Files
+- commands/implement.md:45-208 (new `<argument_schema>` section)
+- commands/plan.md:50-136 (new `<argument_schema>` section)
+- docs/spec/active/2025-12-25-implement-ux-improvements/PROGRESS.md:35-38
+- docs/spec/active/2025-12-25-implement-ux-improvements/IMPLEMENTATION_PLAN.md:81-116
