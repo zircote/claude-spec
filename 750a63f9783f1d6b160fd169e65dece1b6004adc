@@ -18,3 +18,16 @@ The `/plan` command produces planning artifacts (REQUIREMENTS.md, ARCHITECTURE.m
 
 ## Related Files
 - commands/plan.md:1-200 (planning protocol)
+
+---
+type: learnings
+timestamp: '2025-12-25T17:54:15.741434+00:00'
+summary: for future reference
+tags:
+- auto-captured
+- pre-compact
+---
+
+...workflows
+
+The planning artifacts are preserved at `docs/spec/completed/2025-12-25-approve-command/` for future reference.
