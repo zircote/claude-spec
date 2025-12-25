@@ -80,3 +80,19 @@ tags:
 ```regex
 # In PROGRESS.md - extract task ID and status
 ^\[([x ])\]\s+(\d+\...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:39:31.740649+00:00'
+summary: '...{task_id}:"'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...{task_id}:"
+    2. Start scanning from that line
+    3. Look for "- **Acceptance Criteria**:" pattern
+    4. Collect all lines starting with "  - [ ]" or "  - [x]"
+       until next heading (####)...
