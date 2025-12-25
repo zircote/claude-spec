@@ -797,3 +797,20 @@ tags:
 ## Recent Completed Spec Projects
 
 - `docs/spec/completed/2025-12-25-approve-command/` - Add /approve Command...
+
+---
+type: progress
+timestamp: '2025-12-25T17:36:00.568499+00:00'
+summary: '...`scripts/github-issues/` (6 scripts, 47 tests)'
+tags:
+- auto-captured
+- post-tool-use
+- file:CLAUDE.md
+---
+
+...`scripts/github-issues/` (6 scripts, 47 tests)
+
+## Recent Completed Spec Projects
+
+- `docs/spec/completed/2025-12-25-approve-command/` - Add /approve Command for Explicit Plan Acceptance
+  - Completed:...
