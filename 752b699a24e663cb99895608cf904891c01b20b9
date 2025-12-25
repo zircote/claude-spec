@@ -490,3 +490,18 @@ tags:
 |----|-------------|--------|---------|-----------|-------|
 | 1.1 | Document Task ID Regex Pattern | pending | | | |
 | 1.2 | Document IMPLEMENTATION_PLAN.md Task Heading Pattern | pending |...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:55:14.732687+00:00'
+summary: '...Task ID Regex Pattern | pending | | | |'
+tags:
+- auto-captured
+- post-tool-use
+- file:PROGRESS.md
+---
+
+...Task ID Regex Pattern | pending | | | |
+| 1.2 | Document IMPLEMENTATION_PLAN.md Task Heading Pattern | pending | | | |
+| 1.3 | Document Acceptance Criteria Section Discovery | pending | | | |
+|...
