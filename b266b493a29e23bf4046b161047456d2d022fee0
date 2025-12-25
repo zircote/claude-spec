@@ -158,3 +158,19 @@ stakeholders: []
 ```
 
 ###...
+
+---
+type: progress
+timestamp: '2025-12-25T17:14:01.332941+00:00'
+summary: '...approved, in-progress'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...approved, in-progress
+├── approved/        # Existing - approved awaiting implementation
+├── completed/       # Existing - finished projects
+├── superseded/      # Existing - replaced projects
+└──...
