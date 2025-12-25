@@ -310,3 +310,17 @@ tags:
 
 ...| Document IMPLEMENTATION_PLAN.md Task Heading Pattern | done | 2025-12-25 | 2025-12-25 | Pattern 2 in implement.md |
 | 1.3 | Document Acceptance Criteria Section Discovery | done | 2025-12-25...
+
+---
+type: patterns
+timestamp: '2025-12-25T19:00:19.220415+00:00'
+summary: '### Task 1.1: Document Task ID Regex Pattern'
+tags:
+- auto-captured
+- post-tool-use
+- file:IMPLEMENTATION_PLAN.md
+---
+
+### Task 1.1: Document Task ID Regex Pattern
+- **Description**: Add explicit regex pattern for matching task IDs in PROGRESS.md
+- **Files**:...
