@@ -223,3 +223,28 @@ All 5 phases of the "Implement Command UX Improvements" spec (SPEC-2025-12-25-00
 - CLAUDE.md:95-130 (new feature documentation)
 - README.md:97-104 (implement features)
 - docs/spec/active/2025-12-25-implement-ux-improvements/PROGRESS.md (all done)
+
+---
+type: progress
+timestamp: '2025-12-25T20:25:54.979010+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Simplified over-engineered documentation in impl...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Simplified over-engineered documentation in implement.md and plan.md
+## Summary
+Removed ~500 lines of unnecessary pseudocode that documented implementation details Claude already knows. The sections now focus on expected behavior rather than how to implement it.
+
+## Changes Made
+- `implement.md argument_schema`: 163 → 30 lines (removed detection algorithm, field tables, upgrade examples)
+- `implement.md help_generation`: 144 → 5 lines (removed full pseudocode algorithm)
+- `implement.md argument_validation`: 192 → 28 lines (removed Levenshtein implementation, validation pseudocode)
+- `plan.md argument_schema`: 103 → 30 lines (removed duplicate documentation)
+
+## Related Files
+- commands/implement.md:60-129 (simplified sections)
+- commands/plan.md:63-93 (simplified section)
