@@ -84,3 +84,21 @@ Added workflow flexibility flags and critical implementation prevention to /plan
 - commands/plan.md:188-210 (branch decision gate)
 - commands/plan.md:265-323 (never_implement section)
 - commands/plan.md:22-38 (help text)
+
+---
+type: progress
+timestamp: '2025-12-25T18:12:43.067139+00:00'
+summary: '...Removed `/code-review` and `/code-fix` commands'
+tags:
+- auto-captured
+- post-tool-use
+- file:CHANGELOG.md
+---
+
+...Removed `/code-review` and `/code-fix` commands
+- **Memory Spec Projects**: Removed related completed spec documentation
+
+## [0.9.0] - 2025-12-25
+
+### Removed
+- Remove `.prompt-log-enabled` dead...
