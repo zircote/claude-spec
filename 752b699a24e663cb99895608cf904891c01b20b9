@@ -174,3 +174,23 @@ tags:
 ## Performance Considerations
 
 ###...
+
+---
+type: patterns
+timestamp: '2025-12-25T18:39:31.834935+00:00'
+summary: '...Levenshtein calculations for common typos'
+tags:
+- auto-captured
+- post-tool-use
+- file:ARCHITECTURE.md
+---
+
+...Levenshtein calculations for common typos
+
+## Testing Strategy
+
+### Unit Testing
+
+- Regex pattern matching for all documented formats
+- Levenshtein distance calculations
+- Schema parsing from...
