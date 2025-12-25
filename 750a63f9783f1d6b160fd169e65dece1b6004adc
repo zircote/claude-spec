@@ -9,3 +9,14 @@ tags:
 ---
 
 ...The current `/plan` → `/implement` flow lacks a formal approval checkpoint. This is a common pattern in enterprise software development where plans need explicit sign-off before implementation...
+
+---
+type: patterns
+timestamp: '2025-12-25T17:54:15.865936+00:00'
+summary: 'Let me update the grep pattern to include approved_by:'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Let me update the grep pattern to include approved_by:
