@@ -69,3 +69,19 @@ tags:
   # Match claude-code-plugins/owner/repo pattern
   if [[ "$path" =~ claude-code-plugins/([^/]+)/([^/]+) ]]; then
     repo="${BASH_REMATCH[1]}/${BASH_REMATCH...
+
+---
+type: patterns
+timestamp: '2025-12-25T20:31:30.412710+00:00'
+summary: '...plugins/([^/]+)/([^/]+) ]]; then'
+tags:
+- auto-captured
+- post-tool-use
+- file:report-issue.md
+---
+
+...plugins/([^/]+)/([^/]+) ]]; then
+    repo="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+  # Match plugins/cache pattern with owner/repo
+  elif [[ "$path" =~ plugins/cache/[^/]+/([^/]+)/([^/]+) ]]; then
+    repo="${BASH_REMATCH...
