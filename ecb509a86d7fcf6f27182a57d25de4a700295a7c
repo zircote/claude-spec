@@ -1,0 +1,14 @@
+---
+type: blockers
+timestamp: '2025-12-26T16:59:29.870513+00:00'
+summary: '...working'
+tags:
+- auto-captured
+- post-tool-use
+- file:deep-clean.md
+---
+
+...working
+- ✅ If a fix is complex, break it down and fix incrementally - DO NOT SKIP
+- ✅ If stuck on one finding, try a different approach - DO NOT DEFER
+- ✅ Work until ZERO findings remain or...
