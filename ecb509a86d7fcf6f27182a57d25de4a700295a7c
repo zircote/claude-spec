@@ -35,3 +35,17 @@ tags:
 3. **NEVER defer without asking** - silent deferrals are PROTOCOL VIOLATIONS
 
 **Valid...
+
+---
+type: progress
+timestamp: '2025-12-26T17:00:18.595239+00:00'
+summary: '...**DO NOT STOP** - move to the next finding immediately'
+tags:
+- auto-captured
+- post-tool-use
+- file:deep-clean.md
+---
+
+...**DO NOT STOP** - move to the next finding immediately
+2. **Complete all findings that CAN be completed** without approval
+3. **Batch approval requests** - collect all blockers, ask ONCE at the...
