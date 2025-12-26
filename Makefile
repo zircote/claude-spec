@@ -109,14 +109,17 @@ changelog:
 		echo "CHANGELOG.md updated for v$$VERSION"; \
 	fi
 
-# Create release: run CI checks, then create and push tag
+# Create release: run CI checks, push commits, then create and push tag
 release: ci
 	@VERSION=$$(grep -m1 'current_version' pyproject.toml | cut -d'"' -f2) && \
 	TAG="v$$VERSION" && \
+	BRANCH=$$(git branch --show-current) && \
 	if git rev-parse "$$TAG" >/dev/null 2>&1; then \
 		echo "Tag $$TAG already exists. Run 'make bump-patch' first, then 'make release'." && \
 		exit 1; \
 	fi && \
+	echo "Pushing commits to origin/$$BRANCH..." && \
+	git push origin "$$BRANCH" && \
 	echo "Creating release $$TAG..." && \
 	git tag -a "$$TAG" -m "Release $$TAG" && \
 	git push origin "$$TAG" && \
