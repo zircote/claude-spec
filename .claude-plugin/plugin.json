@@ -18,7 +18,6 @@
     "approval",
     "governance"
   ],
-  "hooks": "./hooks/hooks.json",
   "commands": [
     "./commands/approve.md",
     "./commands/deep-clean.md",
