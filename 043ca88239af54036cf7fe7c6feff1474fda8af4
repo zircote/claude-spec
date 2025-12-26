@@ -1,0 +1,43 @@
+---
+type: learnings
+timestamp: '2025-12-26T04:01:53.249991+00:00'
+summary: '▶ learned ─────────────────────────────────────
+
+  Git notes non-fast-forward rejection root cause a...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Git notes non-fast-forward rejection root cause and fix
+## Summary
+The git notes conflicts were caused by a misconfigured fetch refspec that tried to fetch directly into local refs instead of remote tracking refs.
+
+## Root Cause
+```
+# BAD: Direct fetch into local refs
+refs/notes/mem/*:refs/notes/mem/*
+
+# When local and remote diverge, this fails with:
+# "rejected - non-fast-forward"
+```
+
+## Fix Applied
+1. **Changed fetch refspec** to use remote tracking refs:
+   ```
+   # GOOD: Fetch to tracking refs first
+   +refs/notes/mem/*:refs/notes/origin/mem/*
+   ```
+
+2. **Merged diverged notes** using `cat_sort_uniq` strategy:
+   ```bash
+   git notes --ref=mem/$ref merge -s cat_sort_uniq refs/notes/origin/mem/$ref
+   ```
+
+3. **Pushed merged notes** to sync remote
+
+## Prevention
+With the new config, fetch goes to `refs/notes/origin/mem/*` first, then you can merge locally before pushing. The `notes.mergeStrategy = cat_sort_uniq` config was already correct.
+
+## Related Files
+- `.git/config` - remote.origin.fetch updated
