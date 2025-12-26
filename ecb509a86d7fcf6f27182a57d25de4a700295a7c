@@ -1,0 +1,13 @@
+---
+type: patterns
+timestamp: '2025-12-26T16:58:28.806125+00:00'
+summary: '...''[N/M] Fixed: [FILE:LINE] - [description] ✓ committed: <hash>'''
+tags:
+- auto-captured
+- post-tool-use
+- file:deep-clean.md
+---
+
+...'[N/M] Fixed: [FILE:LINE] - [description] ✓ committed: <hash>'
+
+  Output: Files modified, pattern applied, tests passing, commit hash"
