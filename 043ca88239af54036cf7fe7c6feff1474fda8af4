@@ -434,3 +434,28 @@ All 28 tasks across 2 phases completed. PR #36 ready for review.
 - commands/plan.md:2713-2815 (error_recovery section)
 - commands/implement.md:1771-1903 (error_recovery section)
 - README.md (report-issue documentation)
+
+---
+type: progress
+timestamp: '2025-12-26T04:01:53.167032+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Addressed Copilot review comments on PR #36 for ...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Addressed Copilot review comments on PR #36 for missing perf type support
+## Summary
+Fixed all 3 perf-related review comments in `commands/report-issue.md` and resolved the corresponding threads.
+
+## Changes Made
+- Added `perf` option to Step 1.1 AskUserQuestion (line 143-145)
+- Added investigation steps for `perf` type in Step 2.1 (lines 309-330)
+- Added issue template for `perf` type in Step 5.1 (lines 551-578)
+- Committed and pushed to main (commit 6b20299)
+- Resolved 3 GitHub review threads via GraphQL mutations
+
+## Related Files
+- commands/report-issue.md:143-145, 309-330, 551-578
