@@ -1,6 +1,6 @@
 {
   "name": "claude-spec",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "Project specification and implementation lifecycle management",
   "author": {
     "name": "Claude Spec Contributors"
