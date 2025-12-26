@@ -498,3 +498,33 @@ Addressed all remaining 8 review comments (after the initial 3 perf-related ones
 - commands/report-issue.md:89-130, 136-187, 204-299, 538-615
 - commands/plan.md:2782-2826
 - commands/implement.md:2113-2157
+
+---
+type: progress
+timestamp: '2025-12-26T04:01:53.288606+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Created GitHub issue for git-notes-memory plugin...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Created GitHub issue for git-notes-memory plugin fix
+## Summary
+Filed issue #18 with detailed technical analysis and proposed fixes.
+
+## Key Findings
+1. **Root cause**: `configure_sync()` sets fetch refspec as `refs/notes/mem/*:refs/notes/mem/*` which fails on diverged notes
+2. **Fix needed**: Change to `+refs/notes/mem/*:refs/notes/origin/mem/*` (fetch to tracking refs)
+3. **Additional work**: Add proper fetch→merge→push sync workflow
+
+## Proposed Changes
+- `git_ops.py:configure_sync()` - fix fetch refspec
+- Add `sync_notes()` method for remote sync
+- Add `migrate_fetch_config()` for existing installations
+- Update `/memory:sync` to handle remote sync
+- Add validation check in `/memory:validate --fix`
+
+## Related Files
+- src/git_notes_memory/git_ops.py:731-742
