@@ -75,11 +75,13 @@ EXECUTION CONTRACT:
 ### Detection Protocol (Run Once at Start of Each Step)
 
 ```bash
-# ALWAYS use date-based directory: docs/code-review/YYYY/MM/DD/
+# Use date-time-branch directory to avoid collisions across worktrees
 YEAR=$(date +%Y)
 MONTH=$(date +%m)
 DAY=$(date +%d)
-REPORT_DIR="docs/code-review/${YEAR}/${MONTH}/${DAY}"
+HOUR_MIN=$(date +%H-%M)
+BRANCH=$(git branch --show-current 2>/dev/null | tr '/' '-' || echo "main")
+REPORT_DIR="docs/code-review/${YEAR}/${MONTH}/${DAY}/${HOUR_MIN}-${BRANCH}"
 
 # Create the directory if it doesn't exist
 mkdir -p "${REPORT_DIR}"
@@ -94,14 +96,16 @@ docs/
 └── code-review/
     └── 2025/
         └── 12/
-            ├── 23/
-            │   ├── CODE_REVIEW.md
-            │   ├── REVIEW_SUMMARY.md
-            │   ├── REMEDIATION_TASKS.md
-            │   └── REMEDIATION_REPORT.md
             └── 24/
-                ├── CODE_REVIEW.md
-                └── ...
+                ├── 14-30-main/
+                │   ├── CODE_REVIEW.md
+                │   ├── REVIEW_SUMMARY.md
+                │   ├── REMEDIATION_TASKS.md
+                │   ├── PROGRESS.md
+                │   └── REMEDIATION_REPORT.md
+                └── 15-45-feat-auth-flow/
+                    ├── CODE_REVIEW.md
+                    └── ...
 ```
 
 ### All Report Locations
@@ -111,14 +115,16 @@ docs/
 | CODE_REVIEW.md        | `${REPORT_DIR}/CODE_REVIEW.md`        |
 | REVIEW_SUMMARY.md     | `${REPORT_DIR}/REVIEW_SUMMARY.md`     |
 | REMEDIATION_TASKS.md  | `${REPORT_DIR}/REMEDIATION_TASKS.md`  |
+| PROGRESS.md           | `${REPORT_DIR}/PROGRESS.md`           |
 | REMEDIATION_REPORT.md | `${REPORT_DIR}/REMEDIATION_REPORT.md` |
 
-**Example (December 24, 2025):**
+**Example (December 24, 2025 at 14:30 on main branch):**
 
-- `docs/code-review/2025/12/24/CODE_REVIEW.md`
-- `docs/code-review/2025/12/24/REVIEW_SUMMARY.md`
-- `docs/code-review/2025/12/24/REMEDIATION_TASKS.md`
-- `docs/code-review/2025/12/24/REMEDIATION_REPORT.md`
+- `docs/code-review/2025/12/24/14-30-main/CODE_REVIEW.md`
+- `docs/code-review/2025/12/24/14-30-main/REVIEW_SUMMARY.md`
+- `docs/code-review/2025/12/24/14-30-main/REMEDIATION_TASKS.md`
+- `docs/code-review/2025/12/24/14-30-main/PROGRESS.md`
+- `docs/code-review/2025/12/24/14-30-main/REMEDIATION_REPORT.md`
 
 </report_placement>
 
@@ -237,7 +243,11 @@ If both `--all` and `--quick` are present, `--all` takes precedence (more compre
 
 ## Real-Time Progress Tracking
 
-**MANDATORY**: Every finding remediated MUST have its checkbox updated from `[ ]` to `[x]` in REMEDIATION_TASKS.md IMMEDIATELY after the fix is verified.
+**MANDATORY - NON-NEGOTIABLE REQUIREMENTS**:
+
+1. Every finding remediated MUST be **committed individually**
+2. Every finding MUST update **PROGRESS.md** with status
+3. Every finding MUST update **REMEDIATION_TASKS.md** checkbox
 
 ### Progress Tracking Protocol
 
@@ -247,60 +257,151 @@ ON EACH FINDING FIXED:
   2. Verify the fix (tests pass, no regressions)
   3. IMMEDIATELY update REMEDIATION_TASKS.md:
      - Change `- [ ] [FILE:LINE] [description]` to `- [x] [FILE:LINE] [description]`
-  4. Report progress inline: '[N/M] Fixed: [FILE:LINE] - [description] [x]'
-  5. Continue to next finding
+  4. IMMEDIATELY update PROGRESS.md with fix details
+  5. COMMIT the fix with descriptive message:
+     git add <fixed-files> ${REPORT_DIR}/REMEDIATION_TASKS.md ${REPORT_DIR}/PROGRESS.md
+     git commit -m "fix(<category>): <brief description>
+
+     Finding: [FILE:LINE] - <issue>
+     Severity: <Critical|High|Medium|Low>
+     Progress: [N/M] findings remediated"
+  6. Report progress inline: '[N/M] Fixed: [FILE:LINE] - [description] ✓ committed'
+  7. Continue to next finding
+```
+
+### PROGRESS.md Format
+
+Create and maintain `${REPORT_DIR}/PROGRESS.md`:
+
+```markdown
+# Deep Clean Progress
+
+## Session Info
+- **Started**: YYYY-MM-DD HH:MM
+- **Branch**: <branch-name>
+- **Report Dir**: ${REPORT_DIR}
+
+## Overall Progress
+- **Total Findings**: [N]
+- **Completed**: [X]
+- **Remaining**: [Y]
+- **Progress**: [X/N] ([%])
+
+## Commits Log
+
+| # | Commit | Category | Finding | File:Line |
+|---|--------|----------|---------|-----------|
+| 1 | abc123 | Security | SQL injection | filters/pipeline.py:42 |
+| 2 | def456 | Performance | N+1 query | analyzers/log_analyzer.py:87 |
+| ... | ... | ... | ... | ... |
+
+## Category Progress
+
+| Category | Total | Done | Remaining |
+|----------|-------|------|-----------|
+| Security | [n] | [x] | [r] |
+| Performance | [n] | [x] | [r] |
+| Architecture | [n] | [x] | [r] |
+| Code Quality | [n] | [x] | [r] |
+| Test Coverage | [n] | [x] | [r] |
+| Documentation | [n] | [x] | [r] |
 ```
 
 ### Checkpoint Frequency
 
-| Scenario                     | Checkpoint Action                       |
-| ---------------------------- | --------------------------------------- |
-| After each finding fixed     | Update checkbox in REMEDIATION_TASKS.md |
-| After each category complete | Add category completion note            |
-| After all fixes applied      | Generate final REMEDIATION_REPORT.md    |
+| Scenario                     | Checkpoint Action                                    |
+| ---------------------------- | ---------------------------------------------------- |
+| After each finding fixed     | Update checkbox, update PROGRESS.md, **COMMIT**      |
+| After each category complete | Add category completion note to PROGRESS.md          |
+| After all fixes applied      | Generate final REMEDIATION_REPORT.md, final commit   |
+
+### Commit Message Format
+
+Each fix MUST be committed with this format:
+
+```
+fix(<category>): <brief description of fix>
+
+Finding: <file>:<line> - <issue description>
+Severity: <Critical|High|Medium|Low>
+Progress: [N/M] findings remediated
+
+Closes: #<issue-number> (if applicable)
+```
+
+**Category prefixes**: `security`, `perf`, `arch`, `quality`, `test`, `docs`
+
+**Examples**:
+```
+fix(security): sanitize SQL query parameters in pipeline
+
+Finding: filters/pipeline.py:42 - SQL injection in query builder
+Severity: Critical
+Progress: [1/12] findings remediated
+```
+
+```
+fix(perf): add eager loading to reduce N+1 queries
+
+Finding: analyzers/log_analyzer.py:87 - N+1 query pattern
+Severity: High
+Progress: [2/12] findings remediated
+```
 
 ### Progress Update Format
 
-The Edit tool MUST be used to update REMEDIATION_TASKS.md after EACH fix:
+The Edit tool MUST be used to update BOTH files after EACH fix:
 
 ```
+# 1. Update REMEDIATION_TASKS.md checkbox
 Edit REMEDIATION_TASKS.md:
   old_string: "- [ ] filters/pipeline.py:42 SQL injection in query builder - Security"
   new_string: "- [x] filters/pipeline.py:42 SQL injection in query builder - Security"
+
+# 2. Update PROGRESS.md with commit log entry
+Edit PROGRESS.md:
+  (add new row to Commits Log table)
+
+# 3. COMMIT immediately
+Bash: git add <files> && git commit -m "fix(security): ..."
 ```
 
 ### Progress Visibility
 
-After updating checkboxes, report progress inline:
+After updating and committing, report progress inline:
 
 ```
-[1/12] Fixed: filters/pipeline.py:42 - SQL injection (Security) [x]
-[2/12] Fixed: analyzers/log_analyzer.py:87 - N+1 query (Performance) [x]
+[1/12] Fixed: filters/pipeline.py:42 - SQL injection (Security) ✓ committed: abc123
+[2/12] Fixed: analyzers/log_analyzer.py:87 - N+1 query (Performance) ✓ committed: def456
 ...
 ```
 
 ### Agent Responsibility
 
-ALL remediation agents MUST include progress tracking in their workflow:
+ALL remediation agents MUST include progress tracking AND commits in their workflow:
 
-- security-engineer: Update checkbox after each security fix
-- performance-engineer: Update checkbox after each performance fix
-- refactoring-specialist: Update checkbox after each architecture fix
-- code-reviewer: Update checkbox after each quality fix
-- test-automator: Update checkbox after tests added (for test coverage findings)
-- documentation-engineer: Update checkbox after docs updated
+- security-engineer: Update checkbox, update PROGRESS.md, **COMMIT** after each security fix
+- performance-engineer: Update checkbox, update PROGRESS.md, **COMMIT** after each performance fix
+- refactoring-specialist: Update checkbox, update PROGRESS.md, **COMMIT** after each architecture fix
+- code-reviewer: Update checkbox, update PROGRESS.md, **COMMIT** after each quality fix
+- test-automator: Update checkbox, update PROGRESS.md, **COMMIT** after tests added
+- documentation-engineer: Update checkbox, update PROGRESS.md, **COMMIT** after docs updated
+
+**FAILURE TO COMMIT EACH FINDING IS A PROTOCOL VIOLATION**
 
 </progress_tracking>
 
 <all_mode_completion_contract>
 
-## ALL MODE COMPLETION CONTRACT (MANDATORY)
+## ALL MODE COMPLETION CONTRACT (MANDATORY - NON-NEGOTIABLE)
 
 **THIS IS A HARD REQUIREMENT - ALL MODE IS NOT COMPLETE UNTIL ALL FINDINGS ARE REMEDIATED**
 
+**ZERO TOLERANCE FOR DEFERRALS. ZERO TOLERANCE FOR EXCUSES. COMPLETE EVERYTHING.**
+
 ### Completion Criteria
 
-The `--all` mode task is **NOT COMPLETE** until:
+The `--all` or `--focus=MAXALL` mode task is **NOT COMPLETE** until:
 
 1. ✅ ALL Critical findings are remediated (0 remaining)
 2. ✅ ALL High findings are remediated (0 remaining)
@@ -322,24 +423,123 @@ During remediation, maintain a running count:
    ⏳ Low: [0]/[Y]     ← Pending
 ```
 
-Update this after EACH batch of fixes. Do NOT move to verification until all counts show [Y]/[Y].
+Update this after EACH fix. Do NOT move to verification until all counts show [Y]/[Y].
 
 ### Anti-Premature-Termination Rules
 
-**DO NOT:**
+**ABSOLUTELY FORBIDDEN - PROTOCOL VIOLATIONS:**
 
 - ❌ Stop after Critical+High (that's `--quick` mode, not `--all`)
 - ❌ Claim "remaining items are low priority" - ALL means ALL
 - ❌ Defer Medium/Low to "next sprint" - ALL mode does not defer
 - ❌ Report completion with any non-zero "remaining" counts
 - ❌ Context-switch to other tasks before finishing
+- ❌ Claim "this is out of scope" without explicit user approval
+- ❌ Say "we can address this later" - there is no later in ALL mode
+- ❌ Mark items as "skipped" without MANDATORY DEFERRAL JUSTIFICATION (see below)
+- ❌ Claim time/context/complexity prevents completion - work through it
 
-**DO:**
+**MANDATORY BEHAVIORS:**
 
 - ✅ Continue through ALL severity levels in order: Critical → High → Medium → Low
-- ✅ Track progress with explicit counts after each batch
+- ✅ Track progress with explicit counts after EACH fix (not batches)
 - ✅ Only report completion when REMEDIATION_TASKS.md shows 100%
 - ✅ If context limits approach, use compact summaries but continue working
+- ✅ If a fix is complex, break it down and fix incrementally - DO NOT SKIP
+- ✅ If stuck on one finding, try a different approach - DO NOT DEFER
+- ✅ Work until ZERO findings remain or user explicitly stops you
+
+### DEFERRAL JUSTIFICATION PROTOCOL (EXCEPTIONAL CIRCUMSTANCES ONLY)
+
+**Deferrals are NOT acceptable without EXPRESS USER CONSENT.**
+
+If you believe a finding cannot be remediated, you MUST:
+
+1. **STOP and request explicit user approval** via AskUserQuestion:
+   ```
+   AskUserQuestion(
+     questions=[{
+       "question": "Finding [FILE:LINE] cannot be remediated because [SPECIFIC TECHNICAL REASON]. This is NOT laziness - here's the evidence: [HARD FACTS]. May I skip this one item?",
+       "header": "Deferral",
+       "multiSelect": false,
+       "options": [
+         {"label": "Approve Deferral", "description": "Skip this specific finding with documented justification"},
+         {"label": "Try Anyway", "description": "Attempt the fix despite the technical challenge"},
+         {"label": "Show Me", "description": "Explain the issue in detail so I can decide"}
+       ]
+     }]
+   )
+   ```
+
+2. **Document with HARD FACTS** - justification must include:
+   - Specific technical blocker (not "it's complex" or "it would take too long")
+   - Evidence: error messages, dependency conflicts, external system requirements
+   - What was attempted before concluding deferral is necessary
+   - Why no workaround exists
+
+3. **NEVER defer without asking** - silent deferrals are PROTOCOL VIOLATIONS
+
+**Valid deferral reasons (require user approval):**
+- External dependency not available in environment (with evidence)
+- Breaking change requires coordinated release (with specific details)
+- Finding is a false positive (with proof from code analysis)
+
+**INVALID deferral reasons (NEVER acceptable):**
+- "Too complex" - break it down
+- "Would take too long" - time is not a constraint
+- "Low priority" - ALL mode has no priorities, only completion
+- "Out of scope" - ALL mode scope is EVERYTHING
+- "Better done manually" - do it now
+- "Risky change" - mitigate risk, don't avoid
+
+### No-Blocking Progress Rule
+
+**NOTHING should block progress. Work around obstacles. GET SHIT DONE.**
+
+| Obstacle | Response |
+|----------|----------|
+| Test failure after fix | Debug and fix the test, don't skip the finding |
+| Merge conflict | Resolve it immediately |
+| Unclear requirement | Make reasonable choice, document in commit |
+| Complex refactoring | Do it incrementally with commits per step |
+| External dependency | Mock/stub if needed, document for follow-up |
+| Linter/type error | Fix it as part of the remediation |
+
+### Complete Available Work Before Blocking
+
+**ALWAYS maximize throughput. Never idle waiting for approval when work remains.**
+
+If you encounter an item that requires user input/approval:
+1. **DO NOT STOP** - move to the next finding immediately
+2. **Complete all findings that CAN be completed** without approval
+3. **Batch approval requests** - collect all blockers, ask ONCE at the end
+4. **Return to blocked items** after user responds
+
+**Example Flow:**
+```
+Finding 1: Fix SQL injection          → COMPLETE, commit
+Finding 2: Fix auth bypass            → COMPLETE, commit
+Finding 3: Requires external API key  → MARK BLOCKED, continue
+Finding 4: Fix XSS vulnerability      → COMPLETE, commit
+Finding 5: Requires DB schema change  → MARK BLOCKED, continue
+Finding 6: Fix path traversal         → COMPLETE, commit
+...
+All completable items done (4/6)
+NOW ask user about blocked items (2 questions batched)
+After approval, complete remaining items
+```
+
+**NEVER:**
+- ❌ Stop at first blocker and wait
+- ❌ Ask for approval before trying other findings
+- ❌ Present one question at a time when multiple exist
+- ❌ Claim "waiting for user input" while completable work remains
+
+**ALWAYS:**
+- ✅ Complete everything possible first
+- ✅ Track blocked items separately
+- ✅ Batch all questions into single AskUserQuestion call
+- ✅ Report progress: "[X/Y] completed, [Z] blocked pending approval"
 
 ### Validation Checkpoint
 
@@ -348,14 +548,19 @@ Before generating REMEDIATION_REPORT.md, run this validation:
 ```bash
 # Count remaining unchecked items in REMEDIATION_TASKS.md
 REMAINING=$(grep -c '^\- \[ \]' "${REPORT_DIR}/REMEDIATION_TASKS.md" || echo 0)
+DEFERRED=$(grep -c '\[DEFERRED\]' "${REPORT_DIR}/REMEDIATION_TASKS.md" || echo 0)
 
 if [ "$REMAINING" -gt 0 ]; then
   echo "❌ ALL MODE INCOMPLETE: $REMAINING findings not remediated"
   echo "Continue remediation until all items are checked."
   exit 1
-else
-  echo "✅ ALL MODE COMPLETE: All findings remediated"
 fi
+
+if [ "$DEFERRED" -gt 0 ]; then
+  echo "⚠️  $DEFERRED items deferred - verify each has USER-APPROVED justification"
+fi
+
+echo "✅ ALL MODE COMPLETE: All findings remediated"
 ```
 
 ### Session Boundary Handling
@@ -365,6 +570,22 @@ If the session must end before completion:
 1. Update REMEDIATION_TASKS.md with current progress
 2. Document exactly which items remain
 3. First message in next session: "Continuing ALL MODE remediation - [X] findings remaining"
+4. **Resume immediately with next finding - no re-analysis, no re-planning**
+
+### Accountability Statement
+
+When ALL/MAXALL mode completes, include this attestation in REMEDIATION_REPORT.md:
+
+```markdown
+## Completion Attestation
+
+- Total findings identified: [N]
+- Findings remediated: [N]
+- Findings deferred (with user approval): [N] (list with justifications)
+- Findings skipped without approval: 0 (MUST be zero)
+
+I confirm that ALL mode was executed to completion with no unauthorized deferrals.
+```
 
 </all_mode_completion_contract>
 
@@ -1489,13 +1710,21 @@ Task(
   5. Document the security consideration
      IF LSP AVAILABLE: Use incomingCalls to trace data flow from user input
 
-  **6. IMMEDIATELY UPDATE PROGRESS** (MANDATORY):
-     After verifying the fix works, use Edit to update REMEDIATION_TASKS.md:
-     - Find the line: `- [ ] [FILE:LINE] [description] - Security`
-     - Change to: `- [x] [FILE:LINE] [description] - Security`
-     - Report: '[N/M] Fixed: [FILE:LINE] - [description] [x]'
+  **6. IMMEDIATELY UPDATE PROGRESS AND COMMIT** (MANDATORY - NON-NEGOTIABLE):
+     a. Update REMEDIATION_TASKS.md checkbox:
+        - Find: `- [ ] [FILE:LINE] [description] - Security`
+        - Change to: `- [x] [FILE:LINE] [description] - Security`
+     b. Update PROGRESS.md with commit log entry
+     c. COMMIT immediately:
+        git add <fixed-files> ${REPORT_DIR}/REMEDIATION_TASKS.md ${REPORT_DIR}/PROGRESS.md
+        git commit -m 'fix(security): <brief description>
 
-  Output: File modified, changes made, tests added, verification, checkbox updated"
+        Finding: [FILE:LINE] - <issue>
+        Severity: <severity>
+        Progress: [N/M] findings remediated'
+     d. Report: '[N/M] Fixed: [FILE:LINE] - [description] ✓ committed: <hash>'
+
+  Output: File modified, changes made, tests added, verification, commit hash"
 )
 ─────────────────────────────────────────────────────────────────────────
 
@@ -1524,13 +1753,21 @@ Task(
      IF LSP AVAILABLE: Use findReferences to verify all callers still work
   4. Add performance test/benchmark
 
-  **5. IMMEDIATELY UPDATE PROGRESS** (MANDATORY):
-     After verifying the fix works, use Edit to update REMEDIATION_TASKS.md:
-     - Find the line: `- [ ] [FILE:LINE] [description] - Performance`
-     - Change to: `- [x] [FILE:LINE] [description] - Performance`
-     - Report: '[N/M] Fixed: [FILE:LINE] - [description] [x]'
+  **5. IMMEDIATELY UPDATE PROGRESS AND COMMIT** (MANDATORY - NON-NEGOTIABLE):
+     a. Update REMEDIATION_TASKS.md checkbox:
+        - Find: `- [ ] [FILE:LINE] [description] - Performance`
+        - Change to: `- [x] [FILE:LINE] [description] - Performance`
+     b. Update PROGRESS.md with commit log entry
+     c. COMMIT immediately:
+        git add <fixed-files> ${REPORT_DIR}/REMEDIATION_TASKS.md ${REPORT_DIR}/PROGRESS.md
+        git commit -m 'fix(perf): <brief description>
 
-  Output: File modified, optimization, expected improvement, checkbox updated"
+        Finding: [FILE:LINE] - <issue>
+        Severity: <severity>
+        Progress: [N/M] findings remediated'
+     d. Report: '[N/M] Fixed: [FILE:LINE] - [description] ✓ committed: <hash>'
+
+  Output: File modified, optimization, expected improvement, commit hash"
 )
 ─────────────────────────────────────────────────────────────────────────
 
@@ -1561,13 +1798,21 @@ Task(
   5. Ensure all tests pass
      IF LSP AVAILABLE: Use goToImplementation to verify interface contracts
 
-  **6. IMMEDIATELY UPDATE PROGRESS** (MANDATORY):
-     After verifying the fix works, use Edit to update REMEDIATION_TASKS.md:
-     - Find the line: `- [ ] [FILE:LINE] [description] - Architecture`
-     - Change to: `- [x] [FILE:LINE] [description] - Architecture`
-     - Report: '[N/M] Fixed: [FILE:LINE] - [description] [x]'
+  **6. IMMEDIATELY UPDATE PROGRESS AND COMMIT** (MANDATORY - NON-NEGOTIABLE):
+     a. Update REMEDIATION_TASKS.md checkbox:
+        - Find: `- [ ] [FILE:LINE] [description] - Architecture`
+        - Change to: `- [x] [FILE:LINE] [description] - Architecture`
+     b. Update PROGRESS.md with commit log entry
+     c. COMMIT immediately:
+        git add <fixed-files> ${REPORT_DIR}/REMEDIATION_TASKS.md ${REPORT_DIR}/PROGRESS.md
+        git commit -m 'fix(arch): <brief description>
 
-  Output: Files modified, pattern applied, tests passing, checkbox updated"
+        Finding: [FILE:LINE] - <issue>
+        Severity: <severity>
+        Progress: [N/M] findings remediated'
+     d. Report: '[N/M] Fixed: [FILE:LINE] - [description] ✓ committed: <hash>'
+
+  Output: Files modified, pattern applied, tests passing, commit hash"
 )
 ─────────────────────────────────────────────────────────────────────────
 
@@ -1597,13 +1842,21 @@ Task(
   3. Maintain consistency with surrounding style
   4. Run linter to verify improvements
 
-  **5. IMMEDIATELY UPDATE PROGRESS** (MANDATORY):
-     After verifying the fix works, use Edit to update REMEDIATION_TASKS.md:
-     - Find the line: `- [ ] [FILE:LINE] [description] - Code Quality`
-     - Change to: `- [x] [FILE:LINE] [description] - Code Quality`
-     - Report: '[N/M] Fixed: [FILE:LINE] - [description] [x]'
+  **5. IMMEDIATELY UPDATE PROGRESS AND COMMIT** (MANDATORY - NON-NEGOTIABLE):
+     a. Update REMEDIATION_TASKS.md checkbox:
+        - Find: `- [ ] [FILE:LINE] [description] - Code Quality`
+        - Change to: `- [x] [FILE:LINE] [description] - Code Quality`
+     b. Update PROGRESS.md with commit log entry
+     c. COMMIT immediately:
+        git add <fixed-files> ${REPORT_DIR}/REMEDIATION_TASKS.md ${REPORT_DIR}/PROGRESS.md
+        git commit -m 'fix(quality): <brief description>
 
-  Output: File modified, improvement applied, linter results, checkbox updated"
+        Finding: [FILE:LINE] - <issue>
+        Severity: <severity>
+        Progress: [N/M] findings remediated'
+     d. Report: '[N/M] Fixed: [FILE:LINE] - [description] ✓ committed: <hash>'
+
+  Output: File modified, improvement applied, linter results, commit hash"
 )
 ─────────────────────────────────────────────────────────────────────────
 ```
@@ -1639,12 +1892,22 @@ Task(
   3. Use existing test patterns and fixtures
   4. Aim for meaningful assertions
 
-  **5. UPDATE PROGRESS for TEST_COVERAGE findings** (if any):
-     If TEST_COVERAGE findings exist in REMEDIATION_TASKS.md:
-     - Use Edit to change `- [ ]` to `- [x]` for each test gap addressed
-     - Report: '[N/M] Fixed: [test description] [x]'
+  **5. IMMEDIATELY UPDATE PROGRESS AND COMMIT** (MANDATORY - NON-NEGOTIABLE):
+     For each TEST_COVERAGE finding addressed:
+     a. Update REMEDIATION_TASKS.md checkbox:
+        - Find: `- [ ] [FILE:LINE] [description] - Test Coverage`
+        - Change to: `- [x] [FILE:LINE] [description] - Test Coverage`
+     b. Update PROGRESS.md with commit log entry
+     c. COMMIT immediately:
+        git add <test-files> ${REPORT_DIR}/REMEDIATION_TASKS.md ${REPORT_DIR}/PROGRESS.md
+        git commit -m 'test: add coverage for <component/function>
 
-  Output: Test files created/modified, coverage improvement, checkboxes updated"
+        Finding: [FILE:LINE] - <test gap>
+        Severity: <severity>
+        Progress: [N/M] findings remediated'
+     d. Report: '[N/M] Fixed: [FILE:LINE] - [description] ✓ committed: <hash>'
+
+  Output: Test files created/modified, coverage improvement, commit hash"
 )
 
 Task(
@@ -1663,12 +1926,22 @@ Task(
   3. Add CHANGELOG entry for this remediation
   4. Document any new configuration
 
-  **5. UPDATE PROGRESS for DOCUMENTATION findings** (if any):
-     If DOCUMENTATION findings exist in REMEDIATION_TASKS.md:
-     - Use Edit to change `- [ ]` to `- [x]` for each doc gap addressed
-     - Report: '[N/M] Fixed: [doc description] [x]'
+  **5. IMMEDIATELY UPDATE PROGRESS AND COMMIT** (MANDATORY - NON-NEGOTIABLE):
+     For each DOCUMENTATION finding addressed:
+     a. Update REMEDIATION_TASKS.md checkbox:
+        - Find: `- [ ] [FILE:LINE] [description] - Documentation`
+        - Change to: `- [x] [FILE:LINE] [description] - Documentation`
+     b. Update PROGRESS.md with commit log entry
+     c. COMMIT immediately:
+        git add <doc-files> ${REPORT_DIR}/REMEDIATION_TASKS.md ${REPORT_DIR}/PROGRESS.md
+        git commit -m 'docs: <brief description>
 
-  Output: Documentation files updated, checkboxes updated"
+        Finding: [FILE:LINE] - <doc gap>
+        Severity: <severity>
+        Progress: [N/M] findings remediated'
+     d. Report: '[N/M] Fixed: [FILE:LINE] - [description] ✓ committed: <hash>'
+
+  Output: Documentation files updated, commit hash"
 )
 ```
 
