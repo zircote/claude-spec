@@ -15,13 +15,13 @@ If `$ARGUMENTS` contains `--help` or `-h`:
 
 <help_output>
 ```
-CODE_CLEANUP(1)                                      User Commands                                      CODE_CLEANUP(1)
+DEEP-CLEAN(1)                                        User Commands                                        DEEP-CLEAN(1)
 
 NAME
-    deep-clean - Comprehensive code review and remediation using paralle...
+    deep-clean - Comprehensive code review and remediation using parallel specialist agents
 
 SYNOPSIS
-    /claude-spec:deep-clean [path|--focus=security|--focus=performance|--focus=maintainability|--quick|--all]
+    /claude-spec:deep-clean [path|--focus=security|--focus=performance|--focus=maintainability|--focus=MAX|--focus=MAXALL|--quick|--all]
 
 DESCRIPTION
     Comprehensive code review and remediation using parallel specialist agents. Uses LSP semantic analysis when available for precise code navigation. Executes in two sequential steps - review then fix. Produces actionable findings prioritized by severity with clear remediation paths.
@@ -31,12 +31,13 @@ OPTIONS
 
 EXAMPLES
     /claude-spec:deep-clean
-    /claude-spec:deep-clean --help        
+    /claude-spec:deep-clean --focus=security
+    /claude-spec:deep-clean --focus=MAX --all
 
 SEE ALSO
-    /claude-spec:* for related commands
+    /claude-spec:plan, /claude-spec:implement, /claude-spec:deep-explore
 
-                                                                      CODE_CLEANUP(1)
+                                                                        DEEP-CLEAN(1)
 ```
 </help_output>
 
@@ -45,7 +46,7 @@ SEE ALSO
 
 ---
 
-# /code/cleanup - Comprehensive Code Review and Remediation
+# /claude-spec:deep-clean - Comprehensive Code Review and Remediation
 
 <execution_mode>
 sequential - Execute each step completely before proceeding to the next.
