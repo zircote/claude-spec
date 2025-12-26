@@ -17,3 +17,21 @@ During remediation, maintain a running count:
    ✅ Critical: [X]/[Y]
    ✅ High: [X]/[Y]
    🔄 Medium: [X]/[Y]  ← Currently...
+
+---
+type: progress
+timestamp: '2025-12-26T16:59:29.891896+00:00'
+summary: '...system requirements'
+tags:
+- auto-captured
+- post-tool-use
+- file:deep-clean.md
+---
+
+...system requirements
+   - What was attempted before concluding deferral is necessary
+   - Why no workaround exists
+
+3. **NEVER defer without asking** - silent deferrals are PROTOCOL VIOLATIONS
+
+**Valid...
