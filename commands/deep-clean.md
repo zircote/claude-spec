@@ -2084,15 +2084,102 @@ pytest -v || npm test || go test ./...
 
 </verification_layer>
 
-## Phase 6: Final Actions
+## Phase 6: Final Squash and Push (MANDATORY)
 
-**→ DECISION POINT 4**: Use AskUserQuestion for commit strategy
+**After ALL findings are remediated and verified, squash all fix commits into a single commit.**
 
-Based on user selection:
+### Squash Protocol
 
-- **Review First**: Leave changes uncommitted, show summary
-- **Single Commit**: Stage all and commit with comprehensive message
-- **Separate Commits**: Create category-based commits
+```bash
+# 1. Identify the commit before deep-clean started
+#    (This was recorded at the start of remediation)
+BASE_COMMIT="${DEEP_CLEAN_START_COMMIT}"
+
+# 2. Count commits to squash
+COMMIT_COUNT=$(git rev-list --count ${BASE_COMMIT}..HEAD)
+echo "Squashing ${COMMIT_COUNT} fix commits..."
+
+# 3. Soft reset to base commit (preserves all changes)
+git reset --soft ${BASE_COMMIT}
+
+# 4. Create single squashed commit with comprehensive message
+git commit -m "fix: deep-clean remediation - [N] findings across [categories]
+
+## Summary
+- Total findings: [N]
+- Categories: [Security, Performance, Architecture, Quality, Tests, Docs]
+- Files modified: [N]
+- Tests added: [N]
+
+## Findings Remediated
+[List from REMEDIATION_TASKS.md - all checked items]
+
+## Verification
+- Tests: ✅ Passing
+- Linters: ✅ Clean
+- Type check: ✅ No errors
+
+Report: ${REPORT_DIR}/REMEDIATION_REPORT.md"
+
+# 5. Push to remote
+git push origin $(git branch --show-current)
+```
+
+### Why Squash?
+
+| Individual Commits | Squashed Commit |
+|--------------------|-----------------|
+| Clutters git history with N commits | Single atomic change |
+| Hard to revert as a unit | Easy to revert entire remediation |
+| Noisy PR with many commits | Clean PR with one commit |
+| Partial remediation visible | Only complete remediation visible |
+
+### Recording Start Commit
+
+At the START of Step 2 (remediation), before any fixes:
+
+```bash
+# Record starting point for later squash
+DEEP_CLEAN_START_COMMIT=$(git rev-parse HEAD)
+echo "DEEP_CLEAN_START_COMMIT=${DEEP_CLEAN_START_COMMIT}" >> ${REPORT_DIR}/.deep-clean-state
+```
+
+### Squash Validation
+
+Before squashing, verify:
+
+```bash
+# All findings completed
+REMAINING=$(grep -c '^\- \[ \]' "${REPORT_DIR}/REMEDIATION_TASKS.md" || echo 0)
+if [ "$REMAINING" -gt 0 ]; then
+  echo "❌ Cannot squash: $REMAINING findings remain"
+  exit 1
+fi
+
+# Tests still pass after all changes
+pytest -v || npm test || go test ./...
+
+# Then proceed with squash
+```
+
+### Final Output
+
+After squash and push:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DEEP-CLEAN COMPLETE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Findings remediated: [N]/[N]
+✅ Tests passing
+✅ Commits squashed: [M] → 1
+✅ Pushed to origin/[branch]
+
+Final commit: [hash]
+Report: ${REPORT_DIR}/REMEDIATION_REPORT.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
 </execution_protocol>
 
@@ -2178,11 +2265,16 @@ echo $ENABLE_LSP_TOOL
 
 Run verification from step_handoff section. If artifacts missing, abort.
 
-### Step 2: Environment Check
+### Step 2: Environment Check & Record Start Commit
 
 ```bash
 git status --porcelain
 git branch --show-current
+
+# CRITICAL: Record starting commit for final squash
+DEEP_CLEAN_START_COMMIT=$(git rev-parse HEAD)
+echo "DEEP_CLEAN_START_COMMIT=${DEEP_CLEAN_START_COMMIT}" >> ${REPORT_DIR}/.deep-clean-state
+echo "Recorded start commit: ${DEEP_CLEAN_START_COMMIT}"
 ```
 
 ### Step 3: Load Findings
@@ -2246,10 +2338,28 @@ Launch test-automator and documentation-engineer
 1. **AskUserQuestion**: Verification depth (Decision Point 3)
 2. Execute selected verification level
 
-### Step 9: Final Actions
+### Step 9: Final Squash and Push (MANDATORY)
 
-**All Mode / Quick Mode:** Leave changes uncommitted for review
-**Interactive Mode:**
+**ALL MODES:** Squash all fix commits into single commit and push
+
+```bash
+# Load start commit
+source ${REPORT_DIR}/.deep-clean-state
+
+# Count commits to squash
+COMMIT_COUNT=$(git rev-list --count ${DEEP_CLEAN_START_COMMIT}..HEAD)
+
+# Squash
+git reset --soft ${DEEP_CLEAN_START_COMMIT}
+git commit -m "fix: deep-clean remediation - [N] findings
+
+[comprehensive message from Phase 6 template]"
+
+# Push
+git push origin $(git branch --show-current)
+```
+
+**Interactive Mode (legacy - deprecated):**
 
 1. **AskUserQuestion**: Commit strategy (Decision Point 4)
 2. Execute selected commit approach
