@@ -49,3 +49,17 @@ tags:
 ...**DO NOT STOP** - move to the next finding immediately
 2. **Complete all findings that CAN be completed** without approval
 3. **Batch approval requests** - collect all blockers, ask ONCE at the...
+
+---
+type: progress
+timestamp: '2025-12-26T17:00:18.620790+00:00'
+summary: '...separately'
+tags:
+- auto-captured
+- post-tool-use
+- file:deep-clean.md
+---
+
+...separately
+- ✅ Batch all questions into single AskUserQuestion call
+- ✅ Report progress: "[X/Y] completed, [Z] blocked pending approval"
