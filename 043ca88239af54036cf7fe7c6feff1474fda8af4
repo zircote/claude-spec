@@ -528,3 +528,36 @@ Filed issue #18 with detailed technical analysis and proposed fixes.
 
 ## Related Files
 - src/git_notes_memory/git_ops.py:731-742
+
+---
+type: progress
+timestamp: '2025-12-26T04:01:53.330840+00:00'
+summary: '▶ progress ─────────────────────────────────────
+
+  Released claude-spec v0.12.0
+
+  ## Summary
+
+  Updated...'
+tags:
+- auto-captured
+- pre-compact
+---
+
+Released claude-spec v0.12.0
+## Summary
+Updated CHANGELOG.md and released v0.12.0 with the new `/report-issue` command and fixes.
+
+## Release Details
+- **Version**: 0.12.0
+- **Tag**: v0.12.0
+- **URL**: https://github.com/zircote/claude-spec/releases/tag/v0.12.0
+
+## What's Included
+- New `/claude-spec:report-issue` command for AI-actionable GitHub issues
+- Error recovery integration in plan.md and implement.md
+- All 11 Copilot review fixes
+
+## Related Files
+- CHANGELOG.md
+- .claude-plugin/plugin.json (version bump)
