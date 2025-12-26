@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/../hooks/check-approved-spec.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-approved-spec.sh",
             "timeout": 5,
             "description": "Blocks implementation file edits without an approved spec"
           }
