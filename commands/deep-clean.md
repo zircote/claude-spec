@@ -1,12 +1,15 @@
 ---
 argument-hint:
-  [path|--focus=security|--focus=performance|--focus=maintainability|--focus=MAX|--focus=MAXALL|--quick|--all]
+  [
+    path|--focus=security|--focus=performance|--focus=maintainability|--focus=MAX|--focus=MAXALL|--quick|--all,
+  ]
 description: Comprehensive code review and remediation using parallel specialist agents. Uses LSP semantic analysis when available for precise code navigation. Executes in two sequential steps - review then fix. Produces actionable findings prioritized by severity with clear remediation paths.
 model: claude-opus-4-5-20251101
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, TodoRead, TodoWrite, LSP
 ---
 
 <help_check>
+
 ## Help Check
 
 If `$ARGUMENTS` contains `--help` or `-h`:
@@ -14,6 +17,7 @@ If `$ARGUMENTS` contains `--help` or `-h`:
 **Output this help and HALT (do not proceed further):**
 
 <help_output>
+
 ```
 DEEP-CLEAN(1)                                        User Commands                                        DEEP-CLEAN(1)
 
@@ -39,6 +43,7 @@ SEE ALSO
 
                                                                         DEEP-CLEAN(1)
 ```
+
 </help_output>
 
 **After outputting help, HALT immediately. Do not proceed with command execution.**
@@ -109,6 +114,7 @@ docs/
 | REMEDIATION_REPORT.md | `${REPORT_DIR}/REMEDIATION_REPORT.md` |
 
 **Example (December 24, 2025):**
+
 - `docs/code-review/2025/12/24/CODE_REVIEW.md`
 - `docs/code-review/2025/12/24/REVIEW_SUMMARY.md`
 - `docs/code-review/2025/12/24/REMEDIATION_TASKS.md`
@@ -180,30 +186,30 @@ Check if `--all` is in $ARGUMENTS at the start of execution.
 
 ### Behavior
 
-| Aspect | All Mode | Quick Mode |
-|--------|----------|------------|
-| Severities | ALL (Critical + High + Medium + Low) | Critical + High only |
-| Categories | ALL with findings | ALL with findings |
+| Aspect       | All Mode                                   | Quick Mode                   |
+| ------------ | ------------------------------------------ | ---------------------------- |
+| Severities   | ALL (Critical + High + Medium + Low)       | Critical + High only         |
+| Categories   | ALL with findings                          | ALL with findings            |
 | Verification | FULL (pr-review-toolkit + tests + linters) | Quick (tests + linters only) |
-| User prompts | None | None |
-| Commits | Review First | Review First |
+| User prompts | None                                       | None                         |
+| Commits      | Review First                               | Review First                 |
 
 ### Step 1 (Code Review) Settings
 
-| Decision | Value | Rationale |
-|----------|-------|-----------|
-| Scope | Full review | Complete analysis |
-| Focus | All dimensions | Comprehensive coverage |
+| Decision | Value          | Rationale              |
+| -------- | -------------- | ---------------------- |
+| Scope    | Full review    | Complete analysis      |
+| Focus    | All dimensions | Comprehensive coverage |
 
 ### Step 2 (Remediation) Settings
 
-| Decision | Value | Rationale |
-|----------|-------|-----------|
-| Severity | ALL (Critical + High + Medium + Low) | Complete remediation |
-| Categories | ALL with findings | No gaps left |
-| Conflicts | Sequential | Safer, avoids merge issues |
-| Verification | FULL (pr-review-toolkit + tests + linters) | Maximum confidence |
-| Commits | Review First | Never auto-commit |
+| Decision     | Value                                      | Rationale                  |
+| ------------ | ------------------------------------------ | -------------------------- |
+| Severity     | ALL (Critical + High + Medium + Low)       | Complete remediation       |
+| Categories   | ALL with findings                          | No gaps left               |
+| Conflicts    | Sequential                                 | Safer, avoids merge issues |
+| Verification | FULL (pr-review-toolkit + tests + linters) | Maximum confidence         |
+| Commits      | Review First                               | Never auto-commit          |
 
 ### All Mode Announcement
 
@@ -247,11 +253,11 @@ ON EACH FINDING FIXED:
 
 ### Checkpoint Frequency
 
-| Scenario | Checkpoint Action |
-|----------|-------------------|
-| After each finding fixed | Update checkbox in REMEDIATION_TASKS.md |
-| After each category complete | Add category completion note |
-| After all fixes applied | Generate final REMEDIATION_REPORT.md |
+| Scenario                     | Checkpoint Action                       |
+| ---------------------------- | --------------------------------------- |
+| After each finding fixed     | Update checkbox in REMEDIATION_TASKS.md |
+| After each category complete | Add category completion note            |
+| After all fixes applied      | Generate final REMEDIATION_REPORT.md    |
 
 ### Progress Update Format
 
@@ -276,6 +282,7 @@ After updating checkboxes, report progress inline:
 ### Agent Responsibility
 
 ALL remediation agents MUST include progress tracking in their workflow:
+
 - security-engineer: Update checkbox after each security fix
 - performance-engineer: Update checkbox after each performance fix
 - refactoring-specialist: Update checkbox after each architecture fix
@@ -320,6 +327,7 @@ Update this after EACH batch of fixes. Do NOT move to verification until all cou
 ### Anti-Premature-Termination Rules
 
 **DO NOT:**
+
 - ❌ Stop after Critical+High (that's `--quick` mode, not `--all`)
 - ❌ Claim "remaining items are low priority" - ALL means ALL
 - ❌ Defer Medium/Low to "next sprint" - ALL mode does not defer
@@ -327,6 +335,7 @@ Update this after EACH batch of fixes. Do NOT move to verification until all cou
 - ❌ Context-switch to other tasks before finishing
 
 **DO:**
+
 - ✅ Continue through ALL severity levels in order: Critical → High → Medium → Low
 - ✅ Track progress with explicit counts after each batch
 - ✅ Only report completion when REMEDIATION_TASKS.md shows 100%
@@ -352,6 +361,7 @@ fi
 ### Session Boundary Handling
 
 If the session must end before completion:
+
 1. Update REMEDIATION_TASKS.md with current progress
 2. Document exactly which items remain
 3. First message in next session: "Continuing ALL MODE remediation - [X] findings remaining"
@@ -408,9 +418,11 @@ You orchestrate parallel specialist agents, synthesize their findings, and produ
 </review_philosophy>
 
 <lsp_integration>
+
 ## LSP-Enhanced Code Review and Remediation
 
 **Check LSP availability at start of each step:**
+
 ```bash
 echo $ENABLE_LSP_TOOL  # If "1", LSP is available
 ```
@@ -419,14 +431,14 @@ echo $ENABLE_LSP_TOOL  # If "1", LSP is available
 
 Use LSP operations for more accurate code review and remediation:
 
-| Task | LSP Operation | Benefit |
-|------|---------------|---------|
-| Understanding function implementation | `goToDefinition` | Navigate directly to definition |
-| Finding all usages before suggesting changes | `findReferences` | Exact usages, not text matches |
-| Checking type signatures | `hover` | Get type info without reading entire file |
-| Understanding file structure | `documentSymbol` | Quick overview of classes/functions |
-| Analyzing call graphs | `incomingCalls/outgoingCalls` | Accurate caller/callee relationships |
-| Finding interface implementations | `goToImplementation` | All concrete implementations |
+| Task                                         | LSP Operation                 | Benefit                                   |
+| -------------------------------------------- | ----------------------------- | ----------------------------------------- |
+| Understanding function implementation        | `goToDefinition`              | Navigate directly to definition           |
+| Finding all usages before suggesting changes | `findReferences`              | Exact usages, not text matches            |
+| Checking type signatures                     | `hover`                       | Get type info without reading entire file |
+| Understanding file structure                 | `documentSymbol`              | Quick overview of classes/functions       |
+| Analyzing call graphs                        | `incomingCalls/outgoingCalls` | Accurate caller/callee relationships      |
+| Finding interface implementations            | `goToImplementation`          | All concrete implementations              |
 
 ### LSP Decision Matrix
 
@@ -451,11 +463,12 @@ MAPPING DEPENDENCIES?
 ### LSP Fallback Protocol
 
 If LSP is NOT available:
+
 1. Note in report: "LSP unavailable - using Grep fallback"
 2. Use Grep for pattern matching
 3. Manually verify references to avoid false positives
 4. Document any uncertainty in findings
-</lsp_integration>
+   </lsp_integration>
 
 <user_interaction>
 
@@ -557,7 +570,7 @@ Subagent 1 - Security Analyst:
 "You are a security specialist. Review ALL code files for:
 - Authentication/authorization flaws
 - Input validation gaps (SQL injection, XSS, command injection)
-- Secrets/credentials in code or config
+- Secrets/deep-cleanedentials in code or config
 - Insecure dependencies (check requirements.txt, package.json)
 - Cryptographic weaknesses
 - OWASP Top 10 vulnerabilities
@@ -940,6 +953,7 @@ If `--focus` argument provided, weight that dimension more heavily:
 This mode combines ALL focus enhancements and deploys additional specialist agents beyond the base 6.
 
 #### Behavior
+
 - **Maximum agent deployment**: 12+ specialist agents in parallel
 - **All focus enhancements**: Security + Performance + Maintainability combined
 - **Full verification**: All pr-review-toolkit agents + tests + linters
@@ -947,19 +961,22 @@ This mode combines ALL focus enhancements and deploys additional specialist agen
 #### Combining with --all
 
 For **maximum review + automatic remediation**, use both flags:
+
 ```
 /claude-spec:deep-clean --focus=MAX --all
 ```
 
-| Flag Combination | Review Agents | Remediation |
-|-----------------|---------------|-------------|
-| `--focus=MAX` | 12+ agents | Interactive (asks user) |
-| `--all` | 6 base agents | All findings, no prompts |
-| `--focus=MAX --all` | 12+ agents | All findings, no prompts |
-| `--focus=MAXALL` | 12+ agents | All findings, no prompts |
+| Flag Combination    | Review Agents | Remediation              |
+| ------------------- | ------------- | ------------------------ |
+| `--focus=MAX`       | 12+ agents    | Interactive (asks user)  |
+| `--all`             | 6 base agents | All findings, no prompts |
+| `--focus=MAX --all` | 12+ agents    | All findings, no prompts |
+| `--focus=MAXALL`    | 12+ agents    | All findings, no prompts |
 
 #### Base 6 Agents (Enhanced)
+
 All base agents run with maximum thoroughness:
+
 1. Security Analyst (with OWASP Top 10, CVE scan, secrets scanning)
 2. Performance Engineer (with benchmarks, query analysis, profiling recommendations)
 3. Architecture Reviewer (with tech debt quantification, complexity metrics)
@@ -968,16 +985,17 @@ All base agents run with maximum thoroughness:
 6. Documentation Reviewer
 
 #### Additional Specialist Agents
+
 Deploy these domain specialists in parallel with the base 6:
 
-| Agent | subagent_type | Focus |
-|-------|---------------|-------|
-| Database Expert | `postgres-pro` or `database-optimizer` | Query optimization, index analysis, schema review |
-| Penetration Tester | `penetration-tester` | Deep security beyond OWASP (exploit scenarios) |
-| Compliance Auditor | `compliance-auditor` | Regulatory patterns (logging, data handling) |
-| Chaos Engineer | `chaos-engineer` | Resilience, fault tolerance, error recovery |
-| Accessibility Tester | `accessibility-tester` | WCAG compliance, a11y patterns (if UI code) |
-| Prompt Engineer | `claude-code-guide` | Prompt quality, Anthropic best practices, Claude patterns |
+| Agent                | subagent_type                          | Focus                                                     |
+| -------------------- | -------------------------------------- | --------------------------------------------------------- |
+| Database Expert      | `postgres-pro` or `database-optimizer` | Query optimization, index analysis, schema review         |
+| Penetration Tester   | `penetration-tester`                   | Deep security beyond OWASP (exploit scenarios)            |
+| Compliance Auditor   | `compliance-auditor`                   | Regulatory patterns (logging, data handling)              |
+| Chaos Engineer       | `chaos-engineer`                       | Resilience, fault tolerance, error recovery               |
+| Accessibility Tester | `accessibility-tester`                 | WCAG compliance, a11y patterns (if UI code)               |
+| Prompt Engineer      | `claude-code-guide`                    | Prompt quality, Anthropic best practices, Claude patterns |
 
 #### Agent Deployment Instructions
 
@@ -1046,6 +1064,7 @@ USER PROMPTS: None - proceeding autonomously
 **Convenience wrapper** for `--focus=MAX --all`. One flag, maximum everything.
 
 #### Behavior
+
 - **Equivalent to**: `--focus=MAX --all`
 - **12+ agents**: All base + specialist agents deployed
 - **All enhancements**: Security + Performance + Maintainability combined
@@ -1055,10 +1074,10 @@ USER PROMPTS: None - proceeding autonomously
 
 #### When to Use
 
-| Scenario | Use |
-|----------|-----|
-| Want maximum review, pick what to fix | `--focus=MAX` |
-| Want to fix everything, standard review | `--all` |
+| Scenario                                      | Use              |
+| --------------------------------------------- | ---------------- |
+| Want maximum review, pick what to fix         | `--focus=MAX`    |
+| Want to fix everything, standard review       | `--all`          |
 | Want everything, fix everything, no questions | `--focus=MAXALL` |
 
 #### MAXALL Announcement
@@ -1104,6 +1123,7 @@ One command. No limits. No questions.
 ```bash
 echo $ENABLE_LSP_TOOL
 ```
+
 - If output is "1": LSP is available. **Inform subagents to use LSP operations.**
 - If empty/not "1": LSP unavailable. Note in report, use Grep fallback.
 
@@ -1690,6 +1710,7 @@ Proceeding to verification phase...
 **Reconciliation:**
 
 If any fix was applied but checkbox not updated:
+
 1. Read the modified files list from agent outputs
 2. Cross-reference with REMEDIATION_TASKS.md
 3. Update any missed checkboxes
@@ -1813,13 +1834,13 @@ Generate REMEDIATION_REPORT.md at ${REPORT_DIR}/ with:
 
 ## Summary
 
-| Metric              | Value      |
-| ------------------- | ---------- |
-| Findings addressed  | [X] of [Y] |
-| Files modified      | [N]        |
-| Tests added         | [N]        |
-| Verification status | ✅/⚠️/❌   |
-| LSP Available       | [Yes/No]   |
+| Metric              | Value                                        |
+| ------------------- | -------------------------------------------- |
+| Findings addressed  | [X] of [Y]                                   |
+| Files modified      | [N]                                          |
+| Tests added         | [N]                                          |
+| Verification status | ✅/⚠️/❌                                     |
+| LSP Available       | [Yes/No]                                     |
 | Methodology         | [LSP semantic analysis / Grep text fallback] |
 
 ## User Selections
@@ -1876,6 +1897,7 @@ Check $ARGUMENTS for mode flags (precedence: `--all` > `--quick` > interactive):
 ```bash
 echo $ENABLE_LSP_TOOL
 ```
+
 - If "1": LSP is available. **Inform all remediation agents to use LSP operations.**
 - If empty: LSP unavailable. Note in report, agents will use Grep fallback.
 
@@ -1925,6 +1947,7 @@ Parse CODE_REVIEW.md and REMEDIATION_TASKS.md from ${REPORT_DIR}/
 Launch parallel Task calls for selected categories.
 
 **CRITICAL**: Each agent MUST update REMEDIATION_TASKS.md checkboxes in real-time:
+
 - Pass `REMEDIATION_TASKS_FILE=${REPORT_DIR}/REMEDIATION_TASKS.md` to each agent
 - Agents update `- [ ]` to `- [x]` immediately after each fix
 - Progress is visible to user as each checkbox is updated
@@ -1932,6 +1955,7 @@ Launch parallel Task calls for selected categories.
 ### Step 6.5: Progress Checkpoint
 
 After agents complete, run progress reconciliation:
+
 1. Count checkboxes: `grep -c "^\- \[x\]" ${REPORT_DIR}/REMEDIATION_TASKS.md`
 2. Report progress summary table
 3. Reconcile any missed updates

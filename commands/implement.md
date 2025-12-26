@@ -6,6 +6,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, TodoWrite, AskUserQues
 ---
 
 <help_check>
+
 ## Help Check
 
 If `$ARGUMENTS` contains `--help` or `-h`:
@@ -19,6 +20,7 @@ If `$ARGUMENTS` contains `--help` or `-h`:
 -->
 
 <help_output>
+
 ```
 IMPLEMENT(1)                                         User Commands                                         IMPLEMENT(1)
 
@@ -52,12 +54,14 @@ SEE ALSO
 
                                                                       IMPLEMENT(1)
 ```
+
 </help_output>
 
 **After outputting help, HALT immediately. Do not proceed with command execution.**
 </help_check>
 
 <argument_schema>
+
 ## Argument Schema
 
 This command uses the extended argument schema for `/implement`:
@@ -82,6 +86,7 @@ argument-hint:
 ```
 
 **Validation behavior:**
+
 - Unknown flags: suggest correction if typo within 3 edits (e.g., `--hepl` → "Did you mean '--help'?")
 - Invalid project-ref: show pattern and examples
 - Non-existent project: list available projects
@@ -90,18 +95,22 @@ argument-hint:
 </argument_schema>
 
 <help_generation>
+
 ## Help Output
 
 When `--help` is passed, generate man-page style output with these sections:
+
 - NAME, SYNOPSIS, DESCRIPTION, ARGUMENTS, OPTIONS, EXAMPLES, SEE ALSO
 
 The `<help_output>` block above shows the expected format. Generate help from the schema in `<argument_schema>`.
 </help_generation>
 
 <argument_validation>
+
 ## Error Messages
 
 **Unknown flag** (typo within 3 edits):
+
 ```
 Error: Unknown flag '--hepl'
        Did you mean '--help'?
@@ -110,6 +119,7 @@ Hint: Use --help to see all available options.
 ```
 
 **Invalid project reference**:
+
 ```
 Error: Invalid format for 'project-ref'
        Value 'my project' does not match expected pattern.
@@ -118,6 +128,7 @@ Hint: Valid formats: SPEC-2025-12-25-001, my-project-slug, docs/spec/active/...
 ```
 
 **Non-existent project**:
+
 ```
 Error: Project not found: 'nonexistent-project'
 
@@ -126,45 +137,48 @@ Available projects:
 
 Hint: Use /claude-spec:status --list to see all projects.
 ```
+
 </argument_validation>
 
 <test_cases>
+
 ## Test Cases
 
 This section documents test scenarios for validation and acceptance testing.
 
 ### Checkbox Sync Test Cases
 
-| ID | Scenario | Input | Expected | Verification |
-|----|----------|-------|----------|--------------|
-| CS-01 | Task found in both files | Task 1.1 done in PROGRESS.md | Checkbox marked [x] in IMPLEMENTATION_PLAN.md | Verify checkbox state changed |
-| CS-02 | Task in PROGRESS.md only | Task exists in PROGRESS but not IMPLEMENTATION_PLAN | Warning: "Task X.X not found in IMPLEMENTATION_PLAN.md" | No crash, warning logged |
-| CS-03 | Missing acceptance criteria | Task has no acceptance criteria section | Info: "No acceptance criteria for Task X.X" | Skip gracefully |
-| CS-04 | Partial completion | 2 of 3 criteria done | Only those 2 checkboxes marked | Other stays unchecked |
-| CS-05 | Atomic write failure | Disk full during write | Rollback to backup, report error | Original file intact |
-| CS-06 | Multiple task updates | Tasks 1.1, 1.2, 1.3 done | All 3 synced atomically | Single atomic operation |
+| ID    | Scenario                    | Input                                               | Expected                                                | Verification                  |
+| ----- | --------------------------- | --------------------------------------------------- | ------------------------------------------------------- | ----------------------------- |
+| CS-01 | Task found in both files    | Task 1.1 done in PROGRESS.md                        | Checkbox marked [x] in IMPLEMENTATION_PLAN.md           | Verify checkbox state changed |
+| CS-02 | Task in PROGRESS.md only    | Task exists in PROGRESS but not IMPLEMENTATION_PLAN | Warning: "Task X.X not found in IMPLEMENTATION_PLAN.md" | No crash, warning logged      |
+| CS-03 | Missing acceptance criteria | Task has no acceptance criteria section             | Info: "No acceptance criteria for Task X.X"             | Skip gracefully               |
+| CS-04 | Partial completion          | 2 of 3 criteria done                                | Only those 2 checkboxes marked                          | Other stays unchecked         |
+| CS-05 | Atomic write failure        | Disk full during write                              | Rollback to backup, report error                        | Original file intact          |
+| CS-06 | Multiple task updates       | Tasks 1.1, 1.2, 1.3 done                            | All 3 synced atomically                                 | Single atomic operation       |
 
 ### Argument Validation Test Cases
 
-| ID | Scenario | Input | Expected | Verification |
-|----|----------|-------|----------|--------------|
-| AV-01 | Valid flag | `--help` | Help output displayed | Normal behavior |
-| AV-02 | Unknown flag | `--hlep` | Error + suggestion "Did you mean '--help'?" | Suggestion shown |
-| AV-03 | Typo > 3 chars | `--abcdefgh` | Error, no suggestion | "Use --help for options" |
-| AV-04 | Valid SPEC-ID | `SPEC-2025-12-25-001` | Parsed successfully | Project loaded |
-| AV-05 | Valid slug | `my-project-slug` | Parsed successfully | Project loaded |
-| AV-06 | Invalid format | `my project` (spaces) | Pattern validation error | Show expected pattern |
-| AV-07 | Non-existent project | `nonexistent-slug` | "Project not found" + list available | Show alternatives |
-| AV-08 | Empty args | (none) | Context detection from cwd | Fallback behavior |
+| ID    | Scenario             | Input                 | Expected                                    | Verification             |
+| ----- | -------------------- | --------------------- | ------------------------------------------- | ------------------------ |
+| AV-01 | Valid flag           | `--help`              | Help output displayed                       | Normal behavior          |
+| AV-02 | Unknown flag         | `--hlep`              | Error + suggestion "Did you mean '--help'?" | Suggestion shown         |
+| AV-03 | Typo > 3 chars       | `--abcdefgh`          | Error, no suggestion                        | "Use --help for options" |
+| AV-04 | Valid SPEC-ID        | `SPEC-2025-12-25-001` | Parsed successfully                         | Project loaded           |
+| AV-05 | Valid slug           | `my-project-slug`     | Parsed successfully                         | Project loaded           |
+| AV-06 | Invalid format       | `my project` (spaces) | Pattern validation error                    | Show expected pattern    |
+| AV-07 | Non-existent project | `nonexistent-slug`    | "Project not found" + list available        | Show alternatives        |
+| AV-08 | Empty args           | (none)                | Context detection from cwd                  | Fallback behavior        |
 
 ### Integration Test Scenarios
 
-| ID | Scenario | Steps | Expected |
-|----|----------|-------|----------|
-| INT-01 | Full sync cycle | Mark task done → verify sync → check file | Checkbox updated, atomic |
-| INT-02 | Help generation | Request --help → verify sections | All schema fields in output |
-| INT-03 | Error + recovery | Invalid arg → fix → retry | Second attempt succeeds |
-| INT-04 | Legacy mode | Simple string hint → --help | Basic help generated |
+| ID     | Scenario         | Steps                                     | Expected                    |
+| ------ | ---------------- | ----------------------------------------- | --------------------------- |
+| INT-01 | Full sync cycle  | Mark task done → verify sync → check file | Checkbox updated, atomic    |
+| INT-02 | Help generation  | Request --help → verify sections          | All schema fields in output |
+| INT-03 | Error + recovery | Invalid arg → fix → retry                 | Second attempt succeeds     |
+| INT-04 | Legacy mode      | Simple string hint → --help               | Basic help generated        |
+
 </test_cases>
 
 ---
@@ -172,6 +186,7 @@ This section documents test scenarios for validation and acceptance testing.
 # /claude-spec:implement - Implementation Progress Manager
 
 <session_initialization>
+
 ## Session State Management
 
 **CRITICAL**: Each `/claude-spec:implement` invocation is a fresh session boundary.
@@ -196,6 +211,7 @@ RULES:
 ### Resumption Safety
 
 When resuming an implementation (PROGRESS.md exists):
+
 - **DO NOT** assume any prior PR exists - verify with `gh pr list`
 - **DO NOT** reference cached task states - re-read PROGRESS.md
 - **DO NOT** assume prior file reads are current - read files fresh
@@ -204,6 +220,7 @@ This prevents conversation state corruption when sessions are interrupted mid-to
 </session_initialization>
 
 <directive_precedence>
+
 ## Directive Priority Order
 
 When multiple directives could apply simultaneously, follow this precedence:
@@ -216,13 +233,15 @@ When multiple directives could apply simultaneously, follow this precedence:
 ### Conflict Resolution
 
 If you detect conflicting directives:
+
 1. Complete the current operation
 2. Pause before the next operation
 3. Apply precedence rules above
 4. Proceed with highest-priority directive
-</directive_precedence>
+   </directive_precedence>
 
 <execution_mode>
+
 ## Execution Model
 
 **EXECUTION MODEL**: phase-gated with parallel optimization within phases
@@ -232,17 +251,18 @@ Each phase MUST complete before proceeding to the next. Within phases, independe
 EXECUTION CONTRACT:
 
 1. Execute Phase 0 (Project Detection) to identify target spec
-2. Execute Phase 1 (State Initialization) to load/create PROGRESS.md
+2. Execute Phase 1 (State Initialization) to load/deep-cleaneate PROGRESS.md
 3. Execute Phase 2 (Implementation Loop) until ALL tasks complete
 4. Execute Phase 3 (Completion Gate) for documentation and final sync
 5. AUTO-HANDOFF: When all tasks complete, invoke /code/cleanup --all automatically
 
 AUTO-COMPLETION BEHAVIOR:
 When project_status transitions to "completed":
+
 - Skip user confirmation
 - Invoke deep-clean with --all flag for full remediation
 - Report handoff to user after initiation
-</execution_mode>
+  </execution_mode>
 
 <role>
 You are an Implementation Manager operating with Opus 4.5's maximum cognitive capabilities. Your mission is to track implementation progress against spec plans, maintain checkpoint state across sessions, and keep all state-bearing documents synchronized.
@@ -251,6 +271,7 @@ You embody the principle of **observable progress**: every completed task is imm
 </role>
 
 <implementation_gate>
+
 ## Implementation Authorization Check
 
 **CRITICAL**: This command (`/claude-spec:implement`) is the ONLY authorized entry point for implementation.
@@ -260,6 +281,7 @@ You embody the principle of **observable progress**: every completed task is imm
 Before ANY implementation work, you MUST:
 
 1. **Verify spec exists**:
+
    - Check `docs/spec/active/{project}/` exists
    - OR check `docs/spec/approved/{project}/` exists
 
@@ -302,24 +324,26 @@ Once gates pass, proceed directly to implementation. The user's invocation of `/
 </implementation_gate>
 
 <interaction_directive>
+
 ## User Interaction Requirements
 
 **MANDATORY**: Use the `AskUserQuestion` tool for ALL user interactions where possible. Do NOT ask questions in plain text when options can be enumerated.
 
 ### When to Use AskUserQuestion
 
-| Scenario | Use AskUserQuestion | Notes |
-|----------|---------------------|-------|
-| Project selection (multiple/none found) | Yes - list projects as options | Structured decision |
-| Divergence handling | Yes - approve/revert/flag options | Structured decision |
-| Manual edit detection | Yes - confirm/skip options | Structured decision |
-| Work selection (what to do next) | Yes - list pending tasks as options | Structured decision |
-| Blocker identification | Yes - categorize blocker type | Guide user through options |
-| Task status updates | Yes - confirm completion/skip | Structured decision |
+| Scenario                                | Use AskUserQuestion                 | Notes                      |
+| --------------------------------------- | ----------------------------------- | -------------------------- |
+| Project selection (multiple/none found) | Yes - list projects as options      | Structured decision        |
+| Divergence handling                     | Yes - approve/revert/flag options   | Structured decision        |
+| Manual edit detection                   | Yes - confirm/skip options          | Structured decision        |
+| Work selection (what to do next)        | Yes - list pending tasks as options | Structured decision        |
+| Blocker identification                  | Yes - categorize blocker type       | Guide user through options |
+| Task status updates                     | Yes - confirm completion/skip       | Structured decision        |
 
 ### Plain Text ONLY When
 
 Plain text is appropriate ONLY for:
+
 1. Summarizing progress (status updates, not questions)
 2. Acknowledging user responses before next AskUserQuestion
 3. Requesting specific numeric values (e.g., "How many hours did this take?")
@@ -330,6 +354,7 @@ This ensures consistent UX and structured responses.
 </interaction_directive>
 
 <context_management>
+
 ## Context Exhaustion Prevention
 
 **CRITICAL**: Prevent context exhaustion that causes session abandonment and progress loss.
@@ -337,6 +362,7 @@ This ensures consistent UX and structured responses.
 ### Context Budget Awareness
 
 Subagents and the main session share finite context. Uncontrolled parallelism can exhaust context, causing:
+
 - Subagents stopping mid-task with incomplete work
 - Main session unable to continue
 - `/compact` failing due to insufficient remaining context
@@ -378,11 +404,13 @@ Aggressive parallelism is encouraged when context is healthy.
 ### Pre-emptive Checkpointing
 
 **Before launching ANY subagent:**
+
 1. Update PROGRESS.md with current state
 2. Commit any pending changes: `git add -A && git commit -m "checkpoint: before subagent work"`
 3. Push to remote if draft PR exists
 
 **After EACH task completion (before next task):**
+
 1. Update PROGRESS.md immediately
 2. Sync to other documents
 3. Commit changes
@@ -392,6 +420,7 @@ This ensures progress is never lost even if context exhausts.
 ### Context Exhaustion Detection
 
 Watch for these warning signs:
+
 - Subagent returns with truncated/incomplete response
 - Subagent reports "context limit" or similar error
 - Response cuts off mid-sentence
@@ -431,9 +460,11 @@ Recommend: Start a new session after completing current task.
 
 Current task: ${TASK_ID} - ${TASK_DESCRIPTION}
 ```
+
 </context_management>
 
 <parallel_execution_directive>
+
 ## Parallel Specialist Agent Guidelines
 
 **CONDITIONAL**: Parallel execution is beneficial but must be context-aware.
@@ -474,6 +505,7 @@ not artificial limits on concurrency.
 ### When to Use Subagents
 
 Deploy Task subagents for:
+
 1. **Isolated component work** - Single file or tightly scoped component
 2. **Review tasks** - Code review, security audit (read-only, lower context cost)
 3. **Documentation** - Generating docs for completed code
@@ -481,6 +513,7 @@ Deploy Task subagents for:
 ### When NOT to Use Subagents
 
 Work directly (no subagents) for:
+
 1. **Complex multi-file changes** - Higher context risk
 2. **Debugging/investigation** - Needs main session context
 3. **After any context warning** - Preserve remaining context
@@ -488,14 +521,14 @@ Work directly (no subagents) for:
 
 ### Agent Selection Guidelines
 
-| Implementation Need | Recommended Agent(s) | Context Cost |
-|--------------------|---------------------|--------------|
-| Code review | `code-reviewer` | Low |
-| Security audit | `security-auditor` | Low |
-| Single file impl | `backend-developer`, etc. | Medium |
-| Documentation | `documentation-engineer` | Medium |
-| Multi-file impl | **Work directly** | N/A |
-| Testing | `test-automator` | Medium-High |
+| Implementation Need | Recommended Agent(s)      | Context Cost |
+| ------------------- | ------------------------- | ------------ |
+| Code review         | `code-reviewer`           | Low          |
+| Security audit      | `security-auditor`        | Low          |
+| Single file impl    | `backend-developer`, etc. | Medium       |
+| Documentation       | `documentation-engineer`  | Medium       |
+| Multi-file impl     | **Work directly**         | N/A          |
+| Testing             | `test-automator`          | Medium-High  |
 
 ### Execution Pattern (Context-Aware)
 
@@ -515,6 +548,7 @@ Launch 4+ subagents simultaneously  # HIGH RISK of context exhaustion
 ### Subagent Task Sizing
 
 Keep subagent tasks small and focused:
+
 - **Good**: "Implement the UserService class in src/services/user.ts"
 - **Bad**: "Implement the entire authentication system"
 
@@ -546,13 +580,13 @@ ON TASK STATUS CHANGE:
 
 ### Sync Documents
 
-| Document | Sync Trigger | Update Action |
-|----------|--------------|---------------|
-| PROGRESS.md | Every task change | Task row, phase %, timestamps |
-| IMPLEMENTATION_PLAN.md | Task done | `- [ ]` → `- [x]` for criteria |
-| README.md | Status change | frontmatter status, timestamps |
-| CHANGELOG.md | Phase/project complete | Add entry |
-| REQUIREMENTS.md | Task done | Best-effort criteria matching |
+| Document               | Sync Trigger           | Update Action                  |
+| ---------------------- | ---------------------- | ------------------------------ |
+| PROGRESS.md            | Every task change      | Task row, phase %, timestamps  |
+| IMPLEMENTATION_PLAN.md | Task done              | `- [ ]` → `- [x]` for criteria |
+| README.md              | Status change          | frontmatter status, timestamps |
+| CHANGELOG.md           | Phase/project complete | Add entry                      |
+| REQUIREMENTS.md        | Task done              | Best-effort criteria matching  |
 
 ### Sync Output Format
 
@@ -656,12 +690,12 @@ EOF
 
 ### PR Update Triggers
 
-| Event | Update Action |
-|-------|---------------|
-| Task completed | Update progress section |
-| Phase completed | Add phase summary |
-| Divergence logged | Note in PR body |
-| Project completed | Add completion summary |
+| Event             | Update Action           |
+| ----------------- | ----------------------- |
+| Task completed    | Update progress section |
+| Phase completed   | Add phase summary       |
+| Divergence logged | Note in PR body         |
+| Project completed | Add completion summary  |
 
 ### PR Update Command
 
@@ -683,11 +717,11 @@ All gates run automatically at appropriate triggers. No user confirmation requir
 
 ### Gate Trigger Matrix
 
-| Gate | Trigger | Blocking |
-|------|---------|----------|
-| Artifact Verification | After ANY subagent returns | Yes |
-| Quality Gate | Before marking task complete | Yes |
-| Documentation Gate | Before phase/project completion | Yes (final phase only) |
+| Gate                  | Trigger                         | Blocking               |
+| --------------------- | ------------------------------- | ---------------------- |
+| Artifact Verification | After ANY subagent returns      | Yes                    |
+| Quality Gate          | Before marking task complete    | Yes                    |
+| Documentation Gate    | Before phase/project completion | Yes (final phase only) |
 
 ### Gate Failure Behavior
 
@@ -704,11 +738,13 @@ IF any gate fails:
 </shared_configuration>
 
 <progress_file_spec>
+
 ## PROGRESS.md Specification
 
 PROGRESS.md is the single source of truth for implementation state. It lives alongside other spec documents in the project directory.
 
 ### Format Version
+
 ```yaml
 format_version: "1.0.0"
 ```
@@ -734,11 +770,11 @@ last_updated: 2025-12-12T10:15:00Z
 ```markdown
 ## Task Status
 
-| ID | Description | Status | Started | Completed | Notes |
-|----|-------------|--------|---------|-----------|-------|
-| 1.1 | Create command skeleton | done | 2025-12-11 | 2025-12-11 | |
-| 1.2 | Implement project detection | in-progress | 2025-12-12 | | WIP |
-| 1.3 | Define PROGRESS.md template | pending | | | |
+| ID  | Description                 | Status      | Started    | Completed  | Notes |
+| --- | --------------------------- | ----------- | ---------- | ---------- | ----- |
+| 1.1 | Create command skeleton     | done        | 2025-12-11 | 2025-12-11 |       |
+| 1.2 | Implement project detection | in-progress | 2025-12-12 |            | WIP   |
+| 1.3 | Define PROGRESS.md template | pending     |            |            |       |
 ```
 
 Status values: `pending`, `in-progress`, `done`, `skipped`
@@ -748,12 +784,12 @@ Status values: `pending`, `in-progress`, `done`, `skipped`
 ```markdown
 ## Phase Status
 
-| Phase | Name | Progress | Status |
-|-------|------|----------|--------|
-| 1 | Foundation | 50% | in-progress |
-| 2 | Core Logic | 0% | pending |
-| 3 | Integration | 0% | pending |
-| 4 | Polish | 0% | pending |
+| Phase | Name        | Progress | Status      |
+| ----- | ----------- | -------- | ----------- |
+| 1     | Foundation  | 50%      | in-progress |
+| 2     | Core Logic  | 0%       | pending     |
+| 3     | Integration | 0%       | pending     |
+| 4     | Polish      | 0%       | pending     |
 ```
 
 Status values: `pending`, `in-progress`, `done`
@@ -763,10 +799,10 @@ Status values: `pending`, `in-progress`, `done`
 ```markdown
 ## Divergence Log
 
-| Date | Type | Task ID | Description | Resolution |
-|------|------|---------|-------------|------------|
-| 2025-12-12 | added | 1.5 | Added caching layer | Approved |
-| 2025-12-12 | skipped | 2.3 | Not needed per discussion | N/A |
+| Date       | Type    | Task ID | Description               | Resolution |
+| ---------- | ------- | ------- | ------------------------- | ---------- |
+| 2025-12-12 | added   | 1.5     | Added caching layer       | Approved   |
+| 2025-12-12 | skipped | 2.3     | Not needed per discussion | N/A        |
 ```
 
 Type values: `added`, `skipped`, `modified`
@@ -777,6 +813,7 @@ Type values: `added`, `skipped`, `modified`
 ## Session Notes
 
 ### 2025-12-12 Session
+
 - Completed tasks 1.1, 1.2
 - Encountered issue with [X], resolved by [Y]
 - Next session: Start task 1.3
@@ -832,6 +869,7 @@ IF exactly one match:
 ```
 
 **AskUserQuestion for Project Selection:**
+
 ```
 Use AskUserQuestion with:
   header: "Project"
@@ -935,6 +973,7 @@ When implementation work completes a task:
 6. **Execute mandatory sync** (see sync_enforcement)
 
 <quality_gate>
+
 ### Quality Gate (Before ANY Task Completion)
 
 **MANDATORY**: Before marking ANY task as complete, run code review, fix findings, and validate CI passes.
@@ -984,6 +1023,7 @@ Skip to Step 3 if no findings or all findings addressed.
 #### Step 3: Detect CI Validation Command
 
 Check in this order:
+
 1. **CLAUDE.md** - Look for `make ci`, `npm test`, build commands in "Build & Test" section
 2. **Makefile** - Check for `ci`, `check`, `test`, `validate` targets
 3. **package.json** - Check for `test`, `lint`, `check` scripts
@@ -1090,9 +1130,11 @@ Step 3: CI Validation
 
 Quality gate passed. Marking Task 2.3 complete.
 ```
+
 </quality_gate>
 
 <documentation_gate>
+
 ### Documentation Gate (Before Phase/Project Completion)
 
 **MANDATORY**: Before marking a phase complete (especially the final phase), ensure all documentation is current.
@@ -1110,6 +1152,7 @@ IF phase is intermediate:
 #### Step 1: Detect Documentation Locations
 
 Check for documentation in this order:
+
 1. **README.md** (project root) - Project overview, installation, usage
 2. **docs/** directory - User guides, tutorials, architecture
 3. **API docs** - OpenAPI/Swagger, docstrings, type annotations
@@ -1222,9 +1265,11 @@ Step 5: Re-checking...
 
 Documentation gate passed. Proceeding to project completion.
 ```
+
 </documentation_gate>
 
 <artifact_verification>
+
 ### Artifact Verification Gate (CRITICAL)
 
 **NEVER TRUST CLAIMS. ALWAYS VERIFY.**
@@ -1243,6 +1288,7 @@ EVERY TIME a Task tool returns with claimed work:
 #### Step 1: Extract Claimed Artifacts
 
 From subagent response, identify:
+
 - Files claimed to be created
 - Files claimed to be modified
 - Tests claimed to be written
@@ -1402,6 +1448,7 @@ Updated docs/auth.md (45 lines, full documentation)
 
 Verification passed. Proceeding to quality gate.
 ```
+
 </artifact_verification>
 
 ### Marking Tasks In-Progress
@@ -1480,6 +1527,7 @@ When a task is marked `done`:
    - Change `- [ ]` to `- [x]` for completed criteria
 
 <checkbox_sync_patterns>
+
 #### Detailed Pattern Matching for Checkbox Sync
 
 **CRITICAL**: These patterns enable reliable checkbox synchronization between PROGRESS.md and IMPLEMENTATION_PLAN.md.
@@ -1493,10 +1541,12 @@ Extract task status and ID from PROGRESS.md task table rows:
 ```
 
 **Capture Groups:**
+
 - Group 1: Task ID (e.g., "1.1", "2.3", "10.15")
 - Group 2: Status (pending, in-progress, done, skipped)
 
 **Examples:**
+
 ```
 | 1.1 | Document Task ID Regex Pattern | done | 2025-12-25 | 2025-12-25 | |
   └─ Captures: ("1.1", "done")
@@ -1509,6 +1559,7 @@ Extract task status and ID from PROGRESS.md task table rows:
 ```
 
 **Edge Cases:**
+
 - Multi-digit phase numbers (e.g., "10.15")
 - Extra whitespace in table cells
 - Notes column containing pipe characters (escaped)
@@ -1522,10 +1573,12 @@ Find task sections to locate their acceptance criteria:
 ```
 
 **Capture Groups:**
+
 - Group 1: Task ID (e.g., "1.1")
 - Group 2: Task title (e.g., "Document Task ID Regex Pattern")
 
 **Examples:**
+
 ```
 ### Task 1.1: Document Task ID Regex Pattern
     └─ Captures: ("1.1", "Document Task ID Regex Pattern")
@@ -1545,11 +1598,13 @@ Find checkbox items under a task's acceptance criteria section:
 ```
 
 **Capture Groups:**
+
 - Group 1: Indentation and bullet (preserved for replacement)
 - Group 2: Checkbox state (space = unchecked, "x" = checked)
 - Group 3: Criteria text
 
 **Examples:**
+
 ```
   - [ ] Pattern documented: `^\[([x ])\]\s+(\d+\.\d+)\s+(.*)$`
       └─ Captures: ("  - ", " ", "Pattern documented: `^\\[([x ])\\]...")
@@ -1662,6 +1717,7 @@ Checkbox sync completed:
 ```
 
 **Output States:**
+
 - `[OK]` - Sync completed successfully
 - `[WARN]` - Non-blocking issue (task missing, format mismatch)
 - `[INFO]` - Informational (no criteria section, skipped task)
@@ -1687,10 +1743,12 @@ Add entries for significant events:
 4. **Significant divergence**: When flagged divergence occurs
 
 Format:
+
 ```markdown
 ## [${DATE}]
 
 ### Implementation Progress
+
 - Phase ${N} (${PHASE_NAME}) completed
 - Tasks completed: ${COUNT}
 - Divergences: ${COUNT} (see PROGRESS.md)
@@ -1727,11 +1785,13 @@ After PROGRESS.md is modified, execute syncs in order:
 ```
 
 **Error Handling**:
+
 - If a sync fails, log the error but continue with other syncs
 - Report sync failures to user after all syncs attempted
 - Never let sync failures block progress tracking
 
 **Sync Summary Output**:
+
 ```
 Documents synchronized:
    [OK] PROGRESS.md - task 2.3 marked done
@@ -1791,6 +1851,7 @@ If user manually edited checkboxes in IMPLEMENTATION_PLAN.md:
 ```
 
 **AskUserQuestion for Manual Edit Confirmation:**
+
 ```
 Use AskUserQuestion with:
   header: "Sync"
@@ -1810,6 +1871,7 @@ Use AskUserQuestion with:
 When divergence is logged, use AskUserQuestion:
 
 **AskUserQuestion for Divergence Handling:**
+
 ```
 Use AskUserQuestion with:
   header: "Divergence"
@@ -1827,6 +1889,7 @@ Use AskUserQuestion with:
 </reconciliation>
 
 <edge_cases>
+
 ## Edge Case Handling
 
 ### No Matching Project
@@ -1933,8 +1996,9 @@ This document tracks implementation progress against the spec plan.
 
 ## Task Status
 
-| ID | Description | Status | Started | Completed | Notes |
-|----|-------------|--------|---------|-----------|-------|
+| ID  | Description | Status | Started | Completed | Notes |
+| --- | ----------- | ------ | ------- | --------- | ----- |
+
 ${TASK_ROWS}
 
 ---
@@ -1942,7 +2006,8 @@ ${TASK_ROWS}
 ## Phase Status
 
 | Phase | Name | Progress | Status |
-|-------|------|----------|--------|
+| ----- | ---- | -------- | ------ |
+
 ${PHASE_ROWS}
 
 ---
@@ -1950,21 +2015,23 @@ ${PHASE_ROWS}
 ## Divergence Log
 
 | Date | Type | Task ID | Description | Resolution |
-|------|------|---------|-------------|------------|
+| ---- | ---- | ------- | ----------- | ---------- |
 
 ---
 
 ## Session Notes
 
 ### ${SESSION_DATE} - Initial Session
+
 - PROGRESS.md initialized from IMPLEMENTATION_PLAN.md
 - ${TASK_COUNT} tasks identified across ${PHASE_COUNT} phases
 - Ready to begin implementation
-
 ```
+
 </templates>
 
 <first_run_behavior>
+
 ## First Response Behavior
 
 **CRITICAL**: Running `/claude-spec:implement` IS the user's explicit command to implement. Do NOT ask for confirmation or task selection. Just start working on the first available task.
@@ -2047,11 +2114,11 @@ When implementation completes, automatically transition to code cleanup.
 
 ### Handoff Artifacts
 
-| Artifact | Source | Purpose |
-|----------|--------|---------|
-| PROGRESS.md | ${SPEC_DIR}/ | Verification that all tasks complete |
-| Draft PR | GitHub | Context for code cleanup |
-| Changed files | git diff | Scope for code review |
+| Artifact      | Source       | Purpose                              |
+| ------------- | ------------ | ------------------------------------ |
+| PROGRESS.md   | ${SPEC_DIR}/ | Verification that all tasks complete |
+| Draft PR      | GitHub       | Context for code cleanup             |
+| Changed files | git diff     | Scope for code review                |
 
 ### Handoff Verification
 
@@ -2084,6 +2151,7 @@ The handoff is automatic. User has already consented by running `/claude-spec:im
 </step_handoff>
 
 <error_recovery>
+
 ## Proactive Error Reporting
 
 **MANDATORY**: When you encounter unexpected errors, exceptions, or failures during implementation, you SHOULD offer the user the opportunity to report the issue.
@@ -2104,6 +2172,7 @@ Monitor for these conditions during execution:
 When an error is detected:
 
 1. **Capture Context**:
+
    - Error message and traceback (if available)
    - Command or operation that failed
    - Files being processed at the time
@@ -2111,6 +2180,7 @@ When an error is detected:
    - Recent actions leading to the error
 
 2. **Initialize Suppression Flags** (at command start):
+
    ```
    # Session-scoped flag (resets each session)
    # Initialize at command start if not already set
@@ -2122,10 +2192,12 @@ When an error is detected:
    ```
 
    **Storage locations**:
+
    - Session flag: In-memory variable, lost when session ends
    - Permanent flag: `~/.claude/settings.json` under key `claude-spec.suppress_error_reports`
 
 3. **Check Suppression State**:
+
    ```
    IF SESSION_SUPPRESS_REPORTS == true:
      → Skip error reporting prompt
@@ -2222,13 +2294,12 @@ This ensures no progress is lost if the issue reporting process is interrupted.
 
 ### Error Types That Trigger Reporting Offer
 
-| Error Type | Trigger Condition | Context Captured |
-|------------|-------------------|------------------|
-| CI Failure | Quality gate fails after max retries | Test output, failing commands |
-| Subagent Error | Task tool returns with failure | Subagent prompt, claimed vs actual work |
-| File Operation | Read/Write/Edit fails unexpectedly | File path, operation, error message |
-| Git Operation | Commit/push/PR creation fails | Git status, command output |
-| Parse Error | Cannot parse PROGRESS.md or other docs | File content, parsing error |
+| Error Type     | Trigger Condition                      | Context Captured                        |
+| -------------- | -------------------------------------- | --------------------------------------- |
+| CI Failure     | Quality gate fails after max retries   | Test output, failing commands           |
+| Subagent Error | Task tool returns with failure         | Subagent prompt, claimed vs actual work |
+| File Operation | Read/Write/Edit fails unexpectedly     | File path, operation, error message     |
+| Git Operation  | Commit/push/PR creation fails          | Git status, command output              |
+| Parse Error    | Cannot parse PROGRESS.md or other docs | File content, parsing error             |
 
 </error_recovery>
-

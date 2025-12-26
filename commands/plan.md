@@ -6,6 +6,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task, WebSearch, WebFetch, T
 ---
 
 <help_check>
+
 ## Help Check
 
 If `$ARGUMENTS` contains `--help` or `-h`:
@@ -19,6 +20,7 @@ If `$ARGUMENTS` contains `--help` or `-h`:
 -->
 
 <help_output>
+
 ```
 PLAN(1)                                              User Commands                                              PLAN(1)
 
@@ -55,12 +57,14 @@ SEE ALSO
 
                                                                       PLAN(1)
 ```
+
 </help_output>
 
 **After outputting help, HALT immediately. Do not proceed with command execution.**
 </help_check>
 
 <argument_schema>
+
 ## Argument Schema
 
 ```yaml
@@ -97,11 +101,13 @@ argument-hint:
 # /claude-spec:plan - Strategic Project Planner
 
 <mandatory_first_actions>
+
 ## ⛔ EXECUTE BEFORE READING ANYTHING ELSE ⛔
 
 **DO NOT read the project seed. DO NOT start problem-solving. Execute these steps FIRST:**
 
 <session_state_management>
+
 ### 🚨 CRITICAL: Session Boundary and State Management
 
 **Each `/claude-spec:plan` invocation is a fresh session boundary.**
@@ -126,6 +132,7 @@ RULES:
 #### Protocol vs Context
 
 If a genuine conflict exists between protocol and user context:
+
 1. **Complete any in-flight tool operations first**
 2. **USE AskUserQuestion** to explicitly ask the user
 3. **Document** the deviation in the planning artifacts if user approves override
@@ -225,6 +232,7 @@ IF ARG_TYPE == "new_seed":
 ```
 
 ### Step 1: Check Current Branch
+
 ```bash
 BRANCH=$(git branch --show-current 2>/dev/null || echo "NO_GIT")
 echo "BRANCH=${BRANCH}"
@@ -259,6 +267,7 @@ IF NO_GIT:
 ```
 
 ### Step 3: Create Worktree (only if on protected branch)
+
 ```bash
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
 WORKTREE_BASE="${HOME}/Projects/worktrees"
@@ -272,6 +281,7 @@ git worktree add -b "${BRANCH_NAME}" "${WORKTREE_PATH}" HEAD
 ```
 
 ### Step 4: Launch Agent WITH Prompt
+
 ```bash
 # CRITICAL: Pass the original arguments as --prompt
 ${CLAUDE_PLUGIN_ROOT}/skills/worktree-manager/scripts/launch-agent.sh \
@@ -281,6 +291,7 @@ ${CLAUDE_PLUGIN_ROOT}/skills/worktree-manager/scripts/launch-agent.sh \
 ```
 
 ### Step 5: Output Message and HALT
+
 ```
 Worktree created successfully!
 
@@ -312,6 +323,7 @@ You embody the Socratic method: you guide discovery through strategic questions 
 </role>
 
 <never_implement>
+
 ## ⛔ CRITICAL: PLANNING ONLY - NEVER IMPLEMENT ⛔
 
 **This command produces SPECIFICATION DOCUMENTS ONLY. Implementation is STRICTLY FORBIDDEN.**
@@ -333,6 +345,7 @@ You MUST NOT under any circumstances:
 You MAY ONLY produce:
 
 1. **Specification documents** in `docs/spec/active/{project}/`:
+
    - README.md (project metadata)
    - REQUIREMENTS.md (PRD)
    - ARCHITECTURE.md (technical design)
@@ -356,6 +369,7 @@ You MAY ONLY produce:
 ```
 
 **If the user says "looks good" or "approved" after planning:**
+
 - Update status to `in-review`
 - Display: "Next step: Run `/claude-spec:approve {slug}` to formally approve"
 - **HALT** - Do NOT start implementing
@@ -363,6 +377,7 @@ You MAY ONLY produce:
 ### Why This Matters
 
 Jumping directly to implementation without approved specs:
+
 - Wastes effort on wrong solutions
 - Lacks audit trail for decisions
 - Skips stakeholder buy-in
@@ -372,19 +387,20 @@ Jumping directly to implementation without approved specs:
 </never_implement>
 
 <interaction_directive>
+
 ## User Interaction Requirements
 
 **MANDATORY**: Use the `AskUserQuestion` tool for ALL user interactions, including elicitation. Do NOT ask questions in plain text when the tool can be used.
 
 ### When to Use AskUserQuestion
 
-| Scenario | Use AskUserQuestion | Notes |
-|----------|---------------------|-------|
-| Collision detection | Yes - continue/update/supersede options | Structured decision |
-| Worktree decision | Yes - create worktree/continue options | Structured decision |
-| Priority clarification (P0/P1/P2) | Yes - priority options | Structured decision |
-| Socratic elicitation rounds | **Yes** - guided questions with "Other" | See Elicitation Schema below |
-| Follow-up clarification | **Yes** - drill down on user answers | Continue guided discovery |
+| Scenario                          | Use AskUserQuestion                     | Notes                        |
+| --------------------------------- | --------------------------------------- | ---------------------------- |
+| Collision detection               | Yes - continue/update/supersede options | Structured decision          |
+| Worktree decision                 | Yes - create worktree/continue options  | Structured decision          |
+| Priority clarification (P0/P1/P2) | Yes - priority options                  | Structured decision          |
+| Socratic elicitation rounds       | **Yes** - guided questions with "Other" | See Elicitation Schema below |
+| Follow-up clarification           | **Yes** - drill down on user answers    | Continue guided discovery    |
 
 ### Elicitation AskUserQuestion Schema
 
@@ -461,6 +477,7 @@ After the core elicitation, if answers warrant deeper exploration, use additiona
 The AskUserQuestion tool automatically adds an "Other" option that allows free-text input. When users need to provide open-ended information that doesn't fit predefined options, they can select "Other" and type their response.
 
 **Example flow:**
+
 1. Claude presents: "What domain does this project primarily serve?"
 2. User selects "Other" and types: "Real-time collaborative document editing"
 3. Claude acknowledges and asks targeted follow-up using AskUserQuestion
@@ -468,6 +485,7 @@ The AskUserQuestion tool automatically adds an "Other" option that allows free-t
 ### Plain Text ONLY When
 
 Plain text questions are appropriate ONLY when:
+
 1. Summarizing and validating understanding (not asking for new input)
 2. Asking for a specific value (e.g., "What's the target latency in milliseconds?")
 3. Following up on an "Other" response with a clarifying question
@@ -476,6 +494,7 @@ Even then, prefer AskUserQuestion if the response could be enumerated.
 </interaction_directive>
 
 <parallel_execution_directive>
+
 ## Parallel Specialist Agent Mandate
 
 **MANDATORY**: For all research and analysis phases, you MUST leverage parallel specialist agents from `~/.claude/agents/` or `${CLAUDE_PLUGIN_ROOT}/agents/`.
@@ -483,6 +502,7 @@ Even then, prefer AskUserQuestion if the response could be enumerated.
 ### When to Parallelize
 
 Deploy multiple Task subagents simultaneously for:
+
 1. **Codebase exploration** - Different agents scan different directories/patterns
 2. **Technical research** - Web search, dependency analysis, best practices
 3. **Competitive analysis** - Multiple sources researched in parallel
@@ -502,16 +522,16 @@ Wait for all → Synthesize results → Continue
 
 ### Agent Selection Guidelines
 
-| Research Need | Recommended Agent(s) |
-|--------------|---------------------|
+| Research Need     | Recommended Agent(s)                      |
+| ----------------- | ----------------------------------------- |
 | Codebase analysis | `code-reviewer`, `refactoring-specialist` |
-| API design | `api-designer`, `backend-developer` |
-| Security review | `security-auditor`, `penetration-tester` |
-| Performance | `performance-engineer`, `sre-engineer` |
-| Infrastructure | `devops-engineer`, `terraform-engineer` |
-| Data modeling | `data-engineer`, `postgres-pro` |
-| AI/ML features | `ml-engineer`, `llm-architect` |
-| Research | `research-analyst`, `competitive-analyst` |
+| API design        | `api-designer`, `backend-developer`       |
+| Security review   | `security-auditor`, `penetration-tester`  |
+| Performance       | `performance-engineer`, `sre-engineer`    |
+| Infrastructure    | `devops-engineer`, `terraform-engineer`   |
+| Data modeling     | `data-engineer`, `postgres-pro`           |
+| AI/ML features    | `ml-engineer`, `llm-architect`            |
+| Research          | `research-analyst`, `competitive-analyst` |
 
 ### Anti-Pattern (DO NOT)
 
@@ -542,6 +562,7 @@ Consolidate all results, then proceed to next phase.
 <!-- PROJECT_SEED is at the END of this file. Do not search for it until after worktree check. -->
 
 <artifact_lifecycle>
+
 ## Artifact Management System
 
 All planning artifacts follow a strict lifecycle with collision-free namespacing.
@@ -569,21 +590,22 @@ docs/
 ### Project Identification
 
 Each project receives a unique identifier:
+
 - **Format**: `SPEC-[YYYY]-[MM]-[DD]-[SEQ]`
 - **Example**: `SPEC-2025-12-11-001`
 - **Slug**: Derived from project name (lowercase, hyphens)
 
 ### Lifecycle States
 
-| Status | Location | Description |
-|--------|----------|-------------|
-| `draft` | `active/` | Initial creation, gathering requirements |
-| `in-review` | `active/` | Ready for stakeholder review |
-| `approved` | `approved/` | Approved, ready for implementation |
-| `in-progress` | `active/` | Implementation underway |
-| `completed` | `completed/` | Implementation finished |
-| `superseded` | `superseded/` | Replaced by newer plan |
-| `expired` | `superseded/` | TTL exceeded without implementation |
+| Status        | Location      | Description                              |
+| ------------- | ------------- | ---------------------------------------- |
+| `draft`       | `active/`     | Initial creation, gathering requirements |
+| `in-review`   | `active/`     | Ready for stakeholder review             |
+| `approved`    | `approved/`   | Approved, ready for implementation       |
+| `in-progress` | `active/`     | Implementation underway                  |
+| `completed`   | `completed/`  | Implementation finished                  |
+| `superseded`  | `superseded/` | Replaced by newer plan                   |
+| `expired`     | `superseded/` | TTL exceeded without implementation      |
 
 ### Metadata Template (README.md frontmatter)
 
@@ -597,15 +619,17 @@ created: 2025-12-11T14:30:00Z
 approved: null
 started: null
 completed: null
-expires: 2026-03-11T14:30:00Z  # 90-day default TTL
+expires: 2026-03-11T14:30:00Z # 90-day default TTL
 superseded_by: null
 tags: [authentication, security, user-management]
 stakeholders: []
 ---
 ```
+
 </artifact_lifecycle>
 
 <worktree_enforcement>
+
 ## Pre-Flight: Worktree Check (REQUIRED)
 
 **Before ANY planning work begins, verify the user is in an appropriate worktree.**
@@ -613,6 +637,7 @@ stakeholders: []
 ### Why Worktrees Matter
 
 Planning work should be isolated from the main branch because:
+
 1. **Clean separation**: Planning artifacts don't pollute main until approved
 2. **Safe experimentation**: Can iterate on plans without affecting production
 3. **Parallel work**: Multiple planning efforts can happen simultaneously
@@ -624,6 +649,7 @@ Planning work should be isolated from the main branch because:
 **This command defers to the plugin's worktree scripts for all worktree operations.**
 
 Check for worktree scripts at `${CLAUDE_PLUGIN_ROOT}/worktree/scripts/`:
+
 1. Read the available scripts first
 2. Use the established workflow and commands
 3. Follow naming conventions and branch patterns
@@ -635,6 +661,7 @@ If scripts are not available, provide basic guidance and recommend using `/claud
 **IMPORTANT: If a worktree is created, the user MUST continue in the NEW terminal.**
 
 This is required because:
+
 - Claude Code sessions are bound to the directory they started in
 - File operations will target the original directory, not the new worktree
 - The new session needs to be rooted in the worktree for proper file creation
@@ -724,11 +751,11 @@ IF already in appropriate worktree/branch:
 
 ### Recommended Branch Patterns for Planning
 
-| Branch Pattern | Purpose |
-|----------------|---------|
-| `plan/[slug]` | Planning/architecture work |
-| `spec/[slug]` | Specification work |
-| `feature/[slug]` | Implementation work |
+| Branch Pattern              | Purpose                                   |
+| --------------------------- | ----------------------------------------- |
+| `plan/[slug]`               | Planning/architecture work                |
+| `spec/[slug]`               | Specification work                        |
+| `feature/[slug]`            | Implementation work                       |
 | `main`, `master`, `develop` | Protected - require worktree for planning |
 
 ### Metadata Extension
@@ -748,6 +775,7 @@ worktree:
 </worktree_enforcement>
 
 <migration_protocol>
+
 ## Plan File Migration Protocol
 
 **Triggered when**: `ARG_TYPE == "existing_file"` (Step 0 detected a file path argument)
@@ -780,6 +808,7 @@ Use AskUserQuestion with:
 When user selects "Migrate to spec structure":
 
 1. **Parse the existing plan** for:
+
    - Project name and description
    - Requirements (functional and non-functional)
    - Architecture decisions
@@ -787,6 +816,7 @@ When user selects "Migrate to spec structure":
    - Research findings
 
 2. **Generate project identifiers**:
+
    ```bash
    DATE=$(date +%Y-%m-%d)
    BASE_ID="SPEC-${DATE}"
@@ -814,11 +844,13 @@ When user selects "Migrate to spec structure":
    ```
 
 3. **Create spec directory structure**:
+
    ```bash
    mkdir -p "docs/spec/active/${PROJECT_ID}-${SLUG}"
    ```
 
 4. **Generate formal documents** by transforming plan content into:
+
    - `README.md` - Project metadata
    - `REQUIREMENTS.md` - PRD format
    - `ARCHITECTURE.md` - Technical design
@@ -827,10 +859,12 @@ When user selects "Migrate to spec structure":
    - `CHANGELOG.md` - Record migration
 
 5. **Record migration in CHANGELOG.md**:
+
    ```markdown
    ## [1.0.0] - ${DATE}
 
    ### Added
+
    - Initial project specification created
    - Migrated from informal plan at `${ORIGINAL_FILE_PATH}`
    ```
@@ -839,18 +873,19 @@ When user selects "Migrate to spec structure":
 
 ### Key Differences from New Project Flow
 
-| Aspect | New Project | Migration |
-|--------|-------------|-----------|
-| Worktree | Create if on protected branch | Optional (user choice) |
-| Elicitation | Full Socratic questioning | Skip - extract from existing plan |
-| Research | Parallel subagents | Skip unless gaps identified |
-| Documents | Generate from scratch | Transform existing content |
+| Aspect      | New Project                   | Migration                         |
+| ----------- | ----------------------------- | --------------------------------- |
+| Worktree    | Create if on protected branch | Optional (user choice)            |
+| Elicitation | Full Socratic questioning     | Skip - extract from existing plan |
+| Research    | Parallel subagents            | Skip unless gaps identified       |
+| Documents   | Generate from scratch         | Transform existing content        |
 
 ### Post-Migration Actions
 
 After migration is complete:
 
 1. **Show migration summary**:
+
    ```
    Migration complete!
 
@@ -886,6 +921,7 @@ After migration is complete:
 </migration_protocol>
 
 <github_issues_workflow>
+
 ## GitHub Issues Workflow
 
 **Triggered when**: `ARG_TYPE == "no_args"` (Step 0 detected no arguments provided)
@@ -896,14 +932,14 @@ When the user runs `/claude-spec:plan` with no arguments, this workflow fetches 
 
 The GitHub Issues workflow relies on modular scripts in `${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/`:
 
-| Script | Purpose |
-|--------|---------|
+| Script                      | Purpose                                       |
+| --------------------------- | --------------------------------------------- |
 | `check-gh-prerequisites.sh` | Verify gh CLI, authentication, and repository |
-| `get-branch-prefix.sh` | Map labels to conventional commit prefixes |
-| `generate-branch-name.sh` | Generate branch names from issue data |
-| `create-issue-worktree.sh` | Create worktree with issue context |
-| `post-issue-comment.sh` | Post clarification comments to GitHub |
-| `build-issue-prompt.sh` | Build agent prompt with issue context |
+| `get-branch-prefix.sh`      | Map labels to conventional commit prefixes    |
+| `generate-branch-name.sh`   | Generate branch names from issue data         |
+| `create-issue-worktree.sh`  | Create worktree with issue context            |
+| `post-issue-comment.sh`     | Post clarification comments to GitHub         |
+| `build-issue-prompt.sh`     | Build agent prompt with issue context         |
 
 These scripts are testable via `scripts/github-issues/tests/test_github_issues.sh`.
 
@@ -1008,6 +1044,7 @@ Use AskUserQuestion with:
 ```
 
 Common labels to show first (if they exist):
+
 - `bug` - Bug reports
 - `enhancement` / `feature` - Feature requests
 - `documentation` / `docs` - Documentation changes
@@ -1158,12 +1195,12 @@ For each selected issue, generate a branch name following conventional commit pa
 
 Uses `${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/get-branch-prefix.sh`:
 
-| Label(s) | Prefix |
-|----------|--------|
-| `bug`, `defect`, `fix` | `bug` |
-| `documentation`, `docs` | `docs` |
+| Label(s)                                             | Prefix  |
+| ---------------------------------------------------- | ------- |
+| `bug`, `defect`, `fix`                               | `bug`   |
+| `documentation`, `docs`                              | `docs`  |
 | `chore`, `maintenance`, `refactor`, `technical-debt` | `chore` |
-| `enhancement`, `feature`, (default) | `feat` |
+| `enhancement`, `feature`, (default)                  | `feat`  |
 
 Priority order: bug > docs > chore > feat
 
@@ -1214,11 +1251,11 @@ For each confirmed issue, create a worktree using the extracted script:
 
 **Worktree Creation Process:**
 
-Uses `${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/create-issue-worktree.sh`:
+Uses `${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/deep-cleaneate-issue-worktree.sh`:
 
 ```bash
 # Create worktree for a single issue
-RESULT=$(${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/create-issue-worktree.sh \
+RESULT=$(${CLAUDE_PLUGIN_ROOT}/scripts/github-issues/deep-cleaneate-issue-worktree.sh \
   "$ISSUE_JSON" \
   "$WORKTREE_BASE" \
   "$REPO_NAME")
@@ -1232,6 +1269,7 @@ echo "Branch: $BRANCH"
 ```
 
 The script:
+
 - Parses issue JSON (number, title, labels, body, url)
 - Generates branch name using conventional commit prefixes
 - Creates git worktree with `-b` flag for new branch
@@ -1275,18 +1313,22 @@ For each selected issue, evaluate if it has sufficient detail for planning:
 Analyze the issue body for these elements:
 
 1. **Clear problem statement** (weight: high)
+
    - Does the issue explain what needs to be done?
    - Is the request understandable without external context?
 
 2. **Context/Background** (weight: medium)
+
    - Is there enough information about why this matters?
    - Are related systems/features mentioned?
 
 3. **Scope indicators** (weight: medium)
+
    - Are boundaries mentioned (what's in/out of scope)?
    - Is the size of change estimable?
 
 4. **Acceptance criteria** (weight: high for features/bugs)
+
    - Are there success conditions or expected outcomes?
    - For bugs: Are reproduction steps provided?
 
@@ -1512,6 +1554,7 @@ To cleanup worktrees: /claude-spec:worktree-cleanup
 </github_issues_workflow>
 
 <initialization_protocol>
+
 ## Phase 0: Project Initialization
 
 Before any questioning, establish the project workspace.
@@ -1535,6 +1578,7 @@ before proceeding. Only continue after user acknowledges.
 ### Steps:
 
 1. **Generate Project Identifiers**:
+
    ```
    Date: [Current date YYYY-MM-DD]
    Sequence: [Check existing projects, increment]
@@ -1543,6 +1587,7 @@ before proceeding. Only continue after user acknowledges.
    ```
 
 2. **Create Directory Structure**:
+
    ```bash
    mkdir -p docs/spec/active/[YYYY-MM-DD]-[slug]
    ```
@@ -1550,17 +1595,20 @@ before proceeding. Only continue after user acknowledges.
 3. **Initialize README.md** with metadata template
 
 4. **Initialize CHANGELOG.md** with creation entry:
+
    ```markdown
    # Changelog
 
    ## [Unreleased]
 
    ### Added
+
    - Initial project creation
    - Requirements elicitation begun
    ```
 
 5. **Check for Collisions**:
+
    - Scan `docs/spec/` and `docs/architecture/` (legacy) for similar project names
    - If potential collision found, ask user to confirm or differentiate
 
@@ -1571,6 +1619,7 @@ before proceeding. Only continue after user acknowledges.
 ### Collision Detection
 
 Before creating artifacts, search for (including legacy docs/architecture/ location):
+
 ```bash
 find docs/spec docs/architecture -name "*[slug]*" -type d 2>/dev/null
 grep -r "[project keywords]" docs/spec/*/README.md docs/architecture/*/README.md 2>/dev/null
@@ -1579,6 +1628,7 @@ grep -r "[project keywords]" docs/spec/*/README.md docs/architecture/*/README.md
 If matches found, use AskUserQuestion:
 
 **AskUserQuestion for Collision Handling:**
+
 ```
 Use AskUserQuestion with:
   header: "Collision"
@@ -1592,9 +1642,11 @@ Use AskUserQuestion with:
     - label: "Supersede existing project"
       description: "Archive the old project and create this as its replacement"
 ```
+
 </initialization_protocol>
 
 <planning_philosophy>
+
 ## Core Principles
 
 1. **Clarity Before Code**: No implementation planning until requirements are crystal clear
@@ -1626,6 +1678,7 @@ Never skip levels. Build from the foundation up.
 </planning_philosophy>
 
 <directive_precedence>
+
 ## Directive Priority Order
 
 When multiple directives could apply simultaneously, follow this precedence:
@@ -1638,11 +1691,12 @@ When multiple directives could apply simultaneously, follow this precedence:
 ### Conflict Resolution
 
 If you detect conflicting directives:
+
 1. Complete the current operation
 2. Pause before the next operation
 3. Apply precedence rules above
 4. Proceed with highest-priority directive
-</directive_precedence>
+   </directive_precedence>
 
 <execution_protocol>
 
@@ -1650,15 +1704,15 @@ If you detect conflicting directives:
 
 **PHASE ORDER**: 0 → 1 → 2 → 3 → 4 → 5 → 6 (no skipping)
 
-| Phase | Name | Entry Condition | Exit Condition |
-|-------|------|-----------------|----------------|
-| 0 | Project Initialization | Command invoked | Workspace created |
-| 1 | Structured Elicitation | Workspace exists | Clarity checkpoints met |
-| 2 | Research | Requirements clear | Research complete |
-| 3 | Requirements Doc | Research done | REQUIREMENTS.md written |
-| 4 | Architecture Design | Requirements done | ARCHITECTURE.md written |
-| 5 | Implementation Planning | Architecture done | IMPLEMENTATION_PLAN.md written |
-| 6 | Artifact Finalization | All docs written | Status updated, user notified |
+| Phase | Name                    | Entry Condition    | Exit Condition                 |
+| ----- | ----------------------- | ------------------ | ------------------------------ |
+| 0     | Project Initialization  | Command invoked    | Workspace created              |
+| 1     | Structured Elicitation  | Workspace exists   | Clarity checkpoints met        |
+| 2     | Research                | Requirements clear | Research complete              |
+| 3     | Requirements Doc        | Research done      | REQUIREMENTS.md written        |
+| 4     | Architecture Design     | Requirements done  | ARCHITECTURE.md written        |
+| 5     | Implementation Planning | Architecture done  | IMPLEMENTATION_PLAN.md written |
+| 6     | Artifact Finalization   | All docs written   | Status updated, user notified  |
 
 **KEY RULE**: Complete each phase fully before proceeding. Verify state by reading files, not memory.
 
@@ -1671,19 +1725,21 @@ Before ANY planning, achieve absolute clarity through the AskUserQuestion tool.
 **⚠️ CRITICAL**: Do NOT ask questions in plain text. Every question MUST use the AskUserQuestion tool. The schemas in `<interaction_directive>` define the exact questions to ask.
 
 <questioning_concepts>
+
 ### Question Concepts (for designing AskUserQuestion options)
 
 These concepts guide what to explore. They are NOT templates to copy - transform them into AskUserQuestion options:
 
-| Concept | Purpose | How to Transform |
-|---------|---------|------------------|
-| Clarifying | Establish shared understanding | Include in "Other" follow-ups |
-| Assumption-challenging | Uncover hidden beliefs | Add as option descriptions |
-| Consequence | Explore implications | Include in domain-specific deep dives |
-| Priority | Establish what matters most | Use Round 4 (Priority schema) |
-| Context | Understand bigger picture | Use Rounds 1-3 (Domain, Problem, Users) |
+| Concept                | Purpose                        | How to Transform                        |
+| ---------------------- | ------------------------------ | --------------------------------------- |
+| Clarifying             | Establish shared understanding | Include in "Other" follow-ups           |
+| Assumption-challenging | Uncover hidden beliefs         | Add as option descriptions              |
+| Consequence            | Explore implications           | Include in domain-specific deep dives   |
+| Priority               | Establish what matters most    | Use Round 4 (Priority schema)           |
+| Context                | Understand bigger picture      | Use Rounds 1-3 (Domain, Problem, Users) |
 
 **Example transformation:**
+
 - Plain text (WRONG): "What's the minimum viable version?"
 - AskUserQuestion (CORRECT):
   ```
@@ -1695,14 +1751,16 @@ These concepts guide what to explore. They are NOT templates to copy - transform
     - label: "Full feature set"
     - label: "Depends on feedback"
   ```
-</questioning_concepts>
+  </questioning_concepts>
 
 <elicitation_process>
+
 ### Questioning Protocol Using AskUserQuestion
 
 **MANDATORY**: Each elicitation round MUST use the AskUserQuestion tool. Reference the schemas in `<interaction_directive>` above.
 
 <anti_pattern_warning>
+
 ### ❌ WRONG - Plain Text Questions (DO NOT DO THIS)
 
 ```
@@ -1740,23 +1798,27 @@ If the user's brief already answers some questions, acknowledge that context in 
 </anti_pattern_warning>
 
 #### Core Elicitation (Single Call)
+
 **Trigger**: After project scaffold creation
 **Action**: Use AskUserQuestion with all 4 core questions (Domain, Problem, Users, Priority)
 **Purpose**: Gather fundamental project context in one efficient interaction
 
 The 4 core questions are independent and can be answered together:
+
 - **Domain**: What type of project (Web, CLI, Library, Backend)
 - **Problem**: What problem being solved (New capability, Performance, UX, Tech debt)
 - **Users**: Who are the users (Internal devs, End users, External devs, Ops)
 - **Priority**: Primary constraint (Speed, Quality, Extensibility, Security)
 
 #### Context-Specific Deep Dives
+
 **Trigger**: After core elicitation answers received
 **Action**: Generate dynamic AskUserQuestion calls based on context
 
 **Examples of dynamic follow-ups:**
 
 If Domain = "Web Application":
+
 ```
 Use AskUserQuestion with:
   header: "Stack"
@@ -1770,6 +1832,7 @@ Use AskUserQuestion with:
 ```
 
 If Problem = "Performance/Scale":
+
 ```
 Use AskUserQuestion with:
   header: "Bottleneck"
@@ -1783,6 +1846,7 @@ Use AskUserQuestion with:
 ```
 
 If Users includes "External developers":
+
 ```
 Use AskUserQuestion with:
   header: "API Style"
@@ -1796,6 +1860,7 @@ Use AskUserQuestion with:
 ```
 
 #### Validation Round (Final)
+
 **Trigger**: After 4-6 rounds of structured questions
 **Action**: Present summary in plain text, then use AskUserQuestion
 
@@ -1818,12 +1883,14 @@ Use AskUserQuestion with:
 ### Handling "Other" Responses
 
 When user selects "Other" and provides free text:
+
 1. **Acknowledge** their input specifically
 2. **Parse** for structured information
 3. **Follow up** with a targeted AskUserQuestion if clarification helps
 4. **Continue** to the next round with their context integrated
 
 Example:
+
 - User selects "Other" for Domain, types: "IoT edge device firmware"
 - Claude responds: "IoT edge firmware - interesting domain! Let me ask targeted questions."
 - Then uses AskUserQuestion with IoT-relevant options for the next round
@@ -1834,7 +1901,7 @@ Example:
 - AskUserQuestion supports 1-4 questions per call - use this to reduce round-trips
 - Context-specific follow-ups come after core elicitation, based on user answers
 - If user selected "Other" for any question, follow up with targeted clarification
-</elicitation_process>
+  </elicitation_process>
 
 <required_clarity_checkpoints>
 Before proceeding to Phase 2, ensure clarity on:
@@ -1855,6 +1922,7 @@ If ANY checkbox is unclear, continue questioning. DO NOT PROCEED without clarity
 With requirements clear, gather comprehensive context.
 
 <research_tracks>
+
 ### Parallel Research Subagents
 
 Deploy subagents for simultaneous investigation:
@@ -1884,27 +1952,31 @@ compatibility requirements, licensing considerations, and integration complexity
 ### Research Questions to Answer
 
 **Technical Feasibility:**
+
 - What technologies are best suited for this?
 - What dependencies would be required?
 - What are the performance implications?
 - What security considerations exist?
 
 **Existing System Impact:**
+
 - What existing code will be affected?
 - What breaking changes might occur?
 - What migration path is needed?
 
 **Industry Context:**
+
 - How do others solve this problem?
 - What are established patterns?
 - What pitfalls should we avoid?
-</research_tracks>
+  </research_tracks>
 
 ## Phase 3: Requirements Documentation
 
 Transform gathered information into formal specification.
 
 <requirements_template>
+
 ### REQUIREMENTS.md Template
 
 ```markdown
@@ -1919,79 +1991,97 @@ status: draft
 # ${PROJECT_NAME} - Product Requirements Document
 
 ## Executive Summary
+
 [2-3 paragraph summary of what, why, and key success criteria]
 
 ## Problem Statement
 
 ### The Problem
+
 [Clear articulation of the problem being solved]
 
 ### Impact
+
 [Who is affected and how much it matters]
 
 ### Current State
+
 [How the problem is handled today]
 
 ## Goals and Success Criteria
 
 ### Primary Goal
+
 [Single sentence goal]
 
 ### Success Metrics
-| Metric | Target | Measurement Method |
-|--------|--------|-------------------|
-| [KPI 1] | [Value] | [How measured] |
-| [KPI 2] | [Value] | [How measured] |
+
+| Metric  | Target  | Measurement Method |
+| ------- | ------- | ------------------ |
+| [KPI 1] | [Value] | [How measured]     |
+| [KPI 2] | [Value] | [How measured]     |
 
 ### Non-Goals (Explicit Exclusions)
+
 - [What this project will NOT do]
 
 ## User Analysis
 
 ### Primary Users
+
 - **Who**: [Description]
 - **Needs**: [What they need]
 - **Context**: [When/where they use this]
 
 ### User Stories
+
 1. As a [user type], I want [capability] so that [benefit]
 2. [Continue...]
 
 ## Functional Requirements
 
 ### Must Have (P0)
-| ID | Requirement | Rationale | Acceptance Criteria |
-|----|-------------|-----------|---------------------|
-| FR-001 | [Requirement] | [Why needed] | [How to verify] |
+
+| ID     | Requirement   | Rationale    | Acceptance Criteria |
+| ------ | ------------- | ------------ | ------------------- |
+| FR-001 | [Requirement] | [Why needed] | [How to verify]     |
 
 ### Should Have (P1)
-| ID | Requirement | Rationale | Acceptance Criteria |
-|----|-------------|-----------|---------------------|
-| FR-101 | [Requirement] | [Why needed] | [How to verify] |
+
+| ID     | Requirement   | Rationale    | Acceptance Criteria |
+| ------ | ------------- | ------------ | ------------------- |
+| FR-101 | [Requirement] | [Why needed] | [How to verify]     |
 
 ### Nice to Have (P2)
-| ID | Requirement | Rationale | Acceptance Criteria |
-|----|-------------|-----------|---------------------|
-| FR-201 | [Requirement] | [Why needed] | [How to verify] |
+
+| ID     | Requirement   | Rationale    | Acceptance Criteria |
+| ------ | ------------- | ------------ | ------------------- |
+| FR-201 | [Requirement] | [Why needed] | [How to verify]     |
 
 ## Non-Functional Requirements
 
 ### Performance
+
 - [Response time, throughput, etc.]
 
 ### Security
+
 - [Authentication, authorization, data protection]
 
 ### Scalability
+
 - [Growth expectations, load handling]
 
 ### Reliability
+
 - [Uptime, recovery, backup]
 
 ### Maintainability
+
 - [Code quality, documentation, testing]
 
 ## Technical Constraints
+
 - [Technology stack requirements]
 - [Integration requirements]
 - [Compatibility requirements]
@@ -1999,30 +2089,37 @@ status: draft
 ## Dependencies
 
 ### Internal Dependencies
+
 - [Other projects, teams, systems]
 
 ### External Dependencies
+
 - [Third-party services, APIs, libraries]
 
 ## Risks and Mitigations
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
+
+| Risk   | Probability  | Impact       | Mitigation |
+| ------ | ------------ | ------------ | ---------- |
 | [Risk] | High/Med/Low | High/Med/Low | [Strategy] |
 
 ## Open Questions
+
 - [ ] [Unresolved item 1]
 - [ ] [Unresolved item 2]
 
 ## Appendix
 
 ### Glossary
-| Term | Definition |
-|------|------------|
+
+| Term   | Definition   |
+| ------ | ------------ |
 | [Term] | [Definition] |
 
 ### References
+
 - [Link to relevant documents, research, etc.]
 ```
+
 </requirements_template>
 
 ## Phase 4: Technical Architecture Design
@@ -2030,6 +2127,7 @@ status: draft
 Design the technical solution.
 
 <architecture_template>
+
 ### ARCHITECTURE.md Template
 
 ```markdown
@@ -2044,11 +2142,14 @@ status: draft
 # ${PROJECT_NAME} - Technical Architecture
 
 ## System Overview
+
 [High-level description of the system]
 
 ### Architecture Diagram
 ```
+
 [ASCII diagram of system components and their relationships]
+
 ```
 
 ### Key Design Decisions
@@ -2069,12 +2170,16 @@ status: draft
 
 ### Data Models
 ```
+
 [Schema definitions, entity relationships]
+
 ```
 
 ### Data Flow
 ```
+
 [Diagram showing how data moves through the system]
+
 ```
 
 ### Storage Strategy
@@ -2185,6 +2290,7 @@ status: draft
 ## Future Considerations
 [Known areas for future improvement]
 ```
+
 </architecture_template>
 
 ## Phase 5: Implementation Planning
@@ -2192,6 +2298,7 @@ status: draft
 Create actionable, phased implementation plan.
 
 <implementation_template>
+
 ### IMPLEMENTATION_PLAN.md Template
 
 ```markdown
@@ -2207,24 +2314,28 @@ estimated_effort: [Total estimate]
 # ${PROJECT_NAME} - Implementation Plan
 
 ## Overview
+
 [Brief summary of implementation approach and timeline]
 
 ## Team & Resources
-| Role | Responsibility | Allocation |
-|------|---------------|------------|
-| [Role] | [What they do] | [Time %] |
+
+| Role   | Responsibility | Allocation |
+| ------ | -------------- | ---------- |
+| [Role] | [What they do] | [Time %]   |
 
 ## Phase Summary
-| Phase | Duration | Key Deliverables |
-|-------|----------|------------------|
-| Phase 1: Foundation | [Est] | [Deliverables] |
-| Phase 2: Core | [Est] | [Deliverables] |
-| Phase 3: Integration | [Est] | [Deliverables] |
-| Phase 4: Polish | [Est] | [Deliverables] |
+
+| Phase                | Duration | Key Deliverables |
+| -------------------- | -------- | ---------------- |
+| Phase 1: Foundation  | [Est]    | [Deliverables]   |
+| Phase 2: Core        | [Est]    | [Deliverables]   |
+| Phase 3: Integration | [Est]    | [Deliverables]   |
+| Phase 4: Polish      | [Est]    | [Deliverables]   |
 
 ---
 
 ## Phase 1: Foundation
+
 **Duration**: [Estimate]
 **Goal**: [What this phase achieves]
 **Prerequisites**: [What must be true before starting]
@@ -2232,6 +2343,7 @@ estimated_effort: [Total estimate]
 ### Tasks
 
 #### Task 1.1: [Title]
+
 - **Description**: [What to do]
 - **Estimated Effort**: [Hours/Days]
 - **Dependencies**: None
@@ -2242,46 +2354,53 @@ estimated_effort: [Total estimate]
 - **Notes**: [Any additional context]
 
 #### Task 1.2: [Title]
+
 [Same structure...]
 
 ### Phase 1 Deliverables
+
 - [ ] [Deliverable 1]
 - [ ] [Deliverable 2]
 
 ### Phase 1 Exit Criteria
+
 - [ ] [What must be true to proceed]
 
 ---
 
 ## Phase 2: Core Implementation
+
 [Same structure as Phase 1]
 
 ---
 
 ## Phase 3: Integration & Testing
+
 [Same structure as Phase 1]
 
 ---
 
 ## Phase 4: Polish & Launch
+
 [Same structure as Phase 1]
 
 ---
 
 ## Dependency Graph
-
 ```
+
 [ASCII diagram showing task dependencies]
 
 Phase 1:
-  Task 1.1 --+---> Task 1.2
-             |
-             +---> Task 1.3 ---> Phase 2
+Task 1.1 --+---> Task 1.2
+|
++---> Task 1.3 ---> Phase 2
 
 Phase 2:
-  Task 2.1 ------> Task 2.2 --+---> Task 2.4
-                              |
-  Task 2.3 -------------------+
+Task 2.1 ------> Task 2.2 --+---> Task 2.4
+|
+Task 2.3 -------------------+
+
 ```
 
 ## Risk Mitigation Tasks
@@ -2315,6 +2434,7 @@ Phase 2:
 - [ ] Update architecture docs with learnings
 - [ ] Archive planning documents
 ```
+
 </implementation_template>
 
 ## Phase 6: Artifact Finalization
@@ -2322,32 +2442,40 @@ Phase 2:
 After all documents are complete:
 
 <finalization_checklist>
+
 ### Document Finalization
 
 1. **Update all document statuses** to `in-review`
 
 2. **Cross-reference check**:
+
    - All requirements have corresponding architecture components
    - All architecture components have implementation tasks
    - All risks have mitigation tasks
 
 3. **Update CHANGELOG.md**:
+
    ```markdown
    ## [1.0.0] - ${DATE}
+
    ### Added
+
    - Complete requirements specification
    - Technical architecture design
    - Implementation plan with [N] tasks across [M] phases
 
    ### Research Conducted
+
    - [Summary of research findings]
    ```
 
 4. **Update README.md** status to `in-review`
 
 5. **Update CLAUDE.md** (if exists):
+
    ```markdown
    ## Active Spec Projects
+
    - `docs/spec/active/${DATE}-${SLUG}/` - ${PROJECT_NAME} (in-review)
      - Status: Awaiting stakeholder review
      - Key docs: REQUIREMENTS.md, ARCHITECTURE.md, IMPLEMENTATION_PLAN.md
@@ -2359,11 +2487,12 @@ After all documents are complete:
    - Estimated effort: [total]
    - Key risks: [top 3]
    - Next steps: [what user should do]
-</finalization_checklist>
+     </finalization_checklist>
 
 </execution_protocol>
 
 <decisions_template>
+
 ### DECISIONS.md Template (Architecture Decision Records)
 
 ```markdown
@@ -2381,35 +2510,45 @@ project_id: ${PROJECT_ID}
 **Deciders**: [Who was involved]
 
 ### Context
+
 [What is the issue that we're seeing that motivates this decision?]
 
 ### Decision
+
 [What is the change that we're proposing and/or doing?]
 
 ### Consequences
+
 **Positive:**
+
 - [Good outcome 1]
 - [Good outcome 2]
 
 **Negative:**
+
 - [Tradeoff 1]
 - [Tradeoff 2]
 
 **Neutral:**
+
 - [Side effect]
 
 ### Alternatives Considered
+
 1. **[Alternative 1]**: [Why not chosen]
 2. **[Alternative 2]**: [Why not chosen]
 
 ---
 
 ## ADR-002: [Next Decision]
+
 [Same structure...]
 ```
+
 </decisions_template>
 
 <research_template>
+
 ### RESEARCH_NOTES.md Template
 
 ```markdown
@@ -2422,67 +2561,82 @@ last_updated: ${TIMESTAMP}
 # ${PROJECT_NAME} - Research Notes
 
 ## Research Summary
+
 [Executive summary of key findings]
 
 ## Codebase Analysis
 
 ### Relevant Files Examined
-| File | Purpose | Relevance |
-|------|---------|-----------|
+
+| File   | Purpose        | Relevance        |
+| ------ | -------------- | ---------------- |
 | [Path] | [What it does] | [How it relates] |
 
 ### Existing Patterns Identified
+
 - [Pattern 1]: [Where used, implications]
 - [Pattern 2]: [Where used, implications]
 
 ### Integration Points
+
 - [System 1]: [How to integrate]
 - [System 2]: [How to integrate]
 
 ## Technical Research
 
 ### Best Practices Found
-| Topic | Source | Key Insight |
-|-------|--------|-------------|
-| [Topic] | [URL/Reference] | [Takeaway] |
+
+| Topic   | Source          | Key Insight |
+| ------- | --------------- | ----------- |
+| [Topic] | [URL/Reference] | [Takeaway]  |
 
 ### Recommended Approaches
+
 1. **[Approach]**: [Why recommended]
 
 ### Anti-Patterns to Avoid
+
 1. **[Anti-pattern]**: [Why to avoid]
 
 ## Competitive Analysis
 
 ### Similar Solutions
-| Solution | Strengths | Weaknesses | Applicability |
-|----------|-----------|------------|---------------|
-| [Name] | [Pros] | [Cons] | [How relevant] |
+
+| Solution | Strengths | Weaknesses | Applicability  |
+| -------- | --------- | ---------- | -------------- |
+| [Name]   | [Pros]    | [Cons]     | [How relevant] |
 
 ### Lessons Learned from Others
+
 - [Lesson 1]
 - [Lesson 2]
 
 ## Dependency Analysis
 
 ### Recommended Dependencies
-| Dependency | Version | Purpose | License |
-|------------|---------|---------|---------|
-| [Package] | [Ver] | [Why] | [License] |
+
+| Dependency | Version | Purpose | License   |
+| ---------- | ------- | ------- | --------- |
+| [Package]  | [Ver]   | [Why]   | [License] |
 
 ### Dependency Risks
+
 - [Risk 1]: [Mitigation]
 
 ## Open Questions from Research
+
 - [ ] [Question needing further investigation]
 
 ## Sources
+
 - [URL 1]: [What was learned]
 - [URL 2]: [What was learned]
 ```
+
 </research_template>
 
 <quality_gates>
+
 ## Plan Quality Checklist
 
 Before finalizing:
@@ -2499,9 +2653,10 @@ Before finalizing:
 - [ ] All documents have correct metadata
 - [ ] CHANGELOG.md is up to date
 - [ ] No collision with existing projects
-</quality_gates>
+      </quality_gates>
 
 <execution_instruction>
+
 ## Execution Sequence
 
 ### Step 0: Worktree Check (ALWAYS FIRST)
@@ -2567,6 +2722,7 @@ IF scripts NOT available:
 ### Step 1: Initialize Project (ONLY after worktree confirmed - NOT after worktree creation)
 
 This step only runs if:
+
 - User is ALREADY in an appropriate branch/worktree, OR
 - User chose to continue on protected branch despite warnings
 
@@ -2648,6 +2804,7 @@ in your planning worktree.
 ### Scenario B: Already in Appropriate Branch -> PROCEED
 
 **Text output:**
+
 ```
 Working in branch `plan/user-auth` - good isolation for planning work.
 
@@ -2658,6 +2815,7 @@ Let's start by understanding what we're building.
 ```
 
 **Then immediately use AskUserQuestion with all 4 core questions:**
+
 ```
 Use AskUserQuestion with questions array containing:
 
@@ -2691,6 +2849,7 @@ Question 4:
 ### Scenario C: On Protected Branch, User Chooses to Continue Anyway
 
 **Text output:**
+
 ```
 Continuing on `main` as requested. Note that planning artifacts will be
 created directly on this branch.
@@ -2708,9 +2867,11 @@ Let's start by understanding what we're building.
 **Remember**: The goal is structured discovery through the AskUserQuestion tool. Present all 4 core questions together for efficient elicitation. Context-specific follow-ups come after based on answers. The plan that emerges from systematic guided questioning will be far superior to one based on plain-text back-and-forth.
 
 <post_approval_halt>
+
 ## MANDATORY HALT AFTER SPECIFICATION APPROVAL
 
 **CRITICAL ENFORCEMENT**: When the user approves the specification with phrases like:
+
 - "approve", "approved", "approve work"
 - "looks good", "LGTM"
 - "proceed", "go ahead"
@@ -2719,6 +2880,7 @@ Let's start by understanding what we're building.
 You MUST follow this exact protocol:
 
 ### PROHIBITED ACTIONS (NEVER DO THESE)
+
 1. **DO NOT** call ExitPlanMode with intent to implement
 2. **DO NOT** start any implementation tasks
 3. **DO NOT** create or modify code files
@@ -2745,6 +2907,7 @@ This planning session is complete. Implementation requires explicit `/claude-spe
 ### HALT ENFORCEMENT
 
 After displaying the above message:
+
 - **STOP COMPLETELY**
 - **DO NOT** continue the conversation about implementation
 - **DO NOT** offer to help with implementation
@@ -2756,6 +2919,7 @@ After displaying the above message:
 </execution_instruction>
 
 <error_recovery>
+
 ## Proactive Error Reporting
 
 **MANDATORY**: When you encounter unexpected errors, exceptions, or failures during planning, you SHOULD offer the user the opportunity to report the issue.
@@ -2774,12 +2938,14 @@ Monitor for these conditions during execution:
 When an error is detected:
 
 1. **Capture Context**:
+
    - Error message and traceback (if available)
    - Command or operation that failed
    - Files being processed at the time
    - Recent actions leading to the error
 
 2. **Initialize Suppression Flags** (at command start):
+
    ```
    # Session-scoped flag (resets each session)
    # Initialize at command start if not already set
@@ -2791,10 +2957,12 @@ When an error is detected:
    ```
 
    **Storage locations**:
+
    - Session flag: In-memory variable, lost when session ends
    - Permanent flag: `~/.claude/settings.json` under key `claude-spec.suppress_error_reports`
 
 3. **Check Suppression State**:
+
    ```
    IF SESSION_SUPPRESS_REPORTS == true:
      → Skip error reporting prompt
