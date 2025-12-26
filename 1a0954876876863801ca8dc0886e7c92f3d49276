@@ -68,3 +68,25 @@ All 5 tasks in Phase 1 implemented successfully. Added ~190 lines of checkbox sy
 - commands/implement.md:1357-1545 (new `<checkbox_sync_patterns>` section)
 - docs/spec/active/2025-12-25-implement-ux-improvements/PROGRESS.md:30-34
 - docs/spec/active/2025-12-25-implement-ux-improvements/IMPLEMENTATION_PLAN.md:36-74
+
+---
+type: progress
+timestamp: '2025-12-26T17:20:14.798647+00:00'
+summary: '...DIR}/.deep-clean-state'
+tags:
+- auto-captured
+- post-tool-use
+- file:deep-clean.md
+---
+
+...DIR}/.deep-clean-state
+```
+
+### Squash Validation
+
+Before squashing, verify:
+
+```bash
+# All findings completed
+REMAINING=$(grep -c '^\- \[ \]' "${REPORT_DIR}/REMEDIATION_TASKS.md" || echo 0)
+if [ "$REMAINING"...
