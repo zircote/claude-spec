@@ -1,6 +1,6 @@
 [project]
 name = "claude-spec-plugin"
-version = "0.16.0"
+version = "0.16.1"
 description = "Strategic project planning plugin for Claude Code"
 readme = "README.md"
 license = { text = "MIT" }
@@ -76,7 +76,7 @@ skips = ["B101"]  # assert_used - OK in tests
 
 # bump-my-version - Version Management
 [tool.bumpversion]
-current_version = "0.16.0"
+current_version = "0.16.1"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 search = "{current_version}"
@@ -96,6 +96,11 @@ replace = 'version = "{new_version}"'
 filename = ".claude-plugin/plugin.json"
 search = '"version": "{current_version}"'
 replace = '"version": "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "uv.lock"
+search = 'name = "claude-spec-plugin"\nversion = "{current_version}"'
+replace = 'name = "claude-spec-plugin"\nversion = "{new_version}"'
 
 [dependency-groups]
 dev = [
